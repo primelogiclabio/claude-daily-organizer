@@ -14,7 +14,7 @@ A bar above the lists holds the **Day** and **People** filters and a
 with columns for type, ticket, note, age and comments. Each device remembers
 its own choice, so a phone can stay on the list while a desktop uses the
 table. The **Add a task** box folds away when you don't need it, and each
-device remembers that too.
+device remembers that too. The bottom of the page shows its version.
 
 It used to be called **workday-tracker**. See [Renamed](#renamed-from-workday-tracker)
 if you had that installed.
@@ -85,6 +85,18 @@ days, choose which day the planned section shows. The star on a task plans it
 for that day. A task planned for another day shows a small "★ Tue" marker.
 Claude can plan ahead too ("plan tomorrow", "plan Monday"), and offers to plan
 tomorrow when you wrap up a day.
+
+## Updating your organizer
+
+Your organizer keeps the page it was published with, so a plugin update
+doesn't change it by itself. The page notes its version in the organizer's
+settings, and when you plan or wrap up your day, Claude offers the update if
+a newer page has shipped. You can also ask: "update my organizer".
+
+The update republishes the page at the same link. Your tasks stay, because
+they're in the organizer's database rather than the page. Changes you asked
+Claude to make to the page are carried over to the new one. For a page older
+than 0.4.0, Claude asks which changes those were.
 
 The full instructions are in [`SKILL.md`](SKILL.md).
 

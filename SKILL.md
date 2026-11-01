@@ -35,6 +35,8 @@ The organizer is the artifact the user points at: by a link, by name ("my daily 
   - `closedAt`, optional
 - `settings/main`, one document:
   - `ticketUrl`, optional: where ticket keys link. Either a URL with `{key}` where the key goes, or a prefix the key is added to the end of.
+  - `pageVersion`: the version of the page the organizer runs, written by the page itself when it loads. Missing on pages older than 0.4.0.
+  - `pageChanges`, optional: changes Claude made to the page at the user's request, as a list of `{at, text}` entries, so an update can carry them over.
 
 Dates are the user's local date. New task ids are letters, digits and dashes, such as `t-` plus the current time in milliseconds.
 
@@ -48,7 +50,7 @@ Dates are the user's local date. New task ids are letters, digits and dashes, su
 
    The rule keeps every row to the owner and anyone they make an Editor, even if the page is shared.
 3. Check it with one `ArtifactData` `list` of `tasks`. An empty list is right. Never seed sample tasks.
-4. Give the user the link. If they listed tasks while asking, add them now (below).
+4. Give the user the link. If they listed tasks while asking, add them now (below). The page records its version in `settings/main` the first time it's opened.
 
 ## Task rules
 
@@ -96,7 +98,7 @@ The page's **Settings** section has a **Ticket link** field, saved as `ticketUrl
 ## Plan my day
 
 When the user asks to plan the day, or what to work on today:
-1. Read `tasks`, `team`, and the most recent `days` document before today.
+1. Read `tasks`, `team`, `settings/main`, and the most recent `days` document before today. If the page is older than this skill's template, offer the update (see Updating the page) after the plan.
 2. Plan from the user's own tasks. A task assigned to someone else only comes in as a check-in ("ask Sam about the logs") when it's been open 3 or more days. Pick out:
    - tasks planned for an earlier day and not done (carry-overs);
    - follow-ups and Waiting On tasks added 3 or more days ago, which may need chasing;
@@ -114,7 +116,7 @@ The same works for a later day ("plan tomorrow", "plan Monday"). Use that day's 
 ## Wrap up my day
 
 When the user asks to wrap up, close or summarize the day:
-1. Read `tasks` and `days/<today>`.
+1. Read `tasks`, `settings/main` and `days/<today>`. If the page is older than this skill's template, offer the update (see Updating the page) after the summary.
 2. Draft a short summary of:
    - what got done today, with each completion comment;
    - progress on open tasks, from comments added today;
@@ -141,9 +143,21 @@ Making or writing the organizer needs the `Artifact` tool with `capabilities` an
 - **For an organizer that already exists:** say you can't change its rows from here. The user can add, complete and plan tasks on the page itself, wherever they open it, or ask from a Claude Code session.
 - **For a chat-artifact tracker:** keep working the older way. Tasks stay in the artifact's code, the same task rules apply, and missing fields (type, ticket, status note, comments, completion comment) get added to the artifact's code rather than tracked in chat. Keep its plain look.
 
+## Updating the page
+
+An organizer keeps the page it was published with; a newer `template.html` doesn't reach it on its own. The template's version is in its `<meta name="daily-organizer-version">` tag. The organizer's is `settings/main.pageVersion`; if it's missing, the page is older than 0.4.0 or hasn't been opened since it was last published.
+
+- **When to offer.** When planning or wrapping up the day finds the organizer older than the template, say so once per conversation: its version, the template's, and in a line what the newer page adds. Offer to update it. Also update when the user asks ("update my organizer"). Never update without a yes.
+- **Updating, on a yes:**
+  1. Read the page with `Artifact` `read`.
+  2. Copy `template.html` as in Starting one. Re-apply each entry in `settings/main.pageChanges` to the copy. If the organizer has no `pageVersion`, there's no record of earlier changes: ask once whether Claude ever changed the page's look or features for them, and re-apply what they name. Leave the version meta as the template has it.
+  3. Publish the copy to the same `url`. Omit `capabilities` so the database rules carry over.
+  4. `list` `tasks` and check the count is the same as before. Tell the user to reload the page. It records its new version when it loads.
+
 ## Changing the page itself
 
 Only when the user asks for a feature or a look the page doesn't have:
 1. Read the current page with `Artifact` `read`, edit the saved file, and publish it to the same `url`.
 2. Omit `capabilities` so the database rules carry over.
 3. Keep the data fields above, so existing rows still show. If a change needs a new field, add it to the rows that need it rather than renaming old ones.
+4. Add a one-line entry for the change to `settings/main.pageChanges` (`{at, text}`), so a later update can carry it over. Don't change the page's version meta.
