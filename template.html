@@ -1,11 +1,11 @@
 <title>Daily Organizer</title>
-<meta name="daily-organizer-version" content="0.6.0">
+<meta name="daily-organizer-version" content="0.7.0">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: one 760px column like a daybook page: the dated header, the day and people filters, a 1:1 agenda when one person is picked, Today, the foldable add box, the three lists, the day log, then settings and the page's version. */
+/* Layout: one 760px column like a daybook page: the dated header, the day and people filters, a 1:1 agenda when one person is picked, the foldable add box, the list tabs over Today, Up Next, Waiting On, Ideas and Done (or All of them stacked), the day log, then settings and the page's version. */
 :root {
   --bg: #f4f6f9;
   --surface: #ffffff;
@@ -45,6 +45,8 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font-body); 
 }
 button, input, select, textarea { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* The hidden attribute wins over display rules such as section's grid, or hidden sections and filters would still show. */
+[hidden] { display: none !important; }
 
 .day { display: grid; gap: 2px; min-width: 0; }
 /* The filters wrap to two rows on a phone: the day, then people with the layout switch kept at the right. */
@@ -186,6 +188,22 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
 .add .check-label { display: flex; gap: 6px; align-items: center; font-size: 14px; color: var(--muted); }
 .add .btn-primary { grid-column: 1 / -1; justify-self: end; }
 
+/* The list tabs show one list at a time, or All of them stacked. They wrap on a phone rather than scroll sideways. */
+.lists { display: grid; gap: 28px; min-width: 0; }
+/* With one list shown, the list sits right under the tabs and the tabs' line stands in for its own top border. */
+.wrap.is-tabs .lists { gap: 4px; }
+.wrap.is-tabs .panel { gap: 0; }
+.wrap.is-tabs .panel .section-head { justify-content: flex-end; }
+.wrap.is-tabs .panel .list, .wrap.is-tabs .panel .table-wrap { border-top: 0; }
+.wrap.is-tabs .panel .empty { padding-top: 10px; }
+.tabs { display: flex; flex-wrap: wrap; gap: 0 4px; border-bottom: 1px solid var(--line); }
+.tabs button { border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; padding: 8px 10px 6px; font-size: 14px; font-weight: 500; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.tabs button:hover { color: var(--ink); }
+.tabs button[aria-pressed="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.tabs .n { font-family: var(--font-mono); font-size: 12px; font-weight: 400; margin-left: 5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+/* With one tab shown, the tab names the list, so its heading is kept for screen readers only. */
+.wrap.is-tabs .panel h2 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
 .days { display: grid; gap: 0; border-top: 1px solid var(--line); }
 .days details { border-bottom: 1px solid var(--line); padding: 8px 0; }
 .days summary { cursor: pointer; display: flex; gap: 12px; flex-wrap: wrap; align-items: baseline; }
@@ -239,15 +257,6 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     <p class="empty" id="empty-with"></p>
   </section>
 
-  <section id="sec-today" aria-labelledby="h-today">
-    <div class="section-head">
-      <h2 id="h-today"><span id="today-label">Today</span><span class="n" id="n-today"></span></h2>
-    </div>
-    <ul class="list" id="list-today"></ul>
-    <div class="table-wrap" id="table-today" hidden></div>
-    <p class="empty" id="empty-today">Nothing planned for today. Star a task to add it, or ask Claude to plan your day.</p>
-  </section>
-
   <details class="add-box" id="add-box" open>
     <summary id="add-summary">Add a task</summary>
     <form class="add" id="add" autocomplete="off">
@@ -277,29 +286,56 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     </form>
   </details>
 
-  <section id="sec-next" aria-labelledby="h-next">
-    <div class="section-head"><h2 id="h-next">Up Next<span class="n" id="n-next"></span></h2></div>
-    <ul class="list" id="list-next"></ul>
-    <div class="table-wrap" id="table-next" hidden></div>
-    <p class="empty" id="empty-next">Nothing up next.</p>
-  </section>
-
-  <section id="sec-waiting" aria-labelledby="h-waiting">
-    <div class="section-head"><h2 id="h-waiting">Waiting On<span class="n" id="n-waiting"></span></h2></div>
-    <ul class="list" id="list-waiting"></ul>
-    <div class="table-wrap" id="table-waiting" hidden></div>
-    <p class="empty" id="empty-waiting">Nothing waiting on anyone.</p>
-  </section>
-
-  <section id="sec-done" aria-labelledby="h-done">
-    <div class="section-head">
-      <h2 id="h-done">Done<span class="n" id="n-done"></span></h2>
-      <div id="clear-done"></div>
+  <div class="lists" id="lists">
+    <div class="tabs" id="tabs" role="group" aria-label="Lists to show">
+      <button type="button" id="show-today" aria-pressed="true"><span id="show-today-label">Today</span><span class="n" id="tn-today"></span></button>
+      <button type="button" id="show-next" aria-pressed="false">Up Next<span class="n" id="tn-next"></span></button>
+      <button type="button" id="show-waiting" aria-pressed="false">Waiting<span class="n" id="tn-waiting"></span></button>
+      <button type="button" id="show-ideas" aria-pressed="false">Ideas<span class="n" id="tn-ideas"></span></button>
+      <button type="button" id="show-done" aria-pressed="false">Done<span class="n" id="tn-done"></span></button>
+      <button type="button" id="show-all" aria-pressed="false">All</button>
     </div>
-    <ul class="list" id="list-done"></ul>
-    <div class="table-wrap" id="table-done" hidden></div>
-    <p class="empty" id="empty-done">Finished tasks land here with their completion comment.</p>
-  </section>
+
+    <section id="sec-today" class="panel" aria-labelledby="h-today">
+      <div class="section-head">
+        <h2 id="h-today"><span id="today-label">Today</span><span class="n" id="n-today"></span></h2>
+      </div>
+      <ul class="list" id="list-today"></ul>
+      <div class="table-wrap" id="table-today" hidden></div>
+      <p class="empty" id="empty-today">Nothing planned for today. Star a task to add it, or ask Claude to plan your day.</p>
+    </section>
+
+    <section id="sec-next" class="panel" aria-labelledby="h-next">
+      <div class="section-head"><h2 id="h-next">Up Next<span class="n" id="n-next"></span></h2></div>
+      <ul class="list" id="list-next"></ul>
+      <div class="table-wrap" id="table-next" hidden></div>
+      <p class="empty" id="empty-next">Nothing up next.</p>
+    </section>
+
+    <section id="sec-waiting" class="panel" aria-labelledby="h-waiting">
+      <div class="section-head"><h2 id="h-waiting">Waiting On<span class="n" id="n-waiting"></span></h2></div>
+      <ul class="list" id="list-waiting"></ul>
+      <div class="table-wrap" id="table-waiting" hidden></div>
+      <p class="empty" id="empty-waiting">Nothing waiting on anyone.</p>
+    </section>
+
+    <section id="sec-ideas" class="panel" aria-labelledby="h-ideas">
+      <div class="section-head"><h2 id="h-ideas">Ideas<span class="n" id="n-ideas"></span></h2></div>
+      <ul class="list" id="list-ideas"></ul>
+      <div class="table-wrap" id="table-ideas" hidden></div>
+      <p class="empty" id="empty-ideas">No ideas parked. Add one with the type set to Idea.</p>
+    </section>
+
+    <section id="sec-done" class="panel" aria-labelledby="h-done">
+      <div class="section-head">
+        <h2 id="h-done">Done<span class="n" id="n-done"></span></h2>
+        <div id="clear-done"></div>
+      </div>
+      <ul class="list" id="list-done"></ul>
+      <div class="table-wrap" id="table-done" hidden></div>
+      <p class="empty" id="empty-done">Finished tasks land here with their completion comment.</p>
+    </section>
+  </div>
 
   <section id="sec-days" aria-labelledby="h-days">
     <div class="section-head"><h2 id="h-days">Days</h2></div>
@@ -335,9 +371,12 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
 (() => {
   const $ = (id) => document.getElementById(id);
   const state = { tasks: [], days: [], settings: {}, team: [], teamLoaded: false, confirmed: false, slow: false, error: '', note: '', readOnly: false, closed: false };
-  const ui = { completing: null, noting: null, removing: null, clearing: false, drafts: {}, logOpen: new Set(), logRemoving: null, layout: 'list', filter: 'all', day: null, picking: null, addWith: null, teamRemoving: null };
+  const ui = { completing: null, noting: null, removing: null, clearing: false, drafts: {}, logOpen: new Set(), logRemoving: null, layout: 'list', tab: 'today', filter: 'all', day: null, picking: null, addWith: null, teamRemoving: null };
   const chains = new Map();
   const TYPES = ['task', 'idea', 'follow-up', 'discussion'];
+  // The list tabs: one list at a time, or All of them stacked.
+  const LISTS = ['today', 'next', 'waiting', 'ideas', 'done'];
+  const TABS = [...LISTS, 'all'];
   // The template's version, from its meta tag; Claude compares it with settings/main.pageVersion to offer updates.
   const PAGE_VERSION = (document.querySelector('meta[name="daily-organizer-version"]') || {}).content || '';
   let db = null;
@@ -762,6 +801,8 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     table.hidden = !asTable || items.length === 0;
     $('empty-' + name).hidden = items.length > 0;
     $('n-' + name).textContent = items.length ? String(items.length) : '';
+    const tab = $('tn-' + name);
+    if (tab) tab.textContent = items.length ? String(items.length) : '';
   }
 
   function renderDays(byId) {
@@ -854,8 +895,11 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     const inLists = shown.filter((t) => !agenda.includes(t));
     const planned = inLists.filter((t) => t.today === sel).sort((a, b) => (a.status === 'done') - (b.status === 'done') || byPriority(a, b));
     const rest = inLists.filter((t) => t.today !== sel);
-    const next = rest.filter((t) => t.status === 'next' || !t.status).sort(byPriority);
-    const waiting = rest.filter((t) => t.status === 'waiting').sort(byPriority);
+    // Open ideas have their own list, so Up Next and Waiting On hold only work to do.
+    const ideas = rest.filter((t) => t.type === 'idea' && t.status !== 'done').sort(byPriority);
+    const work = rest.filter((t) => t.type !== 'idea');
+    const next = work.filter((t) => t.status === 'next' || !t.status).sort(byPriority);
+    const waiting = work.filter((t) => t.status === 'waiting').sort(byPriority);
     const done = rest.filter((t) => t.status === 'done').sort((a, b) => String(b.doneAt || '').localeCompare(String(a.doneAt || '')));
 
     fill('with', agenda, sel);
@@ -867,6 +911,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     fill('today', planned, sel);
     fill('next', next, sel);
     fill('waiting', waiting, sel);
+    fill('ideas', ideas, sel);
     fill('done', done, sel);
     renderDays(byId);
 
@@ -876,7 +921,10 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     if (document.activeElement !== daySelect) syncSelect(daySelect, dayChoices(today), sel);
     $('tab-today').setAttribute('aria-pressed', String(sel === today));
     $('tab-tomorrow').setAttribute('aria-pressed', String(sel === addDays(today, 1)));
-    $('today-label').textContent = sel === today || sel === addDays(today, 1) ? selWord[0].toUpperCase() + selWord.slice(1) : fromKey(sel).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'short' });
+    const near = sel === today || sel === addDays(today, 1);
+    const selTitle = selWord[0].toUpperCase() + selWord.slice(1);
+    $('today-label').textContent = near ? selTitle : fromKey(sel).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'short' });
+    $('show-today-label').textContent = near ? selTitle : fromKey(sel).toLocaleDateString(undefined, { weekday: 'short' });
     $('empty-today').textContent = 'Nothing planned for ' + selWord + '. Star a task to add it, or ask Claude to plan ' + (sel === today ? 'your day' : selWord) + '.';
     $('add-today-label').textContent = selWord[0].toUpperCase() + selWord.slice(1);
     $('counts').textContent = state.closed ? '' :
@@ -898,8 +946,11 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     }
 
     for (const c of $('add').elements) c.disabled = state.readOnly || !db;
-    for (const id of ['filters', 'sec-today', 'add-box', 'sec-next', 'sec-waiting', 'sec-done', 'sec-days', 'sec-settings']) $(id).hidden = state.closed;
+    for (const id of ['filters', 'add-box', 'lists', 'sec-days', 'sec-settings']) $(id).hidden = state.closed;
     $('sec-with').hidden = state.closed || !person;
+    for (const name of LISTS) $('sec-' + name).hidden = ui.tab !== 'all' && ui.tab !== name;
+    for (const name of TABS) $('show-' + name).setAttribute('aria-pressed', String(ui.tab === name));
+    document.querySelector('.wrap').classList.toggle('is-tabs', ui.tab !== 'all');
     document.querySelector('.wrap').classList.toggle('is-table', ui.layout === 'table');
     $('view-list').setAttribute('aria-pressed', String(ui.layout === 'list'));
     $('view-table').setAttribute('aria-pressed', String(ui.layout === 'table'));
@@ -969,8 +1020,9 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     render();
   });
 
-  // The layout, the person filter and the add box's fold are per-device preferences, so they live in this browser only.
+  // The layout, the list tab, the person filter and the add box's fold are per-device preferences, so they live in this browser only.
   try { ui.filter = localStorage.getItem('organizer-filter') || 'all'; } catch (e) { /* storage blocked: show everyone */ }
+  try { const tab = localStorage.getItem('organizer-tab'); if (TABS.includes(tab)) ui.tab = tab; } catch (e) { /* storage blocked: start on Today */ }
   try { if (localStorage.getItem('organizer-layout') === 'table') ui.layout = 'table'; } catch (e) { /* storage blocked: start in list */ }
   const addBox = $('add-box');
   let addByHand = false;
@@ -983,6 +1035,13 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     try { localStorage.setItem('organizer-add', addBox.open ? 'open' : 'closed'); } catch (e) { /* not remembered, still folds */ }
     if (addBox.open && !$('add-title').disabled) $('add-title').focus();
   });
+  for (const name of TABS) {
+    $('show-' + name).addEventListener('click', () => {
+      ui.tab = name;
+      try { localStorage.setItem('organizer-tab', name); } catch (e) { /* not remembered, still switches */ }
+      render();
+    });
+  }
   for (const [id, value] of [['view-list', 'list'], ['view-table', 'table']]) {
     $(id).addEventListener('click', () => {
       ui.layout = value;
