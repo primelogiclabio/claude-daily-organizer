@@ -10,16 +10,26 @@ past plans and end-of-day summaries. It installs from the
 [claude-tools](https://github.com/primelogiclabio/claude-tools) marketplace.
 
 Tabs show one list at a time, each with a count: **Today**, **Up Next**,
-**Waiting**, **Ideas** and **Done**. **All** shows every list stacked on one
-page. Ideas get their own tab, so Up Next holds only work to do.
+**Waiting**, **Upcoming**, **Someday**, **Ideas** and **Done**. **All** shows
+every list stacked on one page. Ideas get their own tab, so Up Next holds only
+work to do. **Upcoming** holds tasks planned for later days, and **Someday**
+the ones you've set aside with no day. Unfinished tasks from earlier days show
+as **Carried over** under Today, marked "from Oct 9 · 23 days", with **Push to
+tomorrow** on each.
+
+The header shows today in four figures (open today, carried over, to chase,
+done today) and a bar for how much of today's plan is done. "To chase" counts
+follow-ups and waiting tasks that are 3 or more days old.
 
 A bar above the lists holds the **Day** and **People** filters and a
 **List | Table** switch, which shows each section as a list or as a table
 with columns for type, priority, ticket, note, age and comments. Each device
 remembers its own tab and layout, so a phone can stay on the Today list while
 a desktop shows All as tables. The **Add a task** box above the tabs folds
-away when you don't need it, and each device remembers that too. The bottom
-of the page shows its version.
+away when you don't need it, and each device remembers that too. Its **Day**
+picker plans a new task for today, one of the next six days or **Someday**,
+and **+ Note** adds a status note as you add it. Tasks Claude added from a chat
+say "via chat". The bottom of the page shows its version.
 
 It used to be called **workday-tracker**. See [Renamed](#renamed-from-workday-tracker)
 if you had that installed.
@@ -57,6 +67,9 @@ artifact on claude.ai, in the artifact's own database:
   the bottom.
 - A task can have a **status note** that changes over time, such as "blocked
   on DNS change".
+- A task can be set aside for **someday**: say "someday" or "not now", pick
+  Someday as the day when you add it, or use **Move to Someday**. It stays out
+  of your day plans until you plan it for a day.
 - A task can collect **comments**: dated entries with more detail on progress,
   such as what you tried and what's next. The status note says where a task
   stands now; the comments keep the history. Say "add a comment to the DNS
@@ -98,9 +111,10 @@ with each person.
 You can also plan by hand, and ahead. The **Day** filter's **Today |
 Tomorrow** tabs, and the day picker beside them for any of the next seven
 days, choose which day the planned section shows. The star on a task plans it
-for that day. A task planned for another day shows a small "★ Tue" marker.
-Claude can plan ahead too ("plan tomorrow", "plan Monday"), and offers to plan
-tomorrow when you wrap up a day.
+for that day. A task planned for another day goes under **Upcoming** with a
+small "★ Tue" marker. Claude can plan ahead too ("plan tomorrow", "plan
+Monday", "push the DNS task to tomorrow"), and offers to plan tomorrow when
+you wrap up a day.
 
 ## Updating your organizer
 
