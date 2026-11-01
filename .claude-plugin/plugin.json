@@ -1,6 +1,6 @@
 {
   "name": "daily-organizer",
-  "version": "0.8.1",
+  "version": "0.9.0",
   "license": "MIT",
   "author": { "name": "prime" },
   "description": "A Claude skill that keeps your personal daily organizer on claude.ai: Today, Up Next, Waiting On and Done lists that you and Claude both update, with a morning plan and an end-of-day summary.",

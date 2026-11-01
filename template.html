@@ -1,11 +1,11 @@
 <title>Daily Organizer</title>
-<meta name="daily-organizer-version" content="0.8.1">
+<meta name="daily-organizer-version" content="0.9.0">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: one 760px column like a daybook page: the dated header with today's figures and plan bar, the day and people filters, a 1:1 agenda when one person is picked, the foldable add box, the list tabs over Today (with what's carried over), Up Next, Waiting On, Upcoming, Someday, Ideas and Done (or All of them stacked), the day log, then settings and the page's version. */
+/* Layout: one 760px column like a daybook page: the dated header with today's figures and plan bar, the day and people filters, a 1:1 agenda when one person is picked, the foldable add box, the list tabs over Today (with what's carried over), Up Next, Waiting On, Upcoming, Someday, Ideas, Jira flags (once Claude has copied some in) and Done (or All of them stacked), the day log, then settings and the page's version. */
 :root {
   --bg: #f4f6f9;
   --surface: #ffffff;
@@ -227,6 +227,19 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
 /* With one tab shown, the tab names the list, so its heading is kept for screen readers only. */
 .wrap.is-tabs .panel h2 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
+/* Jira flags: one row per ticket flagged on the Jira Dashboard, with its way onto the list at the right. */
+.flag-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 10px 0; border-bottom: 1px solid var(--line); align-items: start; }
+.flag-note { font-size: 14px; overflow-wrap: anywhere; }
+.flag-note::before { content: "Note: "; color: var(--muted); }
+.jstatus { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; padding: 1px 6px; border-radius: 3px; border: 1px solid currentColor; color: var(--muted); white-space: nowrap; }
+.jstatus.progress { color: var(--accent); }
+.jstatus.done { color: var(--done); }
+.on-list { font-size: 13px; color: var(--muted); white-space: nowrap; }
+.flag-act .btn { font-size: 13px; padding: 4px 10px; white-space: nowrap; }
+.tasks .flag-note::before { content: none; }
+.jira-foot { margin: 0; padding-top: 8px; font-size: 13px; color: var(--muted); }
+.jira-foot a { color: var(--accent); }
+
 .days { display: grid; gap: 0; border-top: 1px solid var(--line); }
 .days details { border-bottom: 1px solid var(--line); padding: 8px 0; }
 .days summary { cursor: pointer; display: flex; gap: 12px; flex-wrap: wrap; align-items: baseline; }
@@ -242,6 +255,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
   .add { grid-template-columns: 1fr 1fr; }
   .task { grid-template-columns: auto 1fr; }
   .actions { grid-column: 2; }
+  .flag-row { grid-template-columns: minmax(0, 1fr); }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
@@ -329,6 +343,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
       <button type="button" id="show-upcoming" aria-pressed="false">Upcoming<span class="n" id="tn-upcoming"></span></button>
       <button type="button" id="show-someday" aria-pressed="false">Someday<span class="n" id="tn-someday"></span></button>
       <button type="button" id="show-ideas" aria-pressed="false">Ideas<span class="n" id="tn-ideas"></span></button>
+      <button type="button" id="show-jira" aria-pressed="false" hidden>Jira<span class="n" id="tn-jira"></span></button>
       <button type="button" id="show-done" aria-pressed="false">Done<span class="n" id="tn-done"></span></button>
       <button type="button" id="show-all" aria-pressed="false">All</button>
     </div>
@@ -383,6 +398,14 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
       <p class="empty" id="empty-ideas">No ideas parked. Add one with the type set to Idea.</p>
     </section>
 
+    <section id="sec-jira" class="panel" aria-labelledby="h-jira" hidden>
+      <div class="section-head"><h2 id="h-jira">Flagged on the Jira Dashboard<span class="n" id="n-jira"></span></h2></div>
+      <ul class="list" id="list-jira"></ul>
+      <div class="table-wrap" id="table-jira" hidden></div>
+      <p class="empty" id="empty-jira">No tickets flagged on the Jira Dashboard.</p>
+      <p class="jira-foot" id="jira-foot"></p>
+    </section>
+
     <section id="sec-done" class="panel" aria-labelledby="h-done">
       <div class="section-head">
         <h2 id="h-done">Done<span class="n" id="n-done"></span></h2>
@@ -427,12 +450,12 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
 <script>
 (() => {
   const $ = (id) => document.getElementById(id);
-  const state = { tasks: [], days: [], settings: {}, team: [], teamLoaded: false, confirmed: false, slow: false, error: '', note: '', readOnly: false, closed: false };
+  const state = { tasks: [], days: [], settings: {}, team: [], jira: [], teamLoaded: false, confirmed: false, slow: false, error: '', note: '', readOnly: false, closed: false };
   const ui = { completing: null, noting: null, removing: null, clearing: false, drafts: {}, logOpen: new Set(), logRemoving: null, layout: 'list', tab: 'today', filter: 'all', day: null, picking: null, addWith: null, teamRemoving: null };
   const chains = new Map();
   const TYPES = ['task', 'idea', 'follow-up', 'discussion'];
   // The list tabs: one list at a time, or All of them stacked.
-  const LISTS = ['today', 'next', 'waiting', 'upcoming', 'someday', 'ideas', 'done'];
+  const LISTS = ['today', 'next', 'waiting', 'upcoming', 'someday', 'ideas', 'jira', 'done'];
   const TABS = [...LISTS, 'all'];
   // The template's version, from its meta tag; Claude compares it with settings/main.pageVersion to offer updates.
   const PAGE_VERSION = (document.querySelector('meta[name="daily-organizer-version"]') || {}).content || '';
@@ -917,6 +940,93 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     $('empty-days').hidden = days.length > 0;
   }
 
+  // Jira flags: copies of the tickets flagged on the Jira Dashboard, written by Claude when it syncs, since a page
+  // can't read another artifact's database. A flag becomes a discussion task, linked back by the task's `flag`.
+  const JIRA_STATUS = { 'In Progress': 'progress', 'Done': 'done' };
+  const httpsUrl = (u) => (typeof u === 'string' && /^https:\/\//i.test(u) ? u : null);
+  const hasJira = () => state.jira.length > 0 || Boolean(state.settings.jira);
+
+  // "Fri" within the last six days, else "Oct 30".
+  function flagDay(iso) {
+    const d = iso ? new Date(iso) : null;
+    if (!d || isNaN(d)) return '';
+    return Date.now() - d.getTime() < 6 * 86400000 ? d.toLocaleDateString(undefined, { weekday: 'short' }) : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  }
+
+  // The list a task shows in, as its tab names it.
+  function listOf(t, sel, today, selLabel) {
+    if (t.status === 'done') return 'Done ✓';
+    if (t.today === sel) return selLabel;
+    if (t.today && t.today >= today) return 'Upcoming';
+    if (t.today) return 'Carried over';
+    if (t.someday) return 'Someday';
+    if (t.type === 'idea') return 'Ideas';
+    return t.status === 'waiting' ? 'Waiting On' : 'Up Next';
+  }
+
+  function addFromFlag(f) {
+    if (!db || state.readOnly) return;
+    const body = { title: String(f.summary || f.key), type: 'discussion', status: 'next', created: new Date().toISOString(), ticket: httpsUrl(f.url) || f.key, flag: f.key };
+    if (f.note) body.note = String(f.note).slice(0, 300);
+    const ref = db.collection('tasks').doc();
+    write(ref.id, () => ref.set(body));
+  }
+
+  function renderJira(sel, today, selLabel) {
+    const flags = state.jira.filter((f) => f && f.key).sort((a, b) => String(b.flaggedAt || '').localeCompare(String(a.flaggedAt || '')));
+    const taskOf = new Map(state.tasks.filter((t) => t.flag).map((t) => [t.flag, t]));
+    const asTable = ui.layout === 'table';
+    const pieces = (f) => {
+      const url = httpsUrl(f.url);
+      const task = taskOf.get(f.key);
+      return {
+        key: url ? el('a', { class: 'ticket', href: url, target: '_blank', rel: 'noopener noreferrer', title: url }, f.key) : el('span', { class: 'ticket' }, f.key),
+        status: f.status ? el('span', { class: 'jstatus ' + (JIRA_STATUS[f.statusCategory] || ''), title: f.statusCategory || null }, f.status) : null,
+        who: f.assignee || 'Unassigned',
+        when: f.flaggedAt ? 'flagged ' + flagDay(f.flaggedAt) : '',
+        action: task ? el('span', { class: 'on-list' }, 'On your list · ' + listOf(task, sel, today, selLabel))
+          : state.readOnly ? null : el('button', { type: 'button', class: 'btn', disabled: !db, 'aria-label': 'Add ' + f.key + ' as a task', onclick: () => addFromFlag(f) }, 'Add as task'),
+      };
+    };
+    $('list-jira').replaceChildren(...(asTable ? [] : flags.map((f) => {
+      const p = pieces(f);
+      return el('li', { class: 'flag-row' },
+        el('div', { class: 'body' },
+          el('div', { class: 'title-line' }, p.key, el('span', { class: 'title' }, f.summary || ''), p.status),
+          f.note ? el('div', { class: 'flag-note' }, f.note) : null,
+          el('div', { class: 'meta' }, el('span', {}, p.who), p.when ? el('span', {}, p.when) : null),
+        ),
+        el('div', { class: 'flag-act' }, p.action),
+      );
+    })));
+    $('table-jira').replaceChildren(...(asTable && flags.length ? [el('table', { class: 'tasks' },
+      el('thead', {}, el('tr', {}, [['Key'], ['Summary'], ['Status'], ['Assignee'], ['Note'], ['Flagged'], ['Task', true]].map(([label, hidden]) => el('th', { scope: 'col' }, hidden ? el('span', { class: 'sr' }, label) : label)))),
+      el('tbody', {}, flags.map((f) => {
+        const p = pieces(f);
+        return el('tr', {},
+          el('td', { class: 'c-ticket' }, p.key),
+          el('td', { class: 'c-task' }, f.summary || ''),
+          el('td', { class: 'c-type' }, p.status),
+          el('td', { class: 'c-owner' }, p.who),
+          el('td', { class: 'c-note' }, f.note ? el('span', { class: 'flag-note' }, f.note) : null),
+          el('td', { class: 'c-age' }, f.flaggedAt ? flagDay(f.flaggedAt) : ''),
+          el('td', { class: 'c-actions flag-act' }, p.action),
+        );
+      })),
+    )] : []));
+    $('list-jira').hidden = asTable || !flags.length;
+    $('table-jira').hidden = !asTable || !flags.length;
+    $('empty-jira').hidden = flags.length > 0;
+    $('n-jira').textContent = flags.length ? String(flags.length) : '';
+    $('tn-jira').textContent = flags.length ? String(flags.length) : '';
+
+    const j = state.settings.jira || {};
+    const dash = /^https:\/\/claude\.ai\//i.test(j.url || '') ? el('a', { href: j.url, target: '_blank', rel: 'noopener noreferrer' }, 'Jira Dashboard') : 'Jira Dashboard';
+    $('jira-foot').replaceChildren(...(j.syncedAt
+      ? ['Last copied from the ', dash, ': ' + stamp(j.syncedAt) + '. Ask Claude to sync your Jira flags to update.']
+      : ['Ask Claude to sync your Jira flags to fill this list from the ', dash, '.']));
+  }
+
   function syncSelect(sel, options, keep) {
     const value = keep === undefined ? sel.value : keep;
     sel.replaceChildren(...options.map(([v, label]) => el('option', { value: v }, label)));
@@ -1047,6 +1157,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     $('today-label').textContent = near ? selTitle : fromKey(sel).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'short' });
     $('show-today-label').textContent = near ? selTitle : fromKey(sel).toLocaleDateString(undefined, { weekday: 'short' });
     $('empty-today').textContent = 'Nothing planned for ' + selWord + '. Star a task to add it, or ask Claude to plan ' + (sel === today ? 'your day' : selWord) + '.';
+    renderJira(sel, today, near ? selTitle : $('show-today-label').textContent);
     // The add box's Day: no day, one of the next seven, or Someday, which always goes in Up Next.
     const addDay = $('add-day');
     if (document.activeElement !== addDay) syncSelect(addDay, [['', 'No day'], ...dayChoices(today), ['someday', 'Someday']]);
@@ -1070,10 +1181,14 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     for (const c of $('add').elements) c.disabled = state.readOnly || !db;
     for (const id of ['filters', 'add-box', 'lists', 'sec-days', 'sec-settings']) $(id).hidden = state.closed;
     $('sec-with').hidden = state.closed || !person;
-    for (const name of LISTS) $('sec-' + name).hidden = ui.tab !== 'all' && ui.tab !== name;
-    $('sec-carry').hidden = !carried.length || (ui.tab !== 'all' && ui.tab !== 'today');
-    for (const name of TABS) $('show-' + name).setAttribute('aria-pressed', String(ui.tab === name));
-    document.querySelector('.wrap').classList.toggle('is-tabs', ui.tab !== 'all');
+    // The Jira tab shows once Claude has copied flags in; until then a remembered Jira tab falls back to Today.
+    const jira = hasJira();
+    const tab = ui.tab === 'jira' && !jira ? 'today' : ui.tab;
+    $('show-jira').hidden = !jira;
+    for (const name of LISTS) $('sec-' + name).hidden = (tab !== 'all' && tab !== name) || (name === 'jira' && !jira);
+    $('sec-carry').hidden = !carried.length || (tab !== 'all' && tab !== 'today');
+    for (const name of TABS) $('show-' + name).setAttribute('aria-pressed', String(tab === name));
+    document.querySelector('.wrap').classList.toggle('is-tabs', tab !== 'all');
     document.querySelector('.wrap').classList.toggle('is-table', ui.layout === 'table');
     $('view-list').setAttribute('aria-pressed', String(ui.layout === 'list'));
     $('view-table').setAttribute('aria-pressed', String(ui.layout === 'table'));
@@ -1264,6 +1379,11 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
       if (!snap.metadata.fromCache) state.teamLoaded = true;
       render();
     }, () => { state.teamLoaded = true; });
+    // Jira flags are optional: if they can't load, the Jira tab just stays hidden.
+    db.collection('jira').onSnapshot((snap) => {
+      state.jira = snap.docs.map((d) => ({ ...d.data(), key: d.data().key || d.id }));
+      render();
+    }, () => {});
     // Settings are optional: if they can't load, tickets just stay plain text.
     db.doc('settings/main').onSnapshot((snap) => {
       state.settings = snap.exists ? { ...snap.data() } : {};

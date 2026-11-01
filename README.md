@@ -116,6 +116,18 @@ small "★ Tue" marker. Claude can plan ahead too ("plan tomorrow", "plan
 Monday", "push the DNS task to tomorrow"), and offers to plan tomorrow when
 you wrap up a day.
 
+## Jira flags
+
+If you use the [Jira Dashboard](https://github.com/primelogiclabio/claude-jira-dashboard)
+and flag tickets there for discussion, Claude can bring them into the
+organizer. Say "sync my Jira flags" (Claude also does it when it plans your
+day once you've synced before). Claude copies the flags in and offers each
+new one as a discussion task, with its ticket link and your flag note.
+
+The page lists the flags under a **Jira** tab, each with **Add as task**, or
+which list it's already on. The tab shows the flags as of the last sync, not
+live, because one artifact page can't read another's data.
+
 ## Updating your organizer
 
 Your organizer keeps the page it was published with, so a plugin update
