@@ -1,9 +1,13 @@
 # daily-organizer
 
-A skill for a **personal daily organizer** on claude.ai: one page with
-**Today**, **Up Next**, **Waiting On** and **Done**, plus a **Days** log of
-past plans and end-of-day summaries. Ask Claude to start one and it publishes
-the page from [`template.html`](template.html) and gives you the link.
+A Claude skill that keeps your personal daily organizer on claude.ai: Today,
+Up Next, Waiting On and Done lists that you and Claude both update, with a
+morning plan and an end-of-day summary.
+
+Ask Claude to start one and it publishes the page from
+[`template.html`](template.html) and gives you the link. A **Days** log keeps
+past plans and end-of-day summaries. It installs from the
+[claude-tools](https://github.com/primelogiclabio/claude-tools) marketplace.
 
 A bar above the lists holds the **Day** and **People** filters and a
 **List | Table** switch, which shows each section as a list or as a table
@@ -77,10 +81,10 @@ with each person.
 
 You can also plan by hand, and ahead. The **Day** filter's **Today |
 Tomorrow** tabs, and the day picker beside them for any of the next seven
-days, choose which day the planned section shows. The star on a task plans it for that day. A
-task planned for another day shows a small "★ Tue" marker. Claude can plan
-ahead too ("plan tomorrow", "plan Monday"), and offers to plan tomorrow when
-you wrap up a day.
+days, choose which day the planned section shows. The star on a task plans it
+for that day. A task planned for another day shows a small "★ Tue" marker.
+Claude can plan ahead too ("plan tomorrow", "plan Monday"), and offers to plan
+tomorrow when you wrap up a day.
 
 The full instructions are in [`SKILL.md`](SKILL.md).
 
@@ -90,7 +94,7 @@ Claude picks it up when you ask to start, add to, update, complete or review
 your organizer, or to plan or wrap up your day. Pointing at it by link, or by
 name ("my daily organizer", "my workday tracker", "my task list"), is enough.
 It doesn't apply to team or project trackers, or to a repo's `PROGRESS.md`
-(that's [project-progress](../project-progress/README.md)); if it's unclear
+(that's [project-progress](https://github.com/primelogiclabio/claude-tools/blob/main/plugins/project-progress/README.md)); if it's unclear
 which one you mean, Claude asks.
 
 To call it directly, type `/daily-organizer` and choose it from the list. When
@@ -133,13 +137,15 @@ One line installs it, in either of two places:
 Both add the `claude-tools` marketplace first if you haven't added it yet.
 
 The step-by-step instructions for both paths are in the
-[repo README](../../README.md#installing). Notes specific to this skill:
+[claude-tools README](https://github.com/primelogiclabio/claude-tools#installing).
+Notes specific to this skill:
 
-- **As a plain skill, without the plugin wrapper.** Link the folder into your
-  skills directory. Put your clone's path in place of `C:\src\claude-tools`:
+- **As a plain skill, without the plugin wrapper.** Clone this repo and link
+  it into your skills directory. Put your clone's path in place of
+  `C:\src\claude-daily-organizer`:
 
   ```powershell
-  New-Item -ItemType Junction -Path "$HOME\.claude\skills\daily-organizer" -Target "C:\src\claude-tools\plugins\daily-organizer"
+  New-Item -ItemType Junction -Path "$HOME\.claude\skills\daily-organizer" -Target "C:\src\claude-daily-organizer"
   ```
 
   Remove the link only with `cmd /c rmdir "$HOME\.claude\skills\daily-organizer"`.
@@ -166,6 +172,13 @@ On claude.ai, remove `workday-tracker` under **Customize › Plugins** or
 **Customize › Skills** and add `daily-organizer`. Trackers you already have
 keep working: point Claude at one to move it into the new organizer.
 
+### Moved from claude-tools
+
+Until version 0.3.0 this plugin lived in the claude-tools repo, under
+`plugins/daily-organizer`. The marketplace now installs it from here, so
+installs and updates work as before. If you linked that folder as a plain
+skill, point the link at a clone of this repo instead.
+
 ## Developing
 
 From this folder:
@@ -181,9 +194,14 @@ up a few tasks. Delete the scratch organizer afterwards.
 ## Files
 
 ```
-daily-organizer/
+claude-daily-organizer/
 ├── .claude-plugin/plugin.json   lets this folder install as a plugin
 ├── SKILL.md                     the skill: frontmatter + instructions
 ├── template.html                the organizer page Claude publishes
-└── README.md                    this file
+├── README.md                    this file
+└── LICENSE                      MIT
 ```
+
+## License
+
+MIT, see [LICENSE](LICENSE).
