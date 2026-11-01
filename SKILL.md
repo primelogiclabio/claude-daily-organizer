@@ -28,6 +28,7 @@ The organizer is the artifact the user points at: by a link, by name ("my daily 
   - `today`, optional: the `YYYY-MM-DD` date the task is planned for: today, or a later day. The field keeps the name `today` so older rows still work.
   - `owner`, optional: the id of the team member the task is for. No `owner` means it's the user's own.
   - `with`, optional, for discussions: the id of the team member the discussion is with. It doesn't change whose task it is.
+  - `priority`, optional: `high` or `low`. No `priority` means Normal.
 - `team/<id>`, one document per team member: `name`, `created`
 - `days/<YYYY-MM-DD>`, one document per day:
   - `plan`: task ids
@@ -62,8 +63,9 @@ Dates are the user's local date. New task ids are letters, digits and dashes, su
 5. **Comments, optional.** Dated entries with more detail on progress: what was tried, what was found, what's next. They build up over time, while the status note stays the one-line current state. When the user shares progress on a task, add it as a comment. Change the status note only when they say where the task stands now.
 
 6. **Owner.** A task is the user's own unless they name a team member ("add a follow-up for Sam to check the logs"). Then set `owner` to that member's id. If nobody on the team has that name, ask whether to add them first. Never guess an owner.
+7. **Priority, optional.** Set `high` when the user calls a task urgent, important or top priority, and `low` for "low priority", "whenever" or "no rush". Don't ask when they don't say: Normal is the default. To make a task Normal again, write `priority` as `{"__delete__": true}`. The page lists open tasks High first, then Normal, then Low.
 
-A plain "add a task" with nothing else is the user's own `task` in Up Next, with no ticket or note.
+A plain "add a task" with nothing else is the user's own `task` in Up Next, Normal priority, with no ticket or note.
 
 ## Team
 
@@ -102,10 +104,11 @@ The page's **Settings** section has a **Ticket link** field, saved as `ticketUrl
 When the user asks to plan the day, or what to work on today:
 1. Read `tasks`, `team`, `settings/main`, and the most recent `days` document before today. If the page is older than this skill's template, offer the update (see Updating the page) after the plan.
 2. Plan from the user's own tasks. A task assigned to someone else only comes in as a check-in ("ask Sam about the logs") when it's been open 3 or more days. Pick out:
+   - open `high` priority tasks;
    - tasks planned for an earlier day and not done (carry-overs);
    - follow-ups and Waiting On tasks added 3 or more days ago, which may need chasing;
    - anything whose ticket, status note or latest comment suggests urgency.
-3. Propose 3 to 5 tasks for today, with one line each on why. Ask the user to confirm or change the list. Don't write anything yet.
+3. Propose 3 to 5 tasks for today, with one line each on why. Put high-priority tasks first and say so in their line. Bring in `low` tasks only when there's room. Ask the user to confirm or change the list. Don't write anything yet.
 4. On a yes, one `batch`:
    - `update` `today` to today's date on each chosen task;
    - `set` (or `update`, if it exists) `days/<today>` with `plan` and any `planNote` the user gave.
@@ -123,6 +126,7 @@ When the user asks to wrap up, close or summarize the day:
    - what got done today, with each completion comment;
    - progress on open tasks, from comments added today;
    - which of today's planned tasks are still open, so they carry over;
+   - high-priority tasks still open, planned for today or not;
    - what's waiting on others, including tasks assigned to team members, by person;
    - status notes that look stale.
 3. Show it, and ask whether anything else got done. Anything the user names as done still needs a comment.
