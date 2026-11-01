@@ -1,11 +1,11 @@
 <title>Daily Organizer</title>
-<meta name="daily-organizer-version" content="0.4.0">
+<meta name="daily-organizer-version" content="0.5.0">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: one 760px column like a daybook page: the dated header, the day and people filters, Today, the foldable add box, the three lists, the day log, then settings and the page's version. */
+/* Layout: one 760px column like a daybook page: the dated header, the day and people filters, a 1:1 agenda when one person is picked, Today, the foldable add box, the three lists, the day log, then settings and the page's version. */
 :root {
   --bg: #f4f6f9;
   --surface: #ffffff;
@@ -61,7 +61,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .wrap.is-table { max-width: 1120px; }
 #filter, #day { font-size: 13px; padding: 5px 8px; }
 .plan-chip { font-size: 12px; color: var(--today); white-space: nowrap; }
-.tasks .plan-chip { margin-left: 6px; }
+.tasks .plan-chip, .tasks .with-chip { margin-left: 6px; }
 .owner { font-size: 12px; font-weight: 500; color: var(--person); white-space: nowrap; }
 .eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 h1 { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: clamp(28px, 6vw, 38px); line-height: 1.1; text-wrap: balance; }
@@ -75,10 +75,12 @@ section { display: grid; gap: 8px; min-width: 0; }
 h2 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 h2 .n { font-family: var(--font-mono); font-weight: 400; margin-left: 6px; font-variant-numeric: tabular-nums; }
 #sec-today h2 { color: var(--today); }
+#sec-with h2 { color: var(--discussion); }
 .empty { margin: 0; color: var(--muted); font-size: 14px; }
 
 .list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
 #sec-today .list { border-top-color: var(--today); }
+#sec-with .list { border-top-color: var(--discussion); }
 .task { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 12px; padding: 10px 0; border-bottom: 1px solid var(--line); align-items: start; }
 .task input[type="checkbox"] { width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--done); cursor: pointer; }
 .body { min-width: 0; display: grid; gap: 3px; }
@@ -143,6 +145,7 @@ input[type="text"], select { padding: 6px 8px; border: 1px solid var(--line); bo
 /* position: relative keeps the screen-reader-only headings inside the table's own scroll area, not the page's. */
 .table-wrap { position: relative; overflow-x: auto; border-top: 1px solid var(--line); }
 #sec-today .table-wrap { border-top-color: var(--today); }
+#sec-with .table-wrap { border-top-color: var(--discussion); }
 table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
 .tasks th { text-align: left; font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); padding: 7px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
 .tasks td { padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
@@ -226,6 +229,13 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     </div>
   </div>
 
+  <section id="sec-with" aria-labelledby="h-with" hidden>
+    <div class="section-head"><h2 id="h-with"><span id="with-label">1:1</span><span class="n" id="n-with"></span></h2></div>
+    <ul class="list" id="list-with"></ul>
+    <div class="table-wrap" id="table-with" hidden></div>
+    <p class="empty" id="empty-with"></p>
+  </section>
+
   <section id="sec-today" aria-labelledby="h-today">
     <div class="section-head">
       <h2 id="h-today"><span id="today-label">Today</span><span class="n" id="n-today"></span></h2>
@@ -251,6 +261,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
           <option value="waiting">Waiting On</option>
         </select>
         <select id="add-owner" aria-label="For" hidden><option value="">Me</option></select>
+        <select id="add-with" aria-label="With" hidden><option value="">With no one</option></select>
         <input type="text" id="add-ticket" placeholder="Ticket (optional), e.g. OPS-142 or a link" aria-label="Ticket" maxlength="500">
         <label class="check-label"><input type="checkbox" id="add-today"> <span id="add-today-label">Today</span></label>
       </div>
@@ -316,7 +327,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
 (() => {
   const $ = (id) => document.getElementById(id);
   const state = { tasks: [], days: [], settings: {}, team: [], teamLoaded: false, confirmed: false, slow: false, error: '', note: '', readOnly: false, closed: false };
-  const ui = { completing: null, noting: null, removing: null, clearing: false, drafts: {}, logOpen: new Set(), logRemoving: null, layout: 'list', filter: 'all', day: null, assigning: null, teamRemoving: null };
+  const ui = { completing: null, noting: null, removing: null, clearing: false, drafts: {}, logOpen: new Set(), logRemoving: null, layout: 'list', filter: 'all', day: null, picking: null, addWith: null, teamRemoving: null };
   const chains = new Map();
   const TYPES = ['task', 'idea', 'follow-up', 'discussion'];
   // The template's version, from its meta tag; Claude compares it with settings/main.pageVersion to offer updates.
@@ -444,16 +455,30 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     else render();
   }
 
-  // Team: tasks are the owner's unless `owner` names a member of `team`.
+  // Team: tasks are the owner's unless `owner` names a member of `team`. A discussion's `with` names who it's with.
   const memberName = (id) => {
     const m = state.team.find((x) => x.id === id);
     return m ? m.name || 'Unnamed' : 'Former member';
   };
-  const matchesFilter = (t) => (ui.filter === 'all' ? true : ui.filter === 'me' ? !t.owner : t.owner === ui.filter);
+  const matchesFilter = (t) => (ui.filter === 'all' ? true : ui.filter === 'me' ? !t.owner : t.owner === ui.filter || t.with === ui.filter);
+  // The team member the People filter shows, if it's one person.
+  const personShown = () => (state.team.some((m) => m.id === ui.filter) ? ui.filter : null);
+  const withChip = (t) => (t.with ? el('span', { class: 'owner with-chip' }, 'with ' + memberName(t.with)) : null);
+
+  // The people pickers on a task: `owner` is who it's for, `with` who a discussion is with.
+  const PICKERS = {
+    owner: { question: 'Who is this task for?', none: 'Me' },
+    with: { question: 'Who is this discussion with?', none: 'No one' },
+  };
 
   function removeMember(m) {
     ui.teamRemoving = null;
-    state.tasks.filter((t) => t.owner === m.id).forEach((t) => patch(t.id, { owner: null }));
+    for (const t of state.tasks) {
+      const fields = {};
+      if (t.owner === m.id) fields.owner = null;
+      if (t.with === m.id) fields.with = null;
+      if (Object.keys(fields).length) patch(t.id, fields);
+    }
     write('team-' + m.id, () => db.collection('team').doc(m.id).delete());
     if (ui.filter === m.id) ui.filter = 'all';
     render();
@@ -552,6 +577,11 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
       onclick: () => toggleLog(t.id),
     }, log.length ? (short ? String(log.length) : log.length + (log.length === 1 ? ' comment' : ' comments')) : (short ? 'Add' : 'Add comment')) : null);
 
+    const pickBtn = (field, label) => el('button', { type: 'button', class: 'link-btn', onclick: () => {
+      ui.picking = { id: t.id, field }; ui.completing = ui.noting = ui.removing = null; render();
+      const f = $('pick-' + t.id); if (f) f.focus();
+    } }, label);
+
     const tools = editable ? el('div', { class: 'row-tools' },
       !done && t.status === 'next' ? el('button', { type: 'button', class: 'link-btn', onclick: () => patch(t.id, { status: 'waiting' }) }, 'Move to Waiting') : null,
       !done && t.status === 'waiting' ? el('button', { type: 'button', class: 'link-btn', onclick: () => patch(t.id, { status: 'next' }) }, 'Move to Up Next') : null,
@@ -559,10 +589,8 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
         ui.noting = t.id; ui.completing = ui.removing = null; ui.drafts['note-' + t.id] = t.note || ''; render();
         const f = $('note-' + t.id); if (f) f.focus();
       } }, t.note ? 'Edit status' : 'Add status') : null,
-      state.team.length && !done ? el('button', { type: 'button', class: 'link-btn', onclick: () => {
-        ui.assigning = t.id; ui.completing = ui.noting = ui.removing = null; render();
-        const f = $('assign-' + t.id); if (f) f.focus();
-      } }, t.owner ? 'Reassign' : 'Assign') : null,
+      state.team.length && !done ? pickBtn('owner', t.owner ? 'Reassign' : 'Assign') : null,
+      state.team.length && !done && (typeName === 'discussion' || t.with) ? pickBtn('with', t.with ? 'Change who' : 'With…') : null,
       el('button', { type: 'button', class: 'link-btn danger', onclick: () => { ui.removing = t.id; ui.completing = ui.noting = null; render(); } }, 'Remove'),
     ) : null;
 
@@ -576,20 +604,21 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     const ticket = t.ticket ? ticketNode(String(t.ticket)) : null;
 
     const panels = [];
-    if (ui.assigning === t.id) {
-      const key = 'assign-' + t.id;
-      const pick = el('select', { id: key }, el('option', { value: '' }, 'Me'), state.team.map((m) => el('option', { value: m.id }, m.name || 'Unnamed')));
-      pick.value = t.owner || '';
+    if (ui.picking && ui.picking.id === t.id) {
+      const field = ui.picking.field;
+      const key = 'pick-' + t.id;
+      const pick = el('select', { id: key }, el('option', { value: '' }, PICKERS[field].none), state.team.map((m) => el('option', { value: m.id }, m.name || 'Unnamed')));
+      pick.value = t[field] || '';
       panels.push(el('div', { class: 'inline' },
-        el('label', { for: key }, 'Who is this task for?'),
+        el('label', { for: key }, PICKERS[field].question),
         pick,
         el('button', { type: 'button', class: 'btn btn-primary', onclick: () => {
-          const owner = $(key).value;
-          ui.assigning = null;
-          if (owner !== (t.owner || '')) patch(t.id, { owner: owner || null });
+          const value = $(key).value;
+          ui.picking = null;
+          if (value !== (t[field] || '')) patch(t.id, { [field]: value || null });
           else render();
         } }, 'Save'),
-        el('button', { type: 'button', class: 'btn', onclick: () => { ui.assigning = null; render(); } }, 'Cancel'),
+        el('button', { type: 'button', class: 'btn', onclick: () => { ui.picking = null; render(); } }, 'Cancel'),
       ));
     }
     if (ui.completing === t.id) {
@@ -657,6 +686,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
       el('div', { class: 'title-line' },
         el('span', { class: 'title' }, t.title || '(untitled)'), p.tag, p.ticket,
         t.owner ? el('span', { class: 'owner' }, 'for ' + memberName(t.owner)) : null,
+        withChip(t),
         planChip(t, today),
       ),
       t.note && !p.done ? el('div', { class: 'note' }, t.note) : null,
@@ -687,7 +717,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
       : (t.note ? el('span', { class: 'note' }, t.note) : null);
     const tr = el('tr', { class: [p.done ? 'is-done' : '', p.panels.length ? 'has-detail' : ''].join(' ').trim() || null },
       el('td', { class: 'c-check' }, p.check),
-      el('td', { class: 'c-task' }, el('span', { class: 'title' }, t.title || '(untitled)'), planChip(t, today)),
+      el('td', { class: 'c-task' }, el('span', { class: 'title' }, t.title || '(untitled)'), withChip(t), planChip(t, today)),
       withOwner ? el('td', { class: 'c-owner' }, t.owner ? el('span', { class: 'owner' }, memberName(t.owner)) : el('span', { class: 'me' }, 'Me')) : null,
       el('td', { class: 'c-type' }, p.tag),
       el('td', { class: 'c-ticket' }, p.ticket),
@@ -759,16 +789,22 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     const owner = $('add-owner');
     if (document.activeElement !== owner) syncSelect(owner, [['', 'Me'], ...members]);
     owner.hidden = !has;
+    // The add box's With follows the person shown until it's picked by hand.
+    const withPick = $('add-with');
+    if (document.activeElement !== withPick) syncSelect(withPick, [['', 'With no one'], ...members.map(([id, name]) => [id, 'With ' + name])], ui.addWith ?? (personShown() || ''));
+    withPick.hidden = !has || $('add-type').value !== 'discussion';
 
     const list = $('team-list');
     list.replaceChildren(...team.map((m) => {
       const open = state.tasks.filter((t) => t.owner === m.id && t.status !== 'done').length;
+      const talks = state.tasks.filter((t) => t.with === m.id && t.status !== 'done').length;
       const tools = state.readOnly ? null : ui.teamRemoving === m.id
         ? [el('span', { class: 'muted' }, open ? 'Their tasks come back to you.' : ''),
            el('button', { type: 'button', class: 'link-btn danger', onclick: () => removeMember(m) }, 'Remove'),
            el('button', { type: 'button', class: 'link-btn', onclick: () => { ui.teamRemoving = null; render(); } }, 'Keep')]
         : el('button', { type: 'button', class: 'link-btn danger', onclick: () => { ui.teamRemoving = m.id; render(); } }, 'Remove');
-      return el('li', {}, el('span', {}, m.name || 'Unnamed'), el('span', { class: 'muted' }, open ? open + ' open' : 'no open tasks'), tools);
+      const counts = (open ? open + ' open' : 'no open tasks') + (talks ? ' · ' + talks + ' to discuss' : '');
+      return el('li', {}, el('span', {}, m.name || 'Unnamed'), el('span', { class: 'muted' }, counts), tools);
     }));
     list.hidden = !has;
     for (const c of $('team-form').elements) c.disabled = state.readOnly || !db;
@@ -794,12 +830,22 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     const byCreated = (a, b) => String(a.created || '').localeCompare(String(b.created || ''));
     renderTeam();
     const shown = state.tasks.filter(matchesFilter);
-    const planned = shown.filter((t) => t.today === sel).sort((a, b) => (a.status === 'done') - (b.status === 'done') || byCreated(a, b));
-    const rest = shown.filter((t) => t.today !== sel);
+    // With one person shown, their open discussions are the 1:1 agenda, kept out of the lists below.
+    const person = personShown();
+    const agenda = person ? shown.filter((t) => t.with === person && t.status !== 'done').sort(byCreated) : [];
+    const inLists = shown.filter((t) => !agenda.includes(t));
+    const planned = inLists.filter((t) => t.today === sel).sort((a, b) => (a.status === 'done') - (b.status === 'done') || byCreated(a, b));
+    const rest = inLists.filter((t) => t.today !== sel);
     const next = rest.filter((t) => t.status === 'next' || !t.status).sort(byCreated);
     const waiting = rest.filter((t) => t.status === 'waiting').sort(byCreated);
     const done = rest.filter((t) => t.status === 'done').sort((a, b) => String(b.doneAt || '').localeCompare(String(a.doneAt || '')));
 
+    fill('with', agenda, sel);
+    if (person) {
+      const name = memberName(person);
+      $('with-label').textContent = '1:1 with ' + name;
+      $('empty-with').textContent = 'Nothing to discuss with ' + name + ' yet. Add a discussion with ' + name + ', or use With… on one you have.';
+    }
     fill('today', planned, sel);
     fill('next', next, sel);
     fill('waiting', waiting, sel);
@@ -835,6 +881,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
 
     for (const c of $('add').elements) c.disabled = state.readOnly || !db;
     for (const id of ['filters', 'sec-today', 'add-box', 'sec-next', 'sec-waiting', 'sec-done', 'sec-days', 'sec-settings']) $(id).hidden = state.closed;
+    $('sec-with').hidden = state.closed || !person;
     document.querySelector('.wrap').classList.toggle('is-table', ui.layout === 'table');
     $('view-list').setAttribute('aria-pressed', String(ui.layout === 'list'));
     $('view-table').setAttribute('aria-pressed', String(ui.layout === 'table'));
@@ -866,14 +913,20 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     if (ticket) body.ticket = ticket;
     if ($('add-today').checked) body.today = ui.day || dayKey();
     if ($('add-owner').value) body.owner = $('add-owner').value;
+    if (body.type === 'discussion' && $('add-with').value) body.with = $('add-with').value;
     const ref = db.collection('tasks').doc();
     write(ref.id, () => ref.set(body));
     $('add-title').value = '';
     $('add-ticket').value = '';
     $('add-today').checked = false;
     $('add-owner').value = '';
+    ui.addWith = null;
+    $('add-with').value = personShown() || '';
     $('add-title').focus();
   });
+
+  $('add-type').addEventListener('change', render);
+  $('add-with').addEventListener('change', (e) => { ui.addWith = e.target.value; });
 
   $('team-form').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -891,6 +944,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
 
   $('filter').addEventListener('change', (e) => {
     ui.filter = e.target.value;
+    ui.addWith = null;
     try { localStorage.setItem('organizer-filter', ui.filter); } catch (err) { /* not remembered, still filters */ }
     render();
   });

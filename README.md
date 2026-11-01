@@ -37,7 +37,7 @@ artifact on claude.ai, in the artifact's own database:
 
 - Every task has a **type**: `task`, `idea`, `follow-up` or `discussion` (a
   topic to talk through with someone, such as a point for a 1:1). Claude asks
-  when it isn't clear.
+  when it isn't clear. A discussion can say who it's with (see [Team](#team)).
 - A task is marked done only with a short **completion comment** saying what
   was done or decided. The page asks for it too.
 - A task can have a **ticket**: a key such as `OPS-142`, or a full link. Full
@@ -61,9 +61,15 @@ Tasks are yours unless you say otherwise. To hand some out:
 - Pick who a task is for when you add it, with **Assign** on any task, or by
   asking ("add a follow-up for Sam to check the logs"). The task then shows
   "for Sam".
+- A discussion can say who it's with: pick them under **With** when you add
+  it, use **With…** on the discussion, or ask ("add a discussion with Sam
+  about the Q3 budget"). It shows "with Sam" and stays your own task.
 - The **People** filter above the lists shows **Everyone**, **Mine** or one
-  person's tasks. Each device remembers its choice.
-- Removing someone from the team gives their tasks back to you.
+  person. Picking one person shows a **1:1 with** section first, listing the
+  open discussions with them, then the tasks they have. Ask Claude "what's on
+  my 1:1 with Sam?" for the same list. Each device remembers its choice.
+- Removing someone from the team gives their tasks back to you, and their
+  discussions no longer say who they're with.
 
 "Plan my day" plans from your own tasks, and suggests checking in on tasks
 someone else has had for 3 days or more. "Wrap up my day" lists what's still

@@ -27,6 +27,7 @@ The organizer is the artifact the user points at: by a link, by name ("my daily 
   - `doneAt`: ISO timestamp, set with `comment`
   - `today`, optional: the `YYYY-MM-DD` date the task is planned for: today, or a later day. The field keeps the name `today` so older rows still work.
   - `owner`, optional: the id of the team member the task is for. No `owner` means it's the user's own.
+  - `with`, optional, for discussions: the id of the team member the discussion is with. It doesn't change whose task it is.
 - `team/<id>`, one document per team member: `name`, `created`
 - `days/<YYYY-MM-DD>`, one document per day:
   - `plan`: task ids
@@ -54,7 +55,7 @@ Dates are the user's local date. New task ids are letters, digits and dashes, su
 
 ## Task rules
 
-1. **Type.** Every task is a `task`, `idea`, `follow-up` or `discussion`. Ask when the user doesn't say. Default to `task` only for a clearly actionable to-do. A stray thought is likely an `idea`, something waiting on another person or system is likely a `follow-up`, and a topic to talk through with someone (a point for a 1:1 or a meeting) is likely a `discussion`: ask rather than guess. Who a discussion is with goes in its title, such as "Q3 budget with Sam"; `owner` still means whose task it is.
+1. **Type.** Every task is a `task`, `idea`, `follow-up` or `discussion`. Ask when the user doesn't say. Default to `task` only for a clearly actionable to-do. A stray thought is likely an `idea`, something waiting on another person or system is likely a `follow-up`, and a topic to talk through with someone (a point for a 1:1 or a meeting) is likely a `discussion`: ask rather than guess. When the user says who a discussion is with and they're on the team, set `with` to their id, so it shows on that person's 1:1 agenda. If they aren't on the team, ask whether to add them; if not, name them in the title, such as "Q3 budget with Sam". `owner` still means whose task it is.
 2. **Completing needs a comment.** A task is done only with a short comment saying what was done or decided. If the user says "mark X done" without one, ask for it first. The page enforces the same rule.
 3. **Ticket, optional.** A ticket key such as `OPS-142`, or a full URL, at creation or later. Never required. A full URL always links. A key links once the organizer has a ticket link (below), and shows as plain text until then.
 4. **Status note, optional.** A short, changing note such as "blocked on DNS change", separate from the completion comment. Useful for anything that sits more than a day.
@@ -66,11 +67,12 @@ A plain "add a task" with nothing else is the user's own `task` in Up Next, with
 
 ## Team
 
-The page's **Settings** section lists the team, and the add box and each task's **Assign** let the user pick who a task is for. The page can also show one person's tasks at a time.
+The page's **Settings** section lists the team, and the add box and each task's **Assign** let the user pick who a task is for; a discussion's **With…** picks who it's with. The page can also show one person at a time: their tasks, with a **1:1 with** section above them listing the open discussions with that person.
 - To add someone, `set` `team/<new id>` with `name` and `created`. Ids are letters, digits and dashes, such as `m-` plus the time in milliseconds.
-- To assign a task, `update` its `owner`. To give it back to the user, write `owner` as `{"__delete__": true}`.
-- To remove someone, first give their tasks back to the user (one `batch` of `owner` deletes), then `delete` their `team` document. Say how many tasks came back.
+- To assign a task, `update` its `owner`. To give it back to the user, write `owner` as `{"__delete__": true}`. Set or clear a discussion's `with` the same way.
+- To remove someone, first give their tasks back to the user and clear `with` on their discussions (one `batch` of `owner` and `with` deletes), then `delete` their `team` document. Say how many tasks came back.
 - When the user asks what someone has, `query` `tasks` where `owner` is that member's id.
+- When the user asks for their 1:1 with someone, or what to raise with them, list the open tasks whose `with` is that member's id, then the open tasks they own. Older discussions may name the person only in the title: mention those too, and offer to set their `with`.
 
 ## Changing tasks
 
