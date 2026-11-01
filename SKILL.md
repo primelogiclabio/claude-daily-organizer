@@ -39,11 +39,13 @@ The organizer is the artifact the user points at: by a link, by name ("my daily 
   - `planNote`, optional
   - `summary`, optional: the end-of-day summary
   - `closedAt`, optional
-- `settings/main`, one document:
+- `organizer/settings`, one document:
   - `ticketUrl`, optional: where ticket keys link. Either a URL with `{key}` where the key goes, or a prefix the key is added to the end of.
   - `pageVersion`: the version of the page the organizer runs, written by the page itself when it loads. Missing on pages older than 0.4.0.
   - `pageChanges`, optional: changes Claude made to the page at the user's request, as a list of `{at, text}` entries, so an update can carry them over.
-  - `jira`, optional: `{url, syncedAt}`, the Jira Dashboard's artifact link and when its flags were last copied in.
+  - `jira`, optional: `{url, syncedAt}`, the Jira Dashboard's artifact link and when its flags were last copied in; or `{status: "none", checkedAt}` when a sync found no Jira Dashboard.
+
+  Organizers from before 0.10.0 keep these fields in `settings/main`, a name another skill's artifact might also use. Read it when `organizer/settings` doesn't exist; updating the page moves them (see Updating the page).
 
 Dates are the user's local date. New task ids are letters, digits and dashes, such as `t-` plus the current time in milliseconds.
 
@@ -57,7 +59,7 @@ Dates are the user's local date. New task ids are letters, digits and dashes, su
 
    The rule keeps every row to the owner and anyone they make an Editor, even if the page is shared.
 3. Check it with one `ArtifactData` `list` of `tasks`. An empty list is right. Never seed sample tasks.
-4. Give the user the link. If they listed tasks while asking, add them now (below). The page records its version in `settings/main` the first time it's opened.
+4. Give the user the link. If they listed tasks while asking, add them now (below). The page records its version in `organizer/settings` the first time it's opened.
 
 ## Task rules
 
@@ -103,20 +105,22 @@ To add a comment, `update` `log` with the task's existing entries plus the new o
 
 ## Ticket link
 
-The page's **Settings** section has a **Ticket link** field, saved as `ticketUrl` in `settings/main`.
+The page's **Settings** section has a **Ticket link** field, saved as `ticketUrl` in `organizer/settings`.
 - When the user says where their tickets live (for example "our Jira is acme.atlassian.net"), set it with `ArtifactData`: `https://acme.atlassian.net/browse/` adds the key at the end, and `https://linear.app/acme/issue/{key}` puts it where `{key}` is. Use `set` if the document doesn't exist yet, else `update` with its `if_version`.
 - Then show one example link built from a ticket they already have, so they can check it opens the right page.
 - If the user adds a ticket key while no ticket link is set, mention once that the page can link keys and ask where their tickets live. Don't ask again in the same conversation.
 
 ## Jira flags
 
-The user's **Jira Dashboard** artifact (the jira-dashboard skill's) lets them flag tickets for discussion. The organizer page can't read another artifact's database, so Claude copies the flags in, and the page lists them under **Jira** as of that copy.
+The user's **Jira Dashboard** artifact (the jira-dashboard skill's) lets them flag tickets for discussion. The organizer page can't read another artifact's database, so Claude copies the flags in, and the page lists them under **Jira** as of that copy. The page's **Jira** tab is always there: until a sync connects it, it explains how to set up a Jira Dashboard, and its **Sync now** only copies "sync my Jira flags" for the user to paste to Claude.
 
-- **Finding the dashboard.** Use `settings/main.jira.url`. Otherwise list the user's artifacts and take the one titled **Jira Dashboard**; ask if there's more than one, and if there's none, say there are no flags to bring in. Save its link in `settings/main.jira` on the first sync.
-- **Syncing**, when the user asks ("sync my Jira flags", "pull in what I flagged") and at the start of Plan my day once `settings/main.jira` is set:
+- **Finding the dashboard.** Use `organizer/settings.jira.url`. Otherwise list the user's artifacts and take the one titled **Jira Dashboard**; ask if there's more than one.
+  - **None found:** `update` (or `set`) `organizer/settings` with `jira: {status: "none", checkedAt}` (now), so the page says Jira flags aren't available. Tell the user the setup steps: add the Atlassian connector on claude.ai (Settings › Connectors), install the Jira Dashboard skill (https://github.com/primelogiclabio/claude-jira-dashboard#try-it), ask Claude to start a Jira dashboard and flag tickets there, then sync again.
+  - **Found:** save its link with the first sync's write (step 3).
+- **Syncing**, when the user asks ("sync my Jira flags", "pull in what I flagged") and at the start of Plan my day once `organizer/settings.jira.url` is set:
   1. Read the dashboard's `flags` and `tabs`, and the organizer's `jira` and `tasks`.
   2. For each flag, take the ticket's freshest row: the dashboard tab row with the latest `updated` when the ticket is on a tab, else the flag's own `row`. Build `{key, summary, status, statusCategory, assignee, url, note, flaggedAt, updated}`.
-  3. Write in `batch`es of at most 50: `set` `jira/<KEY>` for each flag that's new or changed, `delete` the copies whose flag is gone, and `update` `settings/main` with `jira: {url, syncedAt}` (now).
+  3. Write in `batch`es of at most 50: `set` `jira/<KEY>` for each flag that's new or changed, `delete` the copies whose flag is gone, and `update` `organizer/settings` with `jira: {url, syncedAt}` (now). An `update` merges nested objects, so also write `status` and `checkedAt` inside `jira` as `{"__delete__": true}` if an earlier sync left them.
   4. Never write to the Jira Dashboard: flags are set and cleared there.
 - **Offering tasks.** List the flags no task has as its `flag`, each with key, summary, status and note, and offer to add them. Each becomes a `discussion` in Up Next: `title` the summary, `ticket` the url, `note` the flag note if there is one, `flag` the key and `via: "chat"`. Set `with` only when the user names who it's with. Add the ones the user picks in one `batch`.
 - **Unflagged tickets.** When a sync finds a task whose `flag` is no longer flagged, say so once and ask whether to finish it (with a comment, as always) or keep it.
@@ -126,7 +130,7 @@ The page's **Add as task** on a flag makes the same discussion, without `via`.
 ## Plan my day
 
 When the user asks to plan the day, or what to work on today:
-1. Read `tasks`, `team`, `settings/main`, and the most recent `days` document before today. If `settings/main.jira` is set, sync the Jira flags first (see Jira flags). If the page is older than this skill's template, offer the update (see Updating the page) after the plan.
+1. Read `tasks`, `team`, `organizer/settings`, and the most recent `days` document before today. If `organizer/settings.jira.url` is set, sync the Jira flags first (see Jira flags). If the page is older than this skill's template, offer the update (see Updating the page) after the plan.
 2. Plan from the user's own tasks. A task assigned to someone else only comes in as a check-in ("ask Sam about the logs") when it's been open 3 or more days. Pick out:
    - open `high` priority tasks;
    - tasks planned for an earlier day and not done (carry-overs, which the page shows under **Carried over**);
@@ -148,7 +152,7 @@ The same works for a later day ("plan tomorrow", "plan Monday"). Use that day's 
 ## Wrap up my day
 
 When the user asks to wrap up, close or summarize the day:
-1. Read `tasks`, `settings/main` and `days/<today>`. If the page is older than this skill's template, offer the update (see Updating the page) after the summary.
+1. Read `tasks`, `organizer/settings` and `days/<today>`. If the page is older than this skill's template, offer the update (see Updating the page) after the summary.
 2. Draft a short summary of:
    - what got done today, with each completion comment;
    - progress on open tasks, from comments added today;
@@ -178,14 +182,15 @@ Making or writing the organizer needs the `Artifact` tool with `capabilities` an
 
 ## Updating the page
 
-An organizer keeps the page it was published with; a newer `template.html` doesn't reach it on its own. The template's version is in its `<meta name="daily-organizer-version">` tag. The organizer's is `settings/main.pageVersion`; if it's missing, the page is older than 0.4.0 or hasn't been opened since it was last published.
+An organizer keeps the page it was published with; a newer `template.html` doesn't reach it on its own. The template's version is in its `<meta name="daily-organizer-version">` tag. The organizer's is `organizer/settings.pageVersion`, or `settings/main.pageVersion` on an organizer whose settings haven't moved yet; if both are missing, the page is older than 0.4.0 or hasn't been opened since it was last published.
 
 - **When to offer.** When planning or wrapping up the day finds the organizer older than the template, say so once per conversation: its version, the template's, and in a line what the newer page adds. Offer to update it. Also update when the user asks ("update my organizer"). Never update without a yes.
 - **Updating, on a yes:**
   1. Read the page with `Artifact` `read`.
-  2. Copy `template.html` as in Starting one. Re-apply each entry in `settings/main.pageChanges` to the copy. If the organizer has no `pageVersion`, there's no record of earlier changes: ask once whether Claude ever changed the page's look or features for them, and re-apply what they name. Leave the version meta as the template has it.
-  3. Publish the copy to the same `url`. Omit `capabilities` so the database rules carry over.
-  4. `list` `tasks` and check the count is the same as before. Tell the user to reload the page. It records its new version when it loads.
+  2. Copy `template.html` as in Starting one. Re-apply each entry in `organizer/settings.pageChanges` to the copy. If the organizer has no `pageVersion`, there's no record of earlier changes: ask once whether Claude ever changed the page's look or features for them, and re-apply what they name. Leave the version meta as the template has it.
+  3. If `settings/main` exists and `organizer/settings` doesn't, move the settings in one `batch`: `set` `organizer/settings` with the organizer's fields from `settings/main` (`ticketUrl`, `pageVersion`, `pageChanges`, `jira`, whichever are there), and `delete` `settings/main` with its `if_version`. Carry no other fields across.
+  4. Publish the copy to the same `url`. Omit `capabilities` so the database rules carry over.
+  5. `list` `tasks` and check the count is the same as before. Tell the user to reload the page. It records its new version when it loads.
 
 ## Changing the page itself
 
@@ -193,4 +198,4 @@ Only when the user asks for a feature or a look the page doesn't have:
 1. Read the current page with `Artifact` `read`, edit the saved file, and publish it to the same `url`.
 2. Omit `capabilities` so the database rules carry over.
 3. Keep the data fields above, so existing rows still show. If a change needs a new field, add it to the rows that need it rather than renaming old ones.
-4. Add a one-line entry for the change to `settings/main.pageChanges` (`{at, text}`), so a later update can carry it over. Don't change the page's version meta.
+4. Add a one-line entry for the change to `organizer/settings.pageChanges` (`{at, text}`), so a later update can carry it over. Don't change the page's version meta.
