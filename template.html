@@ -1,11 +1,11 @@
 <title>Daily Organizer</title>
-<meta name="daily-organizer-version" content="0.9.0">
+<meta name="daily-organizer-version" content="0.10.0">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: one 760px column like a daybook page: the dated header with today's figures and plan bar, the day and people filters, a 1:1 agenda when one person is picked, the foldable add box, the list tabs over Today (with what's carried over), Up Next, Waiting On, Upcoming, Someday, Ideas, Jira flags (once Claude has copied some in) and Done (or All of them stacked), the day log, then settings and the page's version. */
+/* Layout: one 760px column like a daybook page: the dated header with today's figures and plan bar, the day and people filters, a 1:1 agenda when one person is picked, the foldable add box, the list tabs over Today (with what's carried over), Up Next, Waiting On, Upcoming, Someday, Ideas, Jira flags (with how to connect them until Claude has synced) and Done (or All of them stacked), the day log, then settings and the page's version. */
 :root {
   --bg: #f4f6f9;
   --surface: #ffffff;
@@ -239,6 +239,13 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
 .tasks .flag-note::before { content: none; }
 .jira-foot { margin: 0; padding-top: 8px; font-size: 13px; color: var(--muted); }
 .jira-foot a { color: var(--accent); }
+.sync { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: flex-end; gap: 2px 8px; }
+#jira-sync-msg { font-size: 13px; color: var(--muted); }
+/* Before Jira flags are connected, or when Claude found no Jira Dashboard: what to do, in order. */
+.jira-setup { display: grid; gap: 6px; padding-top: 10px; font-size: 14px; max-width: 60ch; }
+.jira-setup p { margin: 0; }
+.jira-setup ol { margin: 0; padding-left: 22px; display: grid; gap: 4px; color: var(--muted); }
+.jira-setup a { color: var(--accent); }
 
 .days { display: grid; gap: 0; border-top: 1px solid var(--line); }
 .days details { border-bottom: 1px solid var(--line); padding: 8px 0; }
@@ -343,7 +350,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
       <button type="button" id="show-upcoming" aria-pressed="false">Upcoming<span class="n" id="tn-upcoming"></span></button>
       <button type="button" id="show-someday" aria-pressed="false">Someday<span class="n" id="tn-someday"></span></button>
       <button type="button" id="show-ideas" aria-pressed="false">Ideas<span class="n" id="tn-ideas"></span></button>
-      <button type="button" id="show-jira" aria-pressed="false" hidden>Jira<span class="n" id="tn-jira"></span></button>
+      <button type="button" id="show-jira" aria-pressed="false">Jira<span class="n" id="tn-jira"></span></button>
       <button type="button" id="show-done" aria-pressed="false">Done<span class="n" id="tn-done"></span></button>
       <button type="button" id="show-all" aria-pressed="false">All</button>
     </div>
@@ -398,12 +405,24 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
       <p class="empty" id="empty-ideas">No ideas parked. Add one with the type set to Idea.</p>
     </section>
 
-    <section id="sec-jira" class="panel" aria-labelledby="h-jira" hidden>
-      <div class="section-head"><h2 id="h-jira">Flagged on the Jira Dashboard<span class="n" id="n-jira"></span></h2></div>
+    <section id="sec-jira" class="panel" aria-labelledby="h-jira">
+      <div class="section-head">
+        <h2 id="h-jira">Flagged on the Jira Dashboard<span class="n" id="n-jira"></span></h2>
+        <div class="sync"><span id="jira-sync-msg" role="status"></span><button type="button" class="link-btn" id="jira-sync">Sync now</button></div>
+      </div>
       <ul class="list" id="list-jira"></ul>
       <div class="table-wrap" id="table-jira" hidden></div>
-      <p class="empty" id="empty-jira">No tickets flagged on the Jira Dashboard.</p>
-      <p class="jira-foot" id="jira-foot"></p>
+      <p class="empty" id="empty-jira" hidden>No tickets flagged on the Jira Dashboard.</p>
+      <p class="jira-foot" id="jira-foot" hidden></p>
+      <div class="jira-setup" id="jira-setup">
+        <p id="jira-setup-lead">Jira flags aren't connected yet.</p>
+        <ol>
+          <li>Add the Atlassian connector to your claude.ai account, under Settings › Connectors.</li>
+          <li>Install the <a href="https://github.com/primelogiclabio/claude-jira-dashboard#try-it" target="_blank" rel="noopener noreferrer">Jira Dashboard skill</a> in Claude Code.</li>
+          <li>Ask Claude to start a Jira dashboard, and flag the tickets you want to discuss there.</li>
+          <li>Back here, press Sync now and paste it to Claude in Claude Code.</li>
+        </ol>
+      </div>
     </section>
 
     <section id="sec-done" class="panel" aria-labelledby="h-done">
@@ -457,7 +476,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
   // The list tabs: one list at a time, or All of them stacked.
   const LISTS = ['today', 'next', 'waiting', 'upcoming', 'someday', 'ideas', 'jira', 'done'];
   const TABS = [...LISTS, 'all'];
-  // The template's version, from its meta tag; Claude compares it with settings/main.pageVersion to offer updates.
+  // The template's version, from its meta tag; Claude compares it with organizer/settings.pageVersion to offer updates.
   const PAGE_VERSION = (document.querySelector('meta[name="daily-organizer-version"]') || {}).content || '';
   let db = null;
 
@@ -563,6 +582,13 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     else state.error = "That change didn't save. Try it again.";
     render();
   }
+
+  // Settings live in organizer/settings, named for the organizer so they can't clash with another skill's settings/main.
+  // Only these fields are the organizer's; they're all a move from settings/main carries over.
+  const SETTINGS_FIELDS = ['ticketUrl', 'pageVersion', 'pageChanges', 'jira'];
+  const ownFields = (o) => Object.fromEntries(SETTINGS_FIELDS.filter((k) => o && o[k] !== undefined && o[k] !== null).map((k) => [k, o[k]]));
+  const settingsRef = () => db.doc('organizer/settings');
+  let settingsOwn = null, settingsLegacy = {};
 
   const taskRef = (id) => db.collection('tasks').doc(id);
   const patch = (id, fields) => write(id, () => taskRef(id).update(fields));
@@ -944,7 +970,8 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
   // can't read another artifact's database. A flag becomes a discussion task, linked back by the task's `flag`.
   const JIRA_STATUS = { 'In Progress': 'progress', 'Done': 'done' };
   const httpsUrl = (u) => (typeof u === 'string' && /^https:\/\//i.test(u) ? u : null);
-  const hasJira = () => state.jira.length > 0 || Boolean(state.settings.jira);
+  // The page can't sync, only Claude can, so Sync now copies the request for the user to paste.
+  const SYNC_ASK = 'sync my Jira flags';
 
   // "Fri" within the last six days, else "Oct 30".
   function flagDay(iso) {
@@ -1014,17 +1041,23 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
         );
       })),
     )] : []));
+    // Connected once a sync has found the Jira Dashboard; "none" when a sync found no dashboard; else not set up yet.
+    const j = state.settings.jira || {};
+    const connected = Boolean(j.url) || flags.length > 0;
     $('list-jira').hidden = asTable || !flags.length;
     $('table-jira').hidden = !asTable || !flags.length;
-    $('empty-jira').hidden = flags.length > 0;
+    $('empty-jira').hidden = !connected || flags.length > 0;
     $('n-jira').textContent = flags.length ? String(flags.length) : '';
     $('tn-jira').textContent = flags.length ? String(flags.length) : '';
 
-    const j = state.settings.jira || {};
     const dash = /^https:\/\/claude\.ai\//i.test(j.url || '') ? el('a', { href: j.url, target: '_blank', rel: 'noopener noreferrer' }, 'Jira Dashboard') : 'Jira Dashboard';
-    $('jira-foot').replaceChildren(...(j.syncedAt
-      ? ['Last copied from the ', dash, ': ' + stamp(j.syncedAt) + '. Ask Claude to sync your Jira flags to update.']
-      : ['Ask Claude to sync your Jira flags to fill this list from the ', dash, '.']));
+    $('jira-foot').hidden = !connected || !j.syncedAt;
+    $('jira-foot').replaceChildren('Last synced from the ', dash, ': ' + stamp(j.syncedAt) + '.');
+    $('jira-setup').hidden = connected;
+    const checked = j.checkedAt ? new Date(j.checkedAt) : null;
+    $('jira-setup-lead').textContent = j.status === 'none'
+      ? "Jira flags aren't available: Claude found no Jira Dashboard" + (checked && !isNaN(checked) ? ' on ' + checked.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) : '') + '. To set one up:'
+      : "Jira flags aren't connected yet. Already have a Jira Dashboard? Press Sync now and paste it to Claude in Claude Code. To set one up:";
   }
 
   function syncSelect(sel, options, keep) {
@@ -1181,14 +1214,10 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     for (const c of $('add').elements) c.disabled = state.readOnly || !db;
     for (const id of ['filters', 'add-box', 'lists', 'sec-days', 'sec-settings']) $(id).hidden = state.closed;
     $('sec-with').hidden = state.closed || !person;
-    // The Jira tab shows once Claude has copied flags in; until then a remembered Jira tab falls back to Today.
-    const jira = hasJira();
-    const tab = ui.tab === 'jira' && !jira ? 'today' : ui.tab;
-    $('show-jira').hidden = !jira;
-    for (const name of LISTS) $('sec-' + name).hidden = (tab !== 'all' && tab !== name) || (name === 'jira' && !jira);
-    $('sec-carry').hidden = !carried.length || (tab !== 'all' && tab !== 'today');
-    for (const name of TABS) $('show-' + name).setAttribute('aria-pressed', String(tab === name));
-    document.querySelector('.wrap').classList.toggle('is-tabs', tab !== 'all');
+    for (const name of LISTS) $('sec-' + name).hidden = ui.tab !== 'all' && ui.tab !== name;
+    $('sec-carry').hidden = !carried.length || (ui.tab !== 'all' && ui.tab !== 'today');
+    for (const name of TABS) $('show-' + name).setAttribute('aria-pressed', String(ui.tab === name));
+    document.querySelector('.wrap').classList.toggle('is-tabs', ui.tab !== 'all');
     document.querySelector('.wrap').classList.toggle('is-table', ui.layout === 'table');
     $('view-list').setAttribute('aria-pressed', String(ui.layout === 'list'));
     $('view-table').setAttribute('aria-pressed', String(ui.layout === 'table'));
@@ -1240,6 +1269,16 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     ui.addWith = null;
     $('add-with').value = personShown() || '';
     $('add-title').focus();
+  });
+
+  $('jira-sync').addEventListener('click', async () => {
+    const msg = $('jira-sync-msg');
+    try {
+      await navigator.clipboard.writeText(SYNC_ASK);
+      msg.textContent = 'Copied. Paste it to Claude in Claude Code.';
+    } catch (e) {
+      msg.textContent = 'Ask Claude in Claude Code: “' + SYNC_ASK + '”';
+    }
   });
 
   $('add-type').addEventListener('change', render);
@@ -1316,7 +1355,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     ui.settingsTyped = false;
     state.error = '';
     const body = { ...state.settings, ticketUrl: value || null };
-    write('settings-main', () => db.doc('settings/main').set(body)).then(() => {
+    write('organizer-settings', () => settingsRef().set(body)).then(() => {
       if (!state.error) msg.textContent = value ? 'Saved. Ticket keys now link there.' : 'Saved. Ticket keys show as plain text.';
     });
   });
@@ -1385,23 +1424,32 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
       render();
     }, () => {});
     // Settings are optional: if they can't load, tickets just stay plain text.
-    db.doc('settings/main').onSnapshot((snap) => {
-      state.settings = snap.exists ? { ...snap.data() } : {};
+    // Organizers from before 0.10.0 keep them in settings/main, which stands in until they've moved to organizer/settings.
+    const showSettings = () => {
+      state.settings = settingsOwn !== null ? settingsOwn : ownFields(settingsLegacy);
       render();
-    }, () => {});
+    };
+    settingsRef().onSnapshot((snap) => { settingsOwn = snap.exists ? { ...snap.data() } : null; showSettings(); }, () => {});
+    db.doc('settings/main').onSnapshot((snap) => { settingsLegacy = snap.exists ? { ...snap.data() } : {}; showSettings(); }, () => {});
     if (PAGE_VERSION) noteVersion();
   }
 
-  // Once per load, the page records its version in settings/main, quietly: a failed write just means no update offer.
+  // Once per load, the page records its version in organizer/settings, quietly: a failed write just means no update offer.
   // It reads once and writes after, in the settings document's write queue, never from a snapshot callback.
+  // The first time, it also carries the organizer's own fields over from settings/main.
   async function noteVersion() {
-    const ref = db.doc('settings/main');
-    let snap;
-    try { snap = await ref.get(); } catch (e) { return; }
-    if ((snap.metadata && snap.metadata.fromCache) || state.readOnly) return;
-    if (snap.exists && snap.data().pageVersion === PAGE_VERSION) return;
-    const op = () => (snap.exists ? ref.update({ pageVersion: PAGE_VERSION }) : ref.set({ pageVersion: PAGE_VERSION }));
-    chains.set('settings-main', (chains.get('settings-main') || Promise.resolve()).then(op).catch(() => {}));
+    const ref = settingsRef();
+    let own, legacy;
+    try { [own, legacy] = await Promise.all([ref.get(), db.doc('settings/main').get()]); } catch (e) { return; }
+    if ((own.metadata && own.metadata.fromCache) || state.readOnly) return;
+    if (own.exists && own.data().pageVersion === PAGE_VERSION) return;
+    // Read again inside the queue, so a Settings save that got in first isn't overwritten.
+    const op = async () => {
+      const cur = await ref.get();
+      if (cur.exists) return cur.data().pageVersion === PAGE_VERSION ? null : ref.update({ pageVersion: PAGE_VERSION });
+      return ref.set({ ...ownFields(legacy.exists ? legacy.data() : {}), pageVersion: PAGE_VERSION });
+    };
+    chains.set('organizer-settings', (chains.get('organizer-settings') || Promise.resolve()).then(op).catch(() => {}));
   }
 
   $('page-foot').textContent = PAGE_VERSION ? 'Daily Organizer · page ' + PAGE_VERSION : '';

@@ -126,14 +126,22 @@ new one as a discussion task, with its ticket link and your flag note.
 
 The page lists the flags under a **Jira** tab, each with **Add as task**, or
 which list it's already on. The tab shows the flags as of the last sync, not
-live, because one artifact page can't read another's data.
+live, because one artifact page can't read another's data. Its **Sync now**
+copies "sync my Jira flags" for you to paste to Claude in Claude Code.
+
+The tab is always there. Until a sync connects it, or if Claude finds no Jira
+Dashboard, it lists the steps to set one up: add the Atlassian connector on
+claude.ai, install the Jira Dashboard skill, ask Claude to start a dashboard
+and flag some tickets, then sync.
 
 ## Updating your organizer
 
 Your organizer keeps the page it was published with, so a plugin update
 doesn't change it by itself. The page notes its version in the organizer's
 settings, and when you plan or wrap up your day, Claude offers the update if
-a newer page has shipped. You can also ask: "update my organizer".
+a newer page has shipped. You can also ask: "update my organizer". From 0.10.0
+the settings live at `organizer/settings` rather than `settings/main`, so they
+can't clash with another skill's; updating an older organizer moves them.
 
 The update republishes the page at the same link. Your tasks stay, because
 they're in the organizer's database rather than the page. Changes you asked
