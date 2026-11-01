@@ -1,5 +1,5 @@
 <title>Daily Organizer</title>
-<meta name="daily-organizer-version" content="0.8.0">
+<meta name="daily-organizer-version" content="0.8.1">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -37,8 +37,9 @@
 }
 
 body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.45; }
+/* minmax(0, 1fr) keeps the column to the page's width, so a wide row such as the day filter shrinks rather than pushing the page past a phone's screen. */
 .wrap {
-  max-width: 760px; margin: 0 auto; display: grid; gap: 28px;
+  max-width: 760px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px;
   padding-block: 28px 56px;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
@@ -54,6 +55,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .filters #view-toggle { margin-left: auto; }
 .filter { display: flex; gap: 8px; align-items: center; min-width: 0; }
 .filter select { min-width: 0; }
+/* The day picker shrinks as far as "Tomorrow" still fits; on phones of 360px or less it drops under the Today | Tomorrow tabs instead. */
+#day { min-width: 7.5em; }
+@media (max-width: 360px) { .filter { flex-wrap: wrap; } }
 .filter .view-toggle { flex: none; }
 .filter-label { flex: none; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 .view-toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--surface); }
@@ -1261,18 +1265,23 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
       render();
     }, () => { state.teamLoaded = true; });
     // Settings are optional: if they can't load, tickets just stay plain text.
-    // Once per load, the page records its version there, quietly: a failed write just means no update offer.
-    let versionNoted = false;
     db.doc('settings/main').onSnapshot((snap) => {
       state.settings = snap.exists ? { ...snap.data() } : {};
-      const fromServer = !(snap.metadata && snap.metadata.fromCache);
-      if (PAGE_VERSION && fromServer && !versionNoted && !state.readOnly && state.settings.pageVersion !== PAGE_VERSION) {
-        versionNoted = true;
-        const ref = db.doc('settings/main');
-        (snap.exists ? ref.update({ pageVersion: PAGE_VERSION }) : ref.set({ pageVersion: PAGE_VERSION })).catch(() => {});
-      }
       render();
     }, () => {});
+    if (PAGE_VERSION) noteVersion();
+  }
+
+  // Once per load, the page records its version in settings/main, quietly: a failed write just means no update offer.
+  // It reads once and writes after, in the settings document's write queue, never from a snapshot callback.
+  async function noteVersion() {
+    const ref = db.doc('settings/main');
+    let snap;
+    try { snap = await ref.get(); } catch (e) { return; }
+    if ((snap.metadata && snap.metadata.fromCache) || state.readOnly) return;
+    if (snap.exists && snap.data().pageVersion === PAGE_VERSION) return;
+    const op = () => (snap.exists ? ref.update({ pageVersion: PAGE_VERSION }) : ref.set({ pageVersion: PAGE_VERSION }));
+    chains.set('settings-main', (chains.get('settings-main') || Promise.resolve()).then(op).catch(() => {}));
   }
 
   $('page-foot').textContent = PAGE_VERSION ? 'Daily Organizer · page ' + PAGE_VERSION : '';
