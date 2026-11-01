@@ -9,12 +9,17 @@ Ask Claude to start one and it publishes the page from
 past plans and end-of-day summaries. It installs from the
 [claude-tools](https://github.com/primelogiclabio/claude-tools) marketplace.
 
+Tabs show one list at a time, each with a count: **Today**, **Up Next**,
+**Waiting**, **Ideas** and **Done**. **All** shows every list stacked on one
+page. Ideas get their own tab, so Up Next holds only work to do.
+
 A bar above the lists holds the **Day** and **People** filters and a
 **List | Table** switch, which shows each section as a list or as a table
-with columns for type, ticket, note, age and comments. Each device remembers
-its own choice, so a phone can stay on the list while a desktop uses the
-table. The **Add a task** box folds away when you don't need it, and each
-device remembers that too. The bottom of the page shows its version.
+with columns for type, priority, ticket, note, age and comments. Each device
+remembers its own tab and layout, so a phone can stay on the Today list while
+a desktop shows All as tables. The **Add a task** box above the tabs folds
+away when you don't need it, and each device remembers that too. The bottom
+of the page shows its version.
 
 It used to be called **workday-tracker**. See [Renamed](#renamed-from-workday-tracker)
 if you had that installed.

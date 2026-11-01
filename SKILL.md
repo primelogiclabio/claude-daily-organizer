@@ -5,7 +5,7 @@ description: "Keeps the user's personal daily organizer artifact on claude.ai: T
 
 # Daily organizer
 
-A personal, day-to-day organizer kept as a claude.ai artifact: a page with **Today**, **Up Next**, **Waiting On** and **Done**, and a **Days** log of past plans and summaries, shown as lists or tables. A bar above the lists picks the day shown, whose tasks to show (once there's a team) and **List | Table**; the layout, the person and whether the **Add a task** box is folded are remembered per device. The page is built from `template.html` in this skill's folder. Its tasks aren't in the page's code: they're rows in the artifact's own database, which the page shows live and Claude reads and writes with the `ArtifactData` tool.
+A personal, day-to-day organizer kept as a claude.ai artifact: a page with **Today**, **Up Next**, **Waiting On**, **Ideas** and **Done**, and a **Days** log of past plans and summaries, shown as lists or tables. Tabs show one list at a time, with counts, and the **All** tab shows them all stacked. Open ideas live under **Ideas**, not Up Next or Waiting On, unless they're planned for the day shown. A bar above the lists picks the day shown, whose tasks to show (once there's a team) and **List | Table**; the tab, the layout, the person and whether the **Add a task** box is folded are remembered per device. The page is built from `template.html` in this skill's folder. Its tasks aren't in the page's code: they're rows in the artifact's own database, which the page shows live and Claude reads and writes with the `ArtifactData` tool.
 
 It's for one person's own work. Don't apply these rules to a team or project tracker, or to a repo's `PROGRESS.md`; if it's unclear which list the user means, ask.
 
@@ -114,7 +114,7 @@ When the user asks to plan the day, or what to work on today:
    - `set` (or `update`, if it exists) `days/<today>` with `plan` and any `planNote` the user gave.
 
    Leave older `today` dates alone: they're history, and the page only shows today's.
-5. Tell the user it's on the page under **Today**.
+5. Tell the user it's on the page under the **Today** tab.
 
 The same works for a later day ("plan tomorrow", "plan Monday"). Use that day's date for `today` and for `days/<date>`. The carry-overs are tasks planned for days before it and not done. The page's day picker and **Today | Tomorrow** tabs show any of the next seven days, and its star plans a task for the day shown.
 
