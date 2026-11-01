@@ -1,6 +1,6 @@
 ---
 name: daily-organizer
-description: House rules for a personal daily organizer artifact on claude.ai (Today, Up Next, Waiting On, Done, plus a log of past days), with tasks kept in the artifact's database: task types, completion comments, ticket refs, status notes, progress comments, a morning plan and an end-of-day summary. Use whenever the user asks to start, add to, update, complete or review their personal organizer, task tracker or task list (including one they call their workday tracker), asks to plan their day or what to work on today, asks to wrap up or summarize their day, or asks to change the organizer page itself.
+description: "Keeps the user's personal daily organizer artifact on claude.ai: Today, Up Next, Waiting On and Done lists in the artifact's database. Use to start it, add, update, finish or review tasks (also when called a workday tracker or task list), plan or wrap up the day, or change the organizer page."
 ---
 
 # Daily organizer
