@@ -45,6 +45,11 @@ artifact on claude.ai, in the artifact's own database:
   under **Settings** on the page, or tell Claude where your tickets live.
   `https://yourcompany.atlassian.net/browse/` adds the key at the end;
   `https://linear.app/yourteam/issue/{key}` puts it where `{key}` is.
+- A task can have a **priority**: High, Normal (the default) or Low. Pick it
+  when you add a task, change it with **Priority** on the task, or say so
+  ("add an urgent task…", "that one's low priority"). High tasks show a red
+  "▲ High" and go to the top of each list; Low ones show "▽ Low" and go to
+  the bottom.
 - A task can have a **status note** that changes over time, such as "blocked
   on DNS change".
 - A task can collect **comments**: dated entries with more detail on progress,
@@ -77,10 +82,10 @@ with each person.
 
 ## Planning your day
 
-- **"Plan my day."** Claude looks at what's open, what was planned yesterday
-  and didn't get done, and follow-ups that have waited 3 days or more. It
-  proposes 3 to 5 tasks for today and puts them under **Today** once you
-  agree.
+- **"Plan my day."** Claude looks at what's open, high-priority tasks first,
+  what was planned yesterday and didn't get done, and follow-ups that have
+  waited 3 days or more. It proposes 3 to 5 tasks for today and puts them
+  under **Today** once you agree.
 - **"Wrap up my day."** Claude summarizes what got done (with the completion
   comments), what carries over and what's waiting, asks whether anything else
   got done, and saves the summary to the **Days** log.
