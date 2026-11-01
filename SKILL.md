@@ -5,7 +5,7 @@ description: "Keeps the user's personal daily organizer artifact on claude.ai: T
 
 # Daily organizer
 
-A personal, day-to-day organizer kept as a claude.ai artifact: a page with **Today**, **Up Next**, **Waiting On**, **Upcoming**, **Someday**, **Ideas** and **Done**, and a **Days** log of past plans and summaries, shown as lists or tables. Tabs show one list at a time, with counts, and the **All** tab shows them all stacked. Open tasks planned for a later day are under **Upcoming**; those planned for a day gone by show as **Carried over** under the day's tasks, marked with the day they were planned for. Tasks set aside with no day are under **Someday**. Open ideas live under **Ideas**, not Up Next or Waiting On, unless they have a day or are set aside for someday. The header shows today's figures (open today, carried over, to chase, done today) and a bar for how much of today's plan is done. A bar above the lists picks the day shown, whose tasks to show (once there's a team) and **List | Table**; the tab, the layout, the person and whether the **Add a task** box is folded are remembered per device. The page is built from `template.html` in this skill's folder. Its tasks aren't in the page's code: they're rows in the artifact's own database, which the page shows live and Claude reads and writes with the `ArtifactData` tool.
+A personal, day-to-day organizer kept as a claude.ai artifact: a page with **Today**, **Up Next**, **Waiting On**, **Upcoming**, **Someday**, **Ideas** and **Done**, and a **Days** log of past plans and summaries, shown as lists or tables. Tabs show one list at a time, with counts, and the **All** tab shows them all stacked. Open tasks planned for a later day are under **Upcoming**; those planned for a day gone by show as **Carried over** under the day's tasks, marked with the day they were planned for. Tasks set aside with no day are under **Someday**. Tickets flagged on the user's Jira Dashboard show under **Jira** once Claude has copied them in, each with **Add as task**. Open ideas live under **Ideas**, not Up Next or Waiting On, unless they have a day or are set aside for someday. The header shows today's figures (open today, carried over, to chase, done today) and a bar for how much of today's plan is done. A bar above the lists picks the day shown, whose tasks to show (once there's a team) and **List | Table**; the tab, the layout, the person and whether the **Add a task** box is folded are remembered per device. The page is built from `template.html` in this skill's folder. Its tasks aren't in the page's code: they're rows in the artifact's own database, which the page shows live and Claude reads and writes with the `ArtifactData` tool.
 
 It's for one person's own work. Don't apply these rules to a team or project tracker, or to a repo's `PROGRESS.md`; if it's unclear which list the user means, ask.
 
@@ -31,7 +31,9 @@ The organizer is the artifact the user points at: by a link, by name ("my daily 
   - `priority`, optional: `high` or `low`. No `priority` means Normal.
   - `someday`, optional: `true` for an open task set aside with no day. It has no `today`, and its `status` is `next`.
   - `via`, optional: `"chat"` on tasks Claude added. Tasks added on the page have none.
+  - `flag`, optional: the Jira ticket key of the Jira Dashboard flag the task was made from, such as `OPS-142`.
 - `team/<id>`, one document per team member: `name`, `created`
+- `jira/<KEY>`, one document per ticket flagged on the Jira Dashboard, copied in by Claude (see Jira flags): `key`, `summary`, `status`, `statusCategory`, `assignee`, `url`, `note`, `flaggedAt`, `updated`
 - `days/<YYYY-MM-DD>`, one document per day:
   - `plan`: task ids
   - `planNote`, optional
@@ -41,6 +43,7 @@ The organizer is the artifact the user points at: by a link, by name ("my daily 
   - `ticketUrl`, optional: where ticket keys link. Either a URL with `{key}` where the key goes, or a prefix the key is added to the end of.
   - `pageVersion`: the version of the page the organizer runs, written by the page itself when it loads. Missing on pages older than 0.4.0.
   - `pageChanges`, optional: changes Claude made to the page at the user's request, as a list of `{at, text}` entries, so an update can carry them over.
+  - `jira`, optional: `{url, syncedAt}`, the Jira Dashboard's artifact link and when its flags were last copied in.
 
 Dates are the user's local date. New task ids are letters, digits and dashes, such as `t-` plus the current time in milliseconds.
 
@@ -105,15 +108,31 @@ The page's **Settings** section has a **Ticket link** field, saved as `ticketUrl
 - Then show one example link built from a ticket they already have, so they can check it opens the right page.
 - If the user adds a ticket key while no ticket link is set, mention once that the page can link keys and ask where their tickets live. Don't ask again in the same conversation.
 
+## Jira flags
+
+The user's **Jira Dashboard** artifact (the jira-dashboard skill's) lets them flag tickets for discussion. The organizer page can't read another artifact's database, so Claude copies the flags in, and the page lists them under **Jira** as of that copy.
+
+- **Finding the dashboard.** Use `settings/main.jira.url`. Otherwise list the user's artifacts and take the one titled **Jira Dashboard**; ask if there's more than one, and if there's none, say there are no flags to bring in. Save its link in `settings/main.jira` on the first sync.
+- **Syncing**, when the user asks ("sync my Jira flags", "pull in what I flagged") and at the start of Plan my day once `settings/main.jira` is set:
+  1. Read the dashboard's `flags` and `tabs`, and the organizer's `jira` and `tasks`.
+  2. For each flag, take the ticket's freshest row: the dashboard tab row with the latest `updated` when the ticket is on a tab, else the flag's own `row`. Build `{key, summary, status, statusCategory, assignee, url, note, flaggedAt, updated}`.
+  3. Write in `batch`es of at most 50: `set` `jira/<KEY>` for each flag that's new or changed, `delete` the copies whose flag is gone, and `update` `settings/main` with `jira: {url, syncedAt}` (now).
+  4. Never write to the Jira Dashboard: flags are set and cleared there.
+- **Offering tasks.** List the flags no task has as its `flag`, each with key, summary, status and note, and offer to add them. Each becomes a `discussion` in Up Next: `title` the summary, `ticket` the url, `note` the flag note if there is one, `flag` the key and `via: "chat"`. Set `with` only when the user names who it's with. Add the ones the user picks in one `batch`.
+- **Unflagged tickets.** When a sync finds a task whose `flag` is no longer flagged, say so once and ask whether to finish it (with a comment, as always) or keep it.
+
+The page's **Add as task** on a flag makes the same discussion, without `via`.
+
 ## Plan my day
 
 When the user asks to plan the day, or what to work on today:
-1. Read `tasks`, `team`, `settings/main`, and the most recent `days` document before today. If the page is older than this skill's template, offer the update (see Updating the page) after the plan.
+1. Read `tasks`, `team`, `settings/main`, and the most recent `days` document before today. If `settings/main.jira` is set, sync the Jira flags first (see Jira flags). If the page is older than this skill's template, offer the update (see Updating the page) after the plan.
 2. Plan from the user's own tasks. A task assigned to someone else only comes in as a check-in ("ask Sam about the logs") when it's been open 3 or more days. Pick out:
    - open `high` priority tasks;
    - tasks planned for an earlier day and not done (carry-overs, which the page shows under **Carried over**);
    - follow-ups and Waiting On tasks added 3 or more days ago, which may need chasing (the page's **To chase** figure);
-   - anything whose ticket, status note or latest comment suggests urgency.
+   - anything whose ticket, status note or latest comment suggests urgency;
+   - Jira flags with no task yet, offered as discussions (see Jira flags).
 
    Leave `someday` tasks out unless the user asks for them.
 3. Propose 3 to 5 tasks for today, with one line each on why. Put high-priority tasks first and say so in their line. Bring in `low` tasks only when there's room. Ask the user to confirm or change the list. Don't write anything yet.
