@@ -5,7 +5,7 @@ description: "Keeps the user's personal daily organizer artifact on claude.ai: T
 
 # Daily organizer
 
-A personal, day-to-day organizer kept as a claude.ai artifact: a page with **Today**, **Up Next**, **Waiting On**, **Ideas** and **Done**, and a **Days** log of past plans and summaries, shown as lists or tables. Tabs show one list at a time, with counts, and the **All** tab shows them all stacked. Open ideas live under **Ideas**, not Up Next or Waiting On, unless they're planned for the day shown. A bar above the lists picks the day shown, whose tasks to show (once there's a team) and **List | Table**; the tab, the layout, the person and whether the **Add a task** box is folded are remembered per device. The page is built from `template.html` in this skill's folder. Its tasks aren't in the page's code: they're rows in the artifact's own database, which the page shows live and Claude reads and writes with the `ArtifactData` tool.
+A personal, day-to-day organizer kept as a claude.ai artifact: a page with **Today**, **Up Next**, **Waiting On**, **Upcoming**, **Someday**, **Ideas** and **Done**, and a **Days** log of past plans and summaries, shown as lists or tables. Tabs show one list at a time, with counts, and the **All** tab shows them all stacked. Open tasks planned for a later day are under **Upcoming**; those planned for a day gone by show as **Carried over** under the day's tasks, marked with the day they were planned for. Tasks set aside with no day are under **Someday**. Open ideas live under **Ideas**, not Up Next or Waiting On, unless they have a day or are set aside for someday. The header shows today's figures (open today, carried over, to chase, done today) and a bar for how much of today's plan is done. A bar above the lists picks the day shown, whose tasks to show (once there's a team) and **List | Table**; the tab, the layout, the person and whether the **Add a task** box is folded are remembered per device. The page is built from `template.html` in this skill's folder. Its tasks aren't in the page's code: they're rows in the artifact's own database, which the page shows live and Claude reads and writes with the `ArtifactData` tool.
 
 It's for one person's own work. Don't apply these rules to a team or project tracker, or to a repo's `PROGRESS.md`; if it's unclear which list the user means, ask.
 
@@ -29,6 +29,8 @@ The organizer is the artifact the user points at: by a link, by name ("my daily 
   - `owner`, optional: the id of the team member the task is for. No `owner` means it's the user's own.
   - `with`, optional, for discussions: the id of the team member the discussion is with. It doesn't change whose task it is.
   - `priority`, optional: `high` or `low`. No `priority` means Normal.
+  - `someday`, optional: `true` for an open task set aside with no day. It has no `today`, and its `status` is `next`.
+  - `via`, optional: `"chat"` on tasks Claude added. Tasks added on the page have none.
 - `team/<id>`, one document per team member: `name`, `created`
 - `days/<YYYY-MM-DD>`, one document per day:
   - `plan`: task ids
@@ -64,8 +66,10 @@ Dates are the user's local date. New task ids are letters, digits and dashes, su
 
 6. **Owner.** A task is the user's own unless they name a team member ("add a follow-up for Sam to check the logs"). Then set `owner` to that member's id. If nobody on the team has that name, ask whether to add them first. Never guess an owner.
 7. **Priority, optional.** Set `high` when the user calls a task urgent, important or top priority, and `low` for "low priority", "whenever" or "no rush". Don't ask when they don't say: Normal is the default. To make a task Normal again, write `priority` as `{"__delete__": true}`. The page lists open tasks High first, then Normal, then Low.
+8. **Someday, optional.** When the user says a task is for "someday", "eventually" or "not now", set `someday: true` and `status: "next"`, and remove any `today`. Planning a someday task for a day removes `someday` in the same write.
+9. **Via chat.** Every task Claude creates gets `via: "chat"`, so the page marks it "via chat". Don't add it to tasks the user made on the page.
 
-A plain "add a task" with nothing else is the user's own `task` in Up Next, Normal priority, with no ticket or note.
+A plain "add a task" with nothing else is the user's own `task` in Up Next, Normal priority, with no day, ticket or note, and `via: "chat"`.
 
 ## Team
 
@@ -90,6 +94,8 @@ Never republish the page to change tasks. Its code changes only when the user as
 
 To finish a task, `update` `status: "done"`, `comment` and `doneAt` together. To reopen one, `update` `status: "next"` and remove the other two by writing each as `{"__delete__": true}`. Remove a status note or a `today` date the same way.
 
+To push a task to tomorrow ("push X to tomorrow"), `update` `today` to tomorrow's date, removing `someday` if it's set. The page's **Push to tomorrow** does the same for carried-over tasks and today's open ones.
+
 To add a comment, `update` `log` with the task's existing entries plus the new one at the end: an `update` replaces the whole list, so leaving the old entries out deletes them.
 
 ## Ticket link
@@ -105,12 +111,14 @@ When the user asks to plan the day, or what to work on today:
 1. Read `tasks`, `team`, `settings/main`, and the most recent `days` document before today. If the page is older than this skill's template, offer the update (see Updating the page) after the plan.
 2. Plan from the user's own tasks. A task assigned to someone else only comes in as a check-in ("ask Sam about the logs") when it's been open 3 or more days. Pick out:
    - open `high` priority tasks;
-   - tasks planned for an earlier day and not done (carry-overs);
-   - follow-ups and Waiting On tasks added 3 or more days ago, which may need chasing;
+   - tasks planned for an earlier day and not done (carry-overs, which the page shows under **Carried over**);
+   - follow-ups and Waiting On tasks added 3 or more days ago, which may need chasing (the page's **To chase** figure);
    - anything whose ticket, status note or latest comment suggests urgency.
+
+   Leave `someday` tasks out unless the user asks for them.
 3. Propose 3 to 5 tasks for today, with one line each on why. Put high-priority tasks first and say so in their line. Bring in `low` tasks only when there's room. Ask the user to confirm or change the list. Don't write anything yet.
 4. On a yes, one `batch`:
-   - `update` `today` to today's date on each chosen task;
+   - `update` `today` to today's date on each chosen task, removing `someday` where it's set;
    - `set` (or `update`, if it exists) `days/<today>` with `plan` and any `planNote` the user gave.
 
    Leave older `today` dates alone: they're history, and the page only shows today's.
@@ -131,7 +139,7 @@ When the user asks to wrap up, close or summarize the day:
    - status notes that look stale.
 3. Show it, and ask whether anything else got done. Anything the user names as done still needs a comment.
 4. On the user's OK, write any completions, then `set` or `update` `days/<today>` with `summary` and `closedAt` (keep `plan` if it's there).
-5. Offer to plan tomorrow, starting from what carries over.
+5. Offer to plan tomorrow, starting from what carries over. If the user would rather move today's open planned tasks on as they are, push them to tomorrow in one `batch`.
 
 ## Older trackers
 

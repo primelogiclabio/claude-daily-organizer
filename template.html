@@ -1,11 +1,11 @@
 <title>Daily Organizer</title>
-<meta name="daily-organizer-version" content="0.7.0">
+<meta name="daily-organizer-version" content="0.8.0">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: one 760px column like a daybook page: the dated header, the day and people filters, a 1:1 agenda when one person is picked, the foldable add box, the list tabs over Today, Up Next, Waiting On, Ideas and Done (or All of them stacked), the day log, then settings and the page's version. */
+/* Layout: one 760px column like a daybook page: the dated header with today's figures and plan bar, the day and people filters, a 1:1 agenda when one person is picked, the foldable add box, the list tabs over Today (with what's carried over), Up Next, Waiting On, Upcoming, Someday, Ideas and Done (or All of them stacked), the day log, then settings and the page's version. */
 :root {
   --bg: #f4f6f9;
   --surface: #ffffff;
@@ -62,15 +62,30 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .view-toggle button[aria-pressed="true"] { background: var(--accent); color: var(--bg); font-weight: 500; }
 .wrap.is-table { max-width: 1120px; }
 #filter, #day { font-size: 13px; padding: 5px 8px; }
-.plan-chip { font-size: 12px; color: var(--today); white-space: nowrap; }
-.tasks .plan-chip, .tasks .with-chip { margin-left: 6px; }
+.plan-chip, .carry-chip { font-size: 12px; color: var(--today); white-space: nowrap; }
+.carry-chip { font-weight: 500; }
+.tasks .plan-chip, .tasks .carry-chip, .tasks .with-chip, .tasks .via { margin-left: 6px; }
+.tasks .via { font-size: 12px; color: var(--muted); white-space: nowrap; }
 .owner { font-size: 12px; font-weight: 500; color: var(--person); white-space: nowrap; }
 .prio { font-size: 12px; font-weight: 600; white-space: nowrap; }
 .prio-high { color: var(--danger); }
 .prio-low { color: var(--muted); font-weight: 500; }
 .eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 h1 { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: clamp(28px, 6vw, 38px); line-height: 1.1; text-wrap: balance; }
-.counts { margin: 4px 0 0; color: var(--muted); font-variant-numeric: tabular-nums; }
+/* Today's figures: four big numbers, then today's plan as a bar. */
+.figures { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+.fig { display: grid; gap: 4px; align-content: start; min-width: 0; padding: 8px 10px 9px; border: 1px solid var(--line); border-top: 3px solid var(--fig); border-radius: 6px; background: var(--surface); }
+.fig .num { font-family: var(--font-display); font-size: 32px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+.fig .lbl { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.fig.is-zero .num { color: var(--muted); font-weight: 400; }
+#fig-open { --fig: var(--accent); }
+#fig-carry { --fig: var(--today); }
+#fig-chase { --fig: var(--person); }
+#fig-done { --fig: var(--done); }
+.progress { display: grid; gap: 4px; margin-top: 10px; }
+.progress .bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.progress .fill { height: 100%; width: 0; border-radius: 3px; background: var(--done); }
+.progress .ptext { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
 
 .notice { margin: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--muted); }
 .notice.is-error { border-color: var(--danger); color: var(--danger); }
@@ -81,11 +96,14 @@ h2 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: .08em; text-t
 h2 .n { font-family: var(--font-mono); font-weight: 400; margin-left: 6px; font-variant-numeric: tabular-nums; }
 #sec-today h2 { color: var(--today); }
 #sec-with h2 { color: var(--discussion); }
+#sec-carry h2 { color: var(--today); }
+.wrap.is-tabs #sec-carry { margin-top: 20px; }
 .empty { margin: 0; color: var(--muted); font-size: 14px; }
 
 .list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
 #sec-today .list { border-top-color: var(--today); }
 #sec-with .list { border-top-color: var(--discussion); }
+#sec-carry .list { border-top-color: var(--today); }
 .task { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 12px; padding: 10px 0; border-bottom: 1px solid var(--line); align-items: start; }
 .task input[type="checkbox"] { width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--done); cursor: pointer; }
 .body { min-width: 0; display: grid; gap: 3px; }
@@ -151,6 +169,7 @@ input[type="text"], select { padding: 6px 8px; border: 1px solid var(--line); bo
 .table-wrap { position: relative; overflow-x: auto; border-top: 1px solid var(--line); }
 #sec-today .table-wrap { border-top-color: var(--today); }
 #sec-with .table-wrap { border-top-color: var(--discussion); }
+#sec-carry .table-wrap { border-top-color: var(--today); }
 table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
 .tasks th { text-align: left; font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); padding: 7px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
 .tasks td { padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
@@ -185,7 +204,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
 .add #add-title { grid-column: 1 / -1; font-size: 16px; }
 .add .opt { display: flex; flex-wrap: wrap; gap: 8px; grid-column: 1 / -1; align-items: center; }
 .add #add-ticket { flex: 1 1 180px; min-width: 0; font-family: var(--font-mono); font-size: 13px; }
-.add .check-label { display: flex; gap: 6px; align-items: center; font-size: 14px; color: var(--muted); }
+.add #add-note { grid-column: 1 / -1; min-width: 0; }
 .add .btn-primary { grid-column: 1 / -1; justify-self: end; }
 
 /* The list tabs show one list at a time, or All of them stacked. They wrap on a phone rather than scroll sideways. */
@@ -215,6 +234,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
 .days .k { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
 
 @media (max-width: 480px) {
+  .figures { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .add { grid-template-columns: 1fr 1fr; }
   .task { grid-template-columns: auto 1fr; }
   .actions { grid-column: 2; }
@@ -226,7 +246,16 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
   <header class="day">
     <div class="eyebrow" id="week"></div>
     <h1 id="date">Daily Organizer</h1>
-    <p class="counts" id="counts"></p>
+    <div class="figures" id="figures" role="group" aria-label="Today in numbers">
+      <div class="fig" id="fig-open"><span class="num" id="num-open">0</span><span class="lbl">Open today</span></div>
+      <div class="fig" id="fig-carry"><span class="num" id="num-carry">0</span><span class="lbl">Carried over</span></div>
+      <div class="fig" id="fig-chase"><span class="num" id="num-chase">0</span><span class="lbl">To chase</span></div>
+      <div class="fig" id="fig-done"><span class="num" id="num-done">0</span><span class="lbl">Done today</span></div>
+    </div>
+    <div class="progress" id="progress" hidden>
+      <div class="bar" id="progress-bar" role="progressbar" aria-label="Today's plan" aria-valuemin="0"><div class="fill" id="progress-fill"></div></div>
+      <span class="ptext" id="progress-text" aria-hidden="true"></span>
+    </div>
   </header>
 
   <p class="notice" id="notice" role="status">Loading your tasks…</p>
@@ -280,8 +309,10 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
         <select id="add-owner" aria-label="For" hidden><option value="">Me</option></select>
         <select id="add-with" aria-label="With" hidden><option value="">With no one</option></select>
         <input type="text" id="add-ticket" placeholder="Ticket (optional), e.g. OPS-142 or a link" aria-label="Ticket" maxlength="500">
-        <label class="check-label"><input type="checkbox" id="add-today"> <span id="add-today-label">Today</span></label>
+        <select id="add-day" aria-label="Day"><option value="">No day</option></select>
+        <button type="button" class="link-btn" id="add-note-btn">+ Note</button>
       </div>
+      <input type="text" id="add-note" placeholder="Status note, e.g. blocked on DNS change" aria-label="Status note" maxlength="300" hidden>
       <button class="btn btn-primary" type="submit" id="add-submit">Add task</button>
     </form>
   </details>
@@ -291,6 +322,8 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
       <button type="button" id="show-today" aria-pressed="true"><span id="show-today-label">Today</span><span class="n" id="tn-today"></span></button>
       <button type="button" id="show-next" aria-pressed="false">Up Next<span class="n" id="tn-next"></span></button>
       <button type="button" id="show-waiting" aria-pressed="false">Waiting<span class="n" id="tn-waiting"></span></button>
+      <button type="button" id="show-upcoming" aria-pressed="false">Upcoming<span class="n" id="tn-upcoming"></span></button>
+      <button type="button" id="show-someday" aria-pressed="false">Someday<span class="n" id="tn-someday"></span></button>
       <button type="button" id="show-ideas" aria-pressed="false">Ideas<span class="n" id="tn-ideas"></span></button>
       <button type="button" id="show-done" aria-pressed="false">Done<span class="n" id="tn-done"></span></button>
       <button type="button" id="show-all" aria-pressed="false">All</button>
@@ -305,6 +338,12 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
       <p class="empty" id="empty-today">Nothing planned for today. Star a task to add it, or ask Claude to plan your day.</p>
     </section>
 
+    <section id="sec-carry" aria-labelledby="h-carry" hidden>
+      <div class="section-head"><h2 id="h-carry">Carried over<span class="n" id="n-carry"></span></h2></div>
+      <ul class="list" id="list-carry"></ul>
+      <div class="table-wrap" id="table-carry" hidden></div>
+    </section>
+
     <section id="sec-next" class="panel" aria-labelledby="h-next">
       <div class="section-head"><h2 id="h-next">Up Next<span class="n" id="n-next"></span></h2></div>
       <ul class="list" id="list-next"></ul>
@@ -317,6 +356,20 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
       <ul class="list" id="list-waiting"></ul>
       <div class="table-wrap" id="table-waiting" hidden></div>
       <p class="empty" id="empty-waiting">Nothing waiting on anyone.</p>
+    </section>
+
+    <section id="sec-upcoming" class="panel" aria-labelledby="h-upcoming">
+      <div class="section-head"><h2 id="h-upcoming">Upcoming<span class="n" id="n-upcoming"></span></h2></div>
+      <ul class="list" id="list-upcoming"></ul>
+      <div class="table-wrap" id="table-upcoming" hidden></div>
+      <p class="empty" id="empty-upcoming">Nothing planned for later days. Pick a day when you add a task, or star one while a later day is shown.</p>
+    </section>
+
+    <section id="sec-someday" class="panel" aria-labelledby="h-someday">
+      <div class="section-head"><h2 id="h-someday">Someday<span class="n" id="n-someday"></span></h2></div>
+      <ul class="list" id="list-someday"></ul>
+      <div class="table-wrap" id="table-someday" hidden></div>
+      <p class="empty" id="empty-someday">Nothing for someday. Pick Someday as the day when you add a task, or use Move to Someday on one.</p>
     </section>
 
     <section id="sec-ideas" class="panel" aria-labelledby="h-ideas">
@@ -375,7 +428,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
   const chains = new Map();
   const TYPES = ['task', 'idea', 'follow-up', 'discussion'];
   // The list tabs: one list at a time, or All of them stacked.
-  const LISTS = ['today', 'next', 'waiting', 'ideas', 'done'];
+  const LISTS = ['today', 'next', 'waiting', 'upcoming', 'someday', 'ideas', 'done'];
   const TABS = [...LISTS, 'all'];
   // The template's version, from its meta tag; Claude compares it with settings/main.pageVersion to offer updates.
   const PAGE_VERSION = (document.querySelector('meta[name="daily-organizer-version"]') || {}).content || '';
@@ -414,6 +467,15 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     const today = dayKey();
     if (!t.today || t.today === shownDay || t.today < today || t.status === 'done') return null;
     return el('span', { class: 'plan-chip', title: 'Planned for ' + dayWord(t.today, today) }, '★ ' + shortDay(t.today, today));
+  }
+
+  // Marks an open task planned for a day gone by: "from Oct 9 · 23 days".
+  function carryChip(t) {
+    const today = dayKey();
+    if (!t.today || t.today >= today || t.status === 'done') return null;
+    const n = Math.round((fromKey(today) - fromKey(t.today)) / 86400000);
+    const from = fromKey(t.today).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    return el('span', { class: 'carry-chip', title: 'Planned for ' + dayLabel(t.today) }, 'from ' + from + ' · ' + n + (n === 1 ? ' day' : ' days'));
   }
 
   function isoWeek(d) {
@@ -493,6 +555,15 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     body.status = 'next';
     write(t.id, () => taskRef(t.id).set(body));
   }
+
+  // Planning a task for a day takes it off Someday.
+  const planFor = (t, day) => patch(t.id, t.someday ? { today: day, someday: null } : { today: day });
+
+  // To chase: open follow-ups and Waiting On tasks added 3 or more days ago, the ones plan-my-day suggests chasing.
+  const toChase = (t) => {
+    const n = daysSince(t.created);
+    return t.status !== 'done' && (t.status === 'waiting' || t.type === 'follow-up') && n !== null && n >= 3;
+  };
 
   function saveNote(t) {
     const note = (ui.drafts['note-' + t.id] || '').trim();
@@ -609,7 +680,10 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     const editable = !state.readOnly;
     const typeName = TYPES.includes(t.type) ? t.type : 'task';
     const added = daysSince(t.created);
-    const waitingLong = t.status === 'waiting' && added !== null && added >= 3;
+    const chase = toChase(t);
+    const realToday = dayKey();
+    // Push to tomorrow: on what's carried over, and on today's open tasks while today is shown.
+    const pushable = !done && t.today && (t.today < realToday || (t.today === realToday && today === realToday));
     const log = logOf(t);
     const logOpen = ui.logOpen.has(t.id);
 
@@ -637,8 +711,11 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     } }, label);
 
     const tools = editable ? el('div', { class: 'row-tools' },
-      !done && t.status === 'next' ? el('button', { type: 'button', class: 'link-btn', onclick: () => patch(t.id, { status: 'waiting' }) }, 'Move to Waiting') : null,
-      !done && t.status === 'waiting' ? el('button', { type: 'button', class: 'link-btn', onclick: () => patch(t.id, { status: 'next' }) }, 'Move to Up Next') : null,
+      !done && t.someday ? el('button', { type: 'button', class: 'link-btn', onclick: () => patch(t.id, { someday: null, status: 'next' }) }, 'Move to Up Next') : null,
+      !done && !t.someday && t.status === 'next' ? el('button', { type: 'button', class: 'link-btn', onclick: () => patch(t.id, { status: 'waiting' }) }, 'Move to Waiting') : null,
+      !done && !t.someday && t.status === 'waiting' ? el('button', { type: 'button', class: 'link-btn', onclick: () => patch(t.id, { status: 'next' }) }, 'Move to Up Next') : null,
+      pushable ? el('button', { type: 'button', class: 'link-btn', onclick: () => planFor(t, addDays(realToday, 1)) }, 'Push to tomorrow') : null,
+      !done && !t.someday ? el('button', { type: 'button', class: 'link-btn', onclick: () => patch(t.id, { someday: true, today: null, status: 'next' }) }, 'Move to Someday') : null,
       !done ? el('button', { type: 'button', class: 'link-btn', onclick: () => {
         ui.noting = t.id; ui.completing = ui.removing = null; ui.drafts['note-' + t.id] = t.note || ''; render();
         const f = $('note-' + t.id); if (f) f.focus();
@@ -652,7 +729,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     const star = !done && editable ? el('button', {
       type: 'button', class: 'icon-btn star', 'aria-pressed': String(planned),
       'aria-label': (planned ? 'Take off ' : 'Plan for ') + dayWord(today, dayKey()), title: (planned ? 'Take off ' : 'Plan for ') + dayWord(today, dayKey()),
-      onclick: () => patch(t.id, { today: planned ? null : today }),
+      onclick: () => (planned ? patch(t.id, { today: null }) : planFor(t, today)),
     }, planned ? '★' : '☆') : null;
 
     const tag = el('span', { class: 'tag tag-' + typeName }, typeName);
@@ -726,14 +803,19 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
         ) : null,
       ));
     }
-    return { done, added, waitingLong, check, logBtn, tools, star, tag, ticket, panels };
+    return { done, added, chase, check, logBtn, tools, star, tag, ticket, panels };
   }
+
+  // Tasks Claude added from a chat carry `via: "chat"`.
+  const viaChip = (t) => (t.via === 'chat' ? el('span', { class: 'via' }, 'via chat') : null);
+  const chaseText = (t, n) => (t.status === 'waiting' ? 'waiting ' : 'open ') + n + ' days';
 
   function listRow(t, today) {
     const p = parts(t, today);
     const meta = el('div', { class: 'meta' },
       el('span', {}, ago(p.added, 'added')),
-      p.waitingLong ? el('span', { class: 'stale' }, 'waiting ' + p.added + ' days') : null,
+      viaChip(t),
+      p.chase ? el('span', { class: 'stale' }, chaseText(t, p.added)) : null,
       p.done && t.doneAt ? el('span', {}, ago(daysSince(t.doneAt), 'done')) : null,
       p.logBtn(false),
     );
@@ -743,6 +825,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
         t.owner ? el('span', { class: 'owner' }, 'for ' + memberName(t.owner)) : null,
         withChip(t),
         planChip(t, today),
+        carryChip(t),
       ),
       t.note && !p.done ? el('div', { class: 'note' }, t.note) : null,
       p.done && t.comment ? el('div', { class: 'comment' }, t.comment) : null,
@@ -772,13 +855,13 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
       : (t.note ? el('span', { class: 'note' }, t.note) : null);
     const tr = el('tr', { class: [p.done ? 'is-done' : '', p.panels.length ? 'has-detail' : ''].join(' ').trim() || null },
       el('td', { class: 'c-check' }, p.check),
-      el('td', { class: 'c-task' }, el('span', { class: 'title' }, t.title || '(untitled)'), withChip(t), planChip(t, today)),
+      el('td', { class: 'c-task' }, el('span', { class: 'title' }, t.title || '(untitled)'), withChip(t), planChip(t, today), carryChip(t), viaChip(t)),
       withOwner ? el('td', { class: 'c-owner' }, t.owner ? el('span', { class: 'owner' }, memberName(t.owner)) : el('span', { class: 'me' }, 'Me')) : null,
       el('td', { class: 'c-type' }, p.tag),
       el('td', { class: 'c-prio' }, prioChip(t)),
       el('td', { class: 'c-ticket' }, p.ticket),
       el('td', { class: 'c-note' }, note),
-      el('td', { class: 'c-age' + (p.waitingLong ? ' stale' : ''), title: p.waitingLong ? 'Waiting ' + p.added + ' days' : null }, ageCell(t, p)),
+      el('td', { class: 'c-age' + (p.chase ? ' stale' : ''), title: p.chase ? chaseText(t, p.added) : null }, ageCell(t, p)),
       el('td', { class: 'c-log' }, p.logBtn(true)),
       el('td', { class: 'c-star' }, p.star),
       el('td', { class: 'c-actions' }, p.tools),
@@ -799,7 +882,8 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     )] : []));
     list.hidden = asTable || items.length === 0;
     table.hidden = !asTable || items.length === 0;
-    $('empty-' + name).hidden = items.length > 0;
+    const empty = $('empty-' + name);
+    if (empty) empty.hidden = items.length > 0;
     $('n-' + name).textContent = items.length ? String(items.length) : '';
     const tab = $('tn-' + name);
     if (tab) tab.textContent = items.length ? String(items.length) : '';
@@ -895,9 +979,15 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     const inLists = shown.filter((t) => !agenda.includes(t));
     const planned = inLists.filter((t) => t.today === sel).sort((a, b) => (a.status === 'done') - (b.status === 'done') || byPriority(a, b));
     const rest = inLists.filter((t) => t.today !== sel);
+    const open = rest.filter((t) => t.status !== 'done');
+    // Open tasks planned for another day are Upcoming, and those planned for a day gone by are carried over.
+    const upcoming = open.filter((t) => t.today && t.today >= today).sort((a, b) => a.today.localeCompare(b.today) || byPriority(a, b));
+    const carried = open.filter((t) => t.today && t.today < today).sort((a, b) => prioRank(a) - prioRank(b) || a.today.localeCompare(b.today) || byCreated(a, b));
+    const unplanned = open.filter((t) => !t.today);
+    const someday = unplanned.filter((t) => t.someday).sort(byPriority);
     // Open ideas have their own list, so Up Next and Waiting On hold only work to do.
-    const ideas = rest.filter((t) => t.type === 'idea' && t.status !== 'done').sort(byPriority);
-    const work = rest.filter((t) => t.type !== 'idea');
+    const ideas = unplanned.filter((t) => !t.someday && t.type === 'idea').sort(byPriority);
+    const work = unplanned.filter((t) => !t.someday && t.type !== 'idea');
     const next = work.filter((t) => t.status === 'next' || !t.status).sort(byPriority);
     const waiting = work.filter((t) => t.status === 'waiting').sort(byPriority);
     const done = rest.filter((t) => t.status === 'done').sort((a, b) => String(b.doneAt || '').localeCompare(String(a.doneAt || '')));
@@ -909,14 +999,41 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
       $('empty-with').textContent = 'Nothing to discuss with ' + name + ' yet. Add a discussion with ' + name + ', or use With… on one you have.';
     }
     fill('today', planned, sel);
+    fill('carry', carried, sel);
     fill('next', next, sel);
     fill('waiting', waiting, sel);
+    fill('upcoming', upcoming, sel);
+    fill('someday', someday, sel);
     fill('ideas', ideas, sel);
     fill('done', done, sel);
     renderDays(byId);
 
+    // Today's figures follow the People filter; the bar is today's plan, done of planned.
     const doneToday = shown.filter((t) => t.status === 'done' && t.doneAt && dayKey(new Date(t.doneAt)) === today).length;
-    const openPlanned = shown.filter((t) => t.today === today && t.status !== 'done').length;
+    const plannedToday = shown.filter((t) => t.today === today);
+    const planDone = plannedToday.filter((t) => t.status === 'done').length;
+    const figures = {
+      open: plannedToday.length - planDone,
+      carry: shown.filter((t) => t.status !== 'done' && t.today && t.today < today).length,
+      chase: shown.filter(toChase).length,
+      done: doneToday,
+    };
+    for (const [id, n] of Object.entries(figures)) {
+      $('num-' + id).textContent = String(n);
+      $('fig-' + id).classList.toggle('is-zero', n === 0);
+    }
+    $('figures').hidden = state.closed;
+    $('progress').hidden = state.closed || !plannedToday.length;
+    if (plannedToday.length) {
+      const text = planDone + ' of ' + plannedToday.length + ' done';
+      const bar = $('progress-bar');
+      bar.setAttribute('aria-valuemax', String(plannedToday.length));
+      bar.setAttribute('aria-valuenow', String(planDone));
+      bar.setAttribute('aria-valuetext', text);
+      $('progress-fill').style.width = (planDone / plannedToday.length) * 100 + '%';
+      $('progress-text').textContent = "Today's plan: " + text;
+    }
+
     const daySelect = $('day');
     if (document.activeElement !== daySelect) syncSelect(daySelect, dayChoices(today), sel);
     $('tab-today').setAttribute('aria-pressed', String(sel === today));
@@ -926,9 +1043,10 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     $('today-label').textContent = near ? selTitle : fromKey(sel).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'short' });
     $('show-today-label').textContent = near ? selTitle : fromKey(sel).toLocaleDateString(undefined, { weekday: 'short' });
     $('empty-today').textContent = 'Nothing planned for ' + selWord + '. Star a task to add it, or ask Claude to plan ' + (sel === today ? 'your day' : selWord) + '.';
-    $('add-today-label').textContent = selWord[0].toUpperCase() + selWord.slice(1);
-    $('counts').textContent = state.closed ? '' :
-      [openPlanned + ' left today', next.length + ' up next', waiting.length + ' waiting', doneToday + ' done today'].join(' · ');
+    // The add box's Day: no day, one of the next seven, or Someday, which always goes in Up Next.
+    const addDay = $('add-day');
+    if (document.activeElement !== addDay) syncSelect(addDay, [['', 'No day'], ...dayChoices(today), ['someday', 'Someday']]);
+    $('add-status').hidden = addDay.value === 'someday';
 
     const clear = $('clear-done');
     const allDone = state.tasks.filter((t) => t.status === 'done' && t.today !== sel);
@@ -949,6 +1067,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     for (const id of ['filters', 'add-box', 'lists', 'sec-days', 'sec-settings']) $(id).hidden = state.closed;
     $('sec-with').hidden = state.closed || !person;
     for (const name of LISTS) $('sec-' + name).hidden = ui.tab !== 'all' && ui.tab !== name;
+    $('sec-carry').hidden = !carried.length || (ui.tab !== 'all' && ui.tab !== 'today');
     for (const name of TABS) $('show-' + name).setAttribute('aria-pressed', String(ui.tab === name));
     document.querySelector('.wrap').classList.toggle('is-tabs', ui.tab !== 'all');
     document.querySelector('.wrap').classList.toggle('is-table', ui.layout === 'table');
@@ -980,15 +1099,23 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
       created: new Date().toISOString(),
     };
     if (ticket) body.ticket = ticket;
+    const note = $('add-note').value.trim();
+    if (note) body.note = note;
     if ($('add-priority').value) body.priority = $('add-priority').value;
-    if ($('add-today').checked) body.today = ui.day || dayKey();
+    const day = $('add-day').value;
+    if (day === 'someday') { body.someday = true; body.status = 'next'; }
+    else if (day) body.today = day;
     if ($('add-owner').value) body.owner = $('add-owner').value;
     if (body.type === 'discussion' && $('add-with').value) body.with = $('add-with').value;
     const ref = db.collection('tasks').doc();
     write(ref.id, () => ref.set(body));
     $('add-title').value = '';
     $('add-ticket').value = '';
-    $('add-today').checked = false;
+    $('add-note').value = '';
+    $('add-note').hidden = true;
+    $('add-note-btn').hidden = false;
+    $('add-day').value = '';
+    $('add-status').hidden = false;
     $('add-owner').value = '';
     $('add-priority').value = '';
     ui.addWith = null;
@@ -997,6 +1124,12 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
   });
 
   $('add-type').addEventListener('change', render);
+  $('add-day').addEventListener('change', render);
+  $('add-note-btn').addEventListener('click', () => {
+    $('add-note').hidden = false;
+    $('add-note-btn').hidden = true;
+    $('add-note').focus();
+  });
   $('add-with').addEventListener('change', (e) => { ui.addWith = e.target.value; });
 
   $('team-form').addEventListener('submit', (e) => {
