@@ -41,6 +41,10 @@ artifact on claude.ai, in the artifact's own database:
 
 - The page shows them live and saves what you do there straight away: add a
   task, star it for today, tick it off, add a status note or a comment.
+- **Edit** on a task changes any of its fields: title, type, list, priority,
+  day (any date, or Someday), ticket, status note, who it's for or with, and
+  the day it was added; on a done task, also the completion comment and the
+  day it was done. Each comment has its own **Edit** too.
 - Claude reads and changes the same records when you ask, without rewriting
   the page, so asking for "add a follow-up to chase the DNS change" is quick
   and can't drop other tasks.
