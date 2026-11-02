@@ -1,5 +1,5 @@
 <title>Daily Organizer</title>
-<meta name="daily-organizer-version" content="0.10.0">
+<meta name="daily-organizer-version" content="0.11.0">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -143,7 +143,16 @@ h2 .n { font-family: var(--font-mono); font-weight: 400; margin-left: 6px; font-
 .inline { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .inline label { width: 100%; font-size: 13px; color: var(--muted); }
 .inline input[type="text"] { flex: 1 1 220px; min-width: 0; }
-input[type="text"], select { padding: 6px 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); }
+input[type="text"], input[type="date"], select { padding: 6px 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); }
+/* Edit: every field of one task, in a grid that drops to one column on a phone. */
+.edit { grid-column: 2 / -1; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 10px; padding: 6px 0 2px; }
+.edit .field { display: grid; gap: 3px; align-content: start; min-width: 0; }
+.edit .wide { grid-column: 1 / -1; }
+.edit label { font-size: 12px; font-weight: 500; color: var(--muted); }
+.edit input, .edit select { width: 100%; min-width: 0; box-sizing: border-box; }
+.edit .field select + input { margin-top: 4px; }
+.edit .mono { font-family: var(--font-mono); font-size: 13px; }
+.edit .edit-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
 .btn { padding: 6px 12px; border-radius: 5px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; }
 .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--bg); font-weight: 500; }
 .btn-danger { border-color: var(--danger); color: var(--danger); }
@@ -170,7 +179,9 @@ input[type="text"], select { padding: 6px 8px; border: 1px solid var(--line); bo
 .settings #set-msg { font-size: 13px; color: var(--muted); }
 
 /* position: relative keeps the screen-reader-only headings inside the table's own scroll area, not the page's. */
-.table-wrap { position: relative; overflow-x: auto; border-top: 1px solid var(--line); }
+.table-wrap { position: relative; overflow-x: auto; border-top: 1px solid var(--line); container-type: inline-size; }
+/* A row's Edit form, comments and other panels stay in view, as wide as the table's visible part, when the table is wider than the page. */
+.tasks tr.detail td > * { position: sticky; left: 8px; max-width: calc(100cqw - 16px); box-sizing: border-box; }
 #sec-today .table-wrap { border-top-color: var(--today); }
 #sec-with .table-wrap { border-top-color: var(--discussion); }
 #sec-carry .table-wrap { border-top-color: var(--today); }
@@ -470,7 +481,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
 (() => {
   const $ = (id) => document.getElementById(id);
   const state = { tasks: [], days: [], settings: {}, team: [], jira: [], teamLoaded: false, confirmed: false, slow: false, error: '', note: '', readOnly: false, closed: false };
-  const ui = { completing: null, noting: null, removing: null, clearing: false, drafts: {}, logOpen: new Set(), logRemoving: null, layout: 'list', tab: 'today', filter: 'all', day: null, picking: null, addWith: null, teamRemoving: null };
+  const ui = { completing: null, noting: null, removing: null, editing: null, clearing: false, drafts: {}, logOpen: new Set(), logRemoving: null, logEditing: null, layout: 'list', tab: 'today', filter: 'all', day: null, picking: null, addWith: null, teamRemoving: null };
   const chains = new Map();
   const TYPES = ['task', 'idea', 'follow-up', 'discussion'];
   // The list tabs: one list at a time, or All of them stacked.
@@ -626,6 +637,130 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     else render();
   }
 
+  // Edit: every field of a task in one form. The draft starts from the task as Edit found it, and Save writes
+  // only the fields changed since, so a change made elsewhere in the meantime isn't undone.
+  const isKey = (v) => /^\d{4}-\d{2}-\d{2}$/.test(v || '');
+  const dateOf = (iso) => { const d = iso ? new Date(iso) : null; return d && !isNaN(d) ? dayKey(d) : ''; };
+  // A timestamp moved to another local date, keeping its time of day.
+  function onDate(iso, key) {
+    const d = iso && !isNaN(new Date(iso)) ? new Date(iso) : new Date();
+    const [y, m, day] = key.split('-').map(Number);
+    d.setFullYear(y, m - 1, day);
+    return d.toISOString();
+  }
+
+  function startEdit(t) {
+    if (ui.editing && ui.editing.id === t.id) { ui.editing = null; render(); return; }
+    const orig = {
+      title: t.title || '', type: TYPES.includes(t.type) ? t.type : 'task', status: t.status === 'waiting' ? 'waiting' : 'next',
+      priority: PRIORITY[t.priority] ? t.priority : '', day: t.someday ? 'someday' : t.today || '',
+      ticket: t.ticket ? String(t.ticket) : '', note: t.note || '', owner: t.owner || '', with: t.with || '',
+      created: dateOf(t.created), comment: t.comment || '', doneAt: dateOf(t.doneAt),
+    };
+    ui.editing = { id: t.id, orig, draft: { ...orig, pick: false } };
+    ui.completing = ui.noting = ui.removing = ui.picking = null;
+    render();
+    const f = $('edit-title-' + t.id); if (f) f.focus();
+  }
+
+  const editValid = (t, d) => Boolean(d.title.trim() && (t.status !== 'done' || d.comment.trim()) && !(d.pick && !isKey(d.day)));
+
+  function saveEdit(t) {
+    const { orig, draft } = ui.editing;
+    if (!editValid(t, draft)) return;
+    const text = (k) => draft[k].trim();
+    const fields = {};
+    if (text('title') !== orig.title) fields.title = text('title');
+    if (draft.type !== orig.type) fields.type = draft.type;
+    if (text('ticket') !== orig.ticket) fields.ticket = text('ticket') || null;
+    if (draft.owner !== orig.owner) fields.owner = draft.owner || null;
+    if (draft.with !== orig.with) fields.with = draft.with || null;
+    if (isKey(draft.created) && draft.created !== orig.created) fields.created = onDate(t.created, draft.created);
+    if (t.status === 'done') {
+      if (text('comment') !== orig.comment) fields.comment = text('comment');
+      if (isKey(draft.doneAt) && draft.doneAt !== orig.doneAt) fields.doneAt = onDate(t.doneAt, draft.doneAt);
+    } else {
+      if (draft.priority !== orig.priority) fields.priority = draft.priority || null;
+      if (text('note') !== orig.note) fields.note = text('note') || null;
+      // Someday is always in Up Next and has no day; a day, or no day, takes a task off Someday.
+      if (draft.day !== orig.day) {
+        if (draft.day === 'someday') Object.assign(fields, { someday: true, today: null, status: 'next' });
+        else { fields.today = draft.day || null; if (t.someday) fields.someday = null; }
+      }
+      if (draft.day !== 'someday' && draft.status !== orig.status) fields.status = draft.status;
+    }
+    ui.editing = null;
+    if (Object.keys(fields).length) patch(t.id, fields);
+    render();
+  }
+
+  function editForm(t) {
+    const { draft, orig } = ui.editing;
+    const done = t.status === 'done';
+    const today = dayKey();
+    const id = (name) => 'edit-' + name + '-' + t.id;
+    const ready = () => { const b = $(id('save')); if (b) b.disabled = !editValid(t, draft); };
+    const cancel = () => { ui.editing = null; render(); };
+    const keys = (e) => { if (e.key === 'Escape') cancel(); };
+    const field = (name, label, wide, ...controls) => el('div', { class: 'field' + (wide ? ' wide' : '') }, el('label', { for: id(name) }, label), controls);
+    const text = (name, attrs) => el('input', {
+      type: 'text', id: id(name), value: draft[name], ...attrs,
+      oninput: (e) => { draft[name] = e.target.value; ready(); },
+      onkeydown: (e) => { if (e.key === 'Enter') { e.preventDefault(); saveEdit(t); } keys(e); },
+    });
+    const date = (name, attrs, key = name) => el('input', {
+      type: 'date', id: id(name), value: isKey(draft[key]) ? draft[key] : '', ...attrs,
+      oninput: (e) => { draft[key] = e.target.value; ready(); }, onkeydown: keys,
+    });
+    // Selects re-render, since some of them show or hide other fields.
+    const choose = (name, options, value, onpick) => {
+      const s = el('select', { id: id(name), onkeydown: keys, onchange: (e) => { (onpick || ((v) => { draft[name] = v; }))(e.target.value); render(); } },
+        options.map(([v, label]) => el('option', { value: v }, label)));
+      s.value = value === undefined ? draft[name] : value;
+      return s;
+    };
+    const people = (keep) => {
+      const opts = teamOptions();
+      return keep && !opts.some(([v]) => v === keep) ? [...opts, [keep, memberName(keep)]] : opts;
+    };
+    const hasTeam = state.team.length > 0;
+
+    // Day: no day, the next seven days, Someday, or any other date. A day outside those is listed as itself.
+    const days = [['', 'No day'], ...dayChoices(today), ['someday', 'Someday']];
+    if (isKey(draft.day) && !days.some(([v]) => v === draft.day)) {
+      const label = fromKey(draft.day).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+      days.splice(draft.day < today ? 1 : days.length - 1, 0, [draft.day, label]);
+    }
+    days.push(['pick', 'Another date…']);
+    const dayField = done ? null : field('day', 'Day', false,
+      choose('day', days, draft.pick ? 'pick' : draft.day, (v) => {
+        draft.pick = v === 'pick';
+        if (!draft.pick) draft.day = v;
+        else if (!isKey(draft.day)) draft.day = '';
+      }),
+      draft.pick ? date('date', { 'aria-label': 'Date' }, 'day') : null,
+    );
+
+    return el('div', { class: 'edit', id: 'editbox-' + t.id, role: 'group', 'aria-label': 'Edit ' + (t.title || 'task') },
+      field('title', 'Title', true, text('title', { maxlength: 300, required: true })),
+      field('type', 'Type', false, choose('type', TYPES.map((v) => [v, v[0].toUpperCase() + v.slice(1)]))),
+      done || draft.day === 'someday' ? null : field('status', 'List', false, choose('status', [['next', 'Up Next'], ['waiting', 'Waiting On']])),
+      done ? null : field('priority', 'Priority', false, choose('priority', [['high', 'High'], ['', 'Normal'], ['low', 'Low']])),
+      dayField,
+      hasTeam || orig.owner ? field('owner', 'For', false, choose('owner', [['', 'Me'], ...people(orig.owner)])) : null,
+      (hasTeam || orig.with) && (draft.type === 'discussion' || orig.with) ? field('with', 'With', false, choose('with', [['', 'No one'], ...people(orig.with)])) : null,
+      field('ticket', 'Ticket', false, text('ticket', { class: 'mono', maxlength: 500, placeholder: 'OPS-142 or a link' })),
+      field('created', 'Added', false, date('created', { max: today })),
+      done ? field('doneAt', 'Done on', false, date('doneAt', { max: today })) : null,
+      done ? field('comment', 'What got done or decided', true, text('comment', { maxlength: 500, required: true }))
+        : field('note', 'Status note', true, text('note', { maxlength: 300, placeholder: 'e.g. blocked on DNS change' })),
+      el('div', { class: 'edit-actions' },
+        el('button', { type: 'button', class: 'btn', onclick: cancel }, 'Cancel'),
+        el('button', { type: 'button', class: 'btn btn-primary', id: id('save'), disabled: !editValid(t, draft), onclick: () => saveEdit(t) }, 'Save changes'),
+      ),
+    );
+  }
+
   // Team: tasks are the owner's unless `owner` names a member of `team`. A discussion's `with` names who it's with.
   const memberName = (id) => {
     const m = state.team.find((x) => x.id === id);
@@ -675,7 +810,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
   function toggleLog(id) {
     if (ui.logOpen.has(id)) ui.logOpen.delete(id);
     else ui.logOpen.add(id);
-    ui.logRemoving = null;
+    ui.logRemoving = ui.logEditing = null;
     render();
     const f = $('log-' + id);
     if (ui.logOpen.has(id) && f) f.focus();
@@ -693,6 +828,25 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
   function removeLog(t, entry) {
     ui.logRemoving = null;
     patch(t.id, { log: logOf(t).filter((e) => !(e.at === entry.at && e.text === entry.text)) });
+  }
+
+  // Editing a comment changes its text and keeps its date. The entry is found by its date and text, like Remove.
+  function startLogEdit(t, entry) {
+    ui.logEditing = { id: t.id, at: entry.at, text: entry.text };
+    ui.drafts['logedit-' + t.id] = String(entry.text || '');
+    ui.logRemoving = null;
+    render();
+    const f = $('logedit-' + t.id); if (f) f.focus();
+  }
+
+  function saveLogEdit(t, entry) {
+    const key = 'logedit-' + t.id;
+    const text = (ui.drafts[key] || '').trim();
+    if (!text) return;
+    ui.logEditing = null;
+    delete ui.drafts[key];
+    if (text !== entry.text) patch(t.id, { log: logOf(t).map((e) => (e.at === entry.at && e.text === entry.text ? { ...e, text } : e)) });
+    render();
   }
 
   function draftInput(key, attrs, onEnter) {
@@ -746,7 +900,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
       onchange: (e) => {
         if (done) { reopen(t); return; }
         e.target.checked = false;
-        ui.completing = t.id; ui.noting = ui.removing = null;
+        ui.completing = t.id; ui.noting = ui.removing = ui.editing = null;
         render();
         const f = $('done-' + t.id); if (f) f.focus();
       },
@@ -759,24 +913,26 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     }, log.length ? (short ? String(log.length) : log.length + (log.length === 1 ? ' comment' : ' comments')) : (short ? 'Add' : 'Add comment')) : null);
 
     const pickBtn = (field, label) => el('button', { type: 'button', class: 'link-btn', onclick: () => {
-      ui.picking = { id: t.id, field }; ui.completing = ui.noting = ui.removing = null; render();
+      ui.picking = { id: t.id, field }; ui.completing = ui.noting = ui.removing = ui.editing = null; render();
       const f = $('pick-' + t.id); if (f) f.focus();
     } }, label);
 
+    const editing = Boolean(ui.editing && ui.editing.id === t.id);
     const tools = editable ? el('div', { class: 'row-tools' },
+      el('button', { type: 'button', class: 'link-btn', 'aria-expanded': String(editing), 'aria-controls': 'editbox-' + t.id, onclick: () => startEdit(t) }, 'Edit'),
       !done && t.someday ? el('button', { type: 'button', class: 'link-btn', onclick: () => patch(t.id, { someday: null, status: 'next' }) }, 'Move to Up Next') : null,
       !done && !t.someday && t.status === 'next' ? el('button', { type: 'button', class: 'link-btn', onclick: () => patch(t.id, { status: 'waiting' }) }, 'Move to Waiting') : null,
       !done && !t.someday && t.status === 'waiting' ? el('button', { type: 'button', class: 'link-btn', onclick: () => patch(t.id, { status: 'next' }) }, 'Move to Up Next') : null,
       pushable ? el('button', { type: 'button', class: 'link-btn', onclick: () => planFor(t, addDays(realToday, 1)) }, 'Push to tomorrow') : null,
       !done && !t.someday ? el('button', { type: 'button', class: 'link-btn', onclick: () => patch(t.id, { someday: true, today: null, status: 'next' }) }, 'Move to Someday') : null,
       !done ? el('button', { type: 'button', class: 'link-btn', onclick: () => {
-        ui.noting = t.id; ui.completing = ui.removing = null; ui.drafts['note-' + t.id] = t.note || ''; render();
+        ui.noting = t.id; ui.completing = ui.removing = ui.editing = null; ui.drafts['note-' + t.id] = t.note || ''; render();
         const f = $('note-' + t.id); if (f) f.focus();
       } }, t.note ? 'Edit status' : 'Add status') : null,
       !done ? pickBtn('priority', 'Priority') : null,
       state.team.length && !done ? pickBtn('owner', t.owner ? 'Reassign' : 'Assign') : null,
       state.team.length && !done && (typeName === 'discussion' || t.with) ? pickBtn('with', t.with ? 'Change who' : 'With…') : null,
-      el('button', { type: 'button', class: 'link-btn danger', onclick: () => { ui.removing = t.id; ui.completing = ui.noting = null; render(); } }, 'Remove'),
+      el('button', { type: 'button', class: 'link-btn danger', onclick: () => { ui.removing = t.id; ui.completing = ui.noting = ui.editing = null; render(); } }, 'Remove'),
     ) : null;
 
     const star = !done && editable ? el('button', {
@@ -789,6 +945,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     const ticket = t.ticket ? ticketNode(String(t.ticket)) : null;
 
     const panels = [];
+    if (editing && editable) panels.push(editForm(t));
     if (ui.picking && ui.picking.id === t.id) {
       const field = ui.picking.field;
       const key = 'pick-' + t.id;
@@ -836,10 +993,27 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
       panels.push(el('div', { class: 'log', id: 'logbox-' + t.id },
         log.length ? el('ol', {}, log.map((entry, i) => {
           const rk = t.id + ':' + i;
+          const ek = 'logedit-' + t.id;
+          if (editable && ui.logEditing && ui.logEditing.id === t.id && ui.logEditing.at === entry.at && ui.logEditing.text === entry.text) {
+            const cancel = () => { ui.logEditing = null; delete ui.drafts[ek]; render(); };
+            return el('li', {},
+              el('div', { class: 'when' }, el('span', {}, stamp(entry.at))),
+              el('textarea', {
+                id: ek, maxlength: 2000, 'aria-label': 'Edit comment',
+                oninput: (e) => { ui.drafts[ek] = e.target.value; const b = $(ek + '-save'); if (b) b.disabled = !e.target.value.trim(); },
+                onkeydown: (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveLogEdit(t, entry); } if (e.key === 'Escape') cancel(); },
+              }, ui.drafts[ek] ?? ''),
+              el('div', { class: 'log-actions' },
+                el('button', { type: 'button', class: 'btn', onclick: cancel }, 'Cancel'),
+                el('button', { type: 'button', class: 'btn btn-primary', id: ek + '-save', disabled: !(ui.drafts[ek] || '').trim(), onclick: () => saveLogEdit(t, entry) }, 'Save comment'),
+              ),
+            );
+          }
           const tools = !editable ? null : ui.logRemoving === rk
             ? [el('button', { type: 'button', class: 'link-btn danger', onclick: () => removeLog(t, entry) }, 'Remove'),
                el('button', { type: 'button', class: 'link-btn', onclick: () => { ui.logRemoving = null; render(); } }, 'Keep')]
-            : el('button', { type: 'button', class: 'link-btn', 'aria-label': 'Remove this comment', onclick: () => { ui.logRemoving = rk; render(); } }, 'Remove');
+            : [el('button', { type: 'button', class: 'link-btn', 'aria-label': 'Edit this comment', onclick: () => startLogEdit(t, entry) }, 'Edit'),
+               el('button', { type: 'button', class: 'link-btn', 'aria-label': 'Remove this comment', onclick: () => { ui.logRemoving = rk; render(); } }, 'Remove')];
           return el('li', {},
             el('div', { class: 'when' }, el('span', {}, stamp(entry.at)), tools),
             el('div', { class: 'text' }, String(entry.text || '')),
