@@ -14,8 +14,8 @@ Tabs show one list at a time, each with a count: **Today**, **Up Next**,
 every list stacked on one page. Ideas get their own tab, so Up Next holds only
 work to do. **Upcoming** holds tasks planned for later days, and **Someday**
 the ones you've set aside with no day. Unfinished tasks from earlier days show
-as **Carried over** under Today, marked "from Oct 9 · 23 days", with **Push to
-tomorrow** on each.
+as **Carried over** under Today, marked "from Oct 9 · 23 days"; give one a new
+day with **Edit**.
 
 The header shows today in four figures (open today, carried over, to chase,
 done today) and a bar for how much of today's plan is done. "To chase" counts
@@ -23,12 +23,14 @@ follow-ups and waiting tasks that are 3 or more days old.
 
 A bar above the lists holds the **Day** and **People** filters and a
 **List | Table** switch, which shows each section as a list or as a table
-with columns for type, priority, ticket, note, age and comments. Each device
+with columns for type, priority, ticket, age and comments. Rows light up under
+the pointer; click one to open its details: every field, the status note in
+the table, and its comments. Each device
 remembers its own tab and layout, so a phone can stay on the Today list while
 a desktop shows All as tables. The **Add a task** box above the tabs folds
 away when you don't need it, and each device remembers that too. Its **Day**
-picker plans a new task for today, one of the next six days or **Someday**,
-and **+ Note** adds a status note as you add it. Tasks Claude added from a chat
+picker starts on today, and can plan a new task for one of the next six days,
+**Someday** or no day; **+ Note** adds a status note as you add it. Tasks Claude added from a chat
 say "via chat". The bottom of the page shows its version.
 
 It used to be called **workday-tracker**. See [Renamed](#renamed-from-workday-tracker)
@@ -40,11 +42,12 @@ The tasks aren't written into the page. They're records stored with the
 artifact on claude.ai, in the artifact's own database:
 
 - The page shows them live and saves what you do there straight away: add a
-  task, star it for today, tick it off, add a status note or a comment.
-- **Edit** on a task changes any of its fields: title, type, list, priority,
-  day (any date, or Someday), ticket, status note, who it's for or with, and
-  the day it was added; on a done task, also the completion comment and the
-  day it was done. Each comment has its own **Edit** too.
+  task, star it for today, tick it off, add a comment.
+- **Edit** is the one button on each task. It changes any of its fields:
+  title, type, list, priority, day (any date, or Someday), ticket, status
+  note, who it's for or with, and the day it was added; on a done task, also
+  the completion comment and the day it was done. **Remove task** is there
+  too. Each comment has its own **Edit**.
 - Claude reads and changes the same records when you ask, without rewriting
   the page, so asking for "add a follow-up to chase the DNS change" is quick
   and can't drop other tasks.
@@ -65,19 +68,19 @@ artifact on claude.ai, in the artifact's own database:
   `https://yourcompany.atlassian.net/browse/` adds the key at the end;
   `https://linear.app/yourteam/issue/{key}` puts it where `{key}` is.
 - A task can have a **priority**: High, Normal (the default) or Low. Pick it
-  when you add a task, change it with **Priority** on the task, or say so
+  when you add a task, change it with **Edit** on the task, or say so
   ("add an urgent task…", "that one's low priority"). High tasks show a red
   "▲ High" and go to the top of each list; Low ones show "▽ Low" and go to
   the bottom.
 - A task can have a **status note** that changes over time, such as "blocked
   on DNS change".
 - A task can be set aside for **someday**: say "someday" or "not now", pick
-  Someday as the day when you add it, or use **Move to Someday**. It stays out
+  Someday as the day when you add it or in **Edit**. It stays out
   of your day plans until you plan it for a day.
 - A task can collect **comments**: dated entries with more detail on progress,
   such as what you tried and what's next. The status note says where a task
   stands now; the comments keep the history. Say "add a comment to the DNS
-  task: …" or use **Add comment** under the task on the page.
+  task: …", or open the task on the page and add one there.
 
 ## Team
 
@@ -85,11 +88,11 @@ Tasks are yours unless you say otherwise. To hand some out:
 
 - Add people under **Settings › Team** on the page, or tell Claude ("add Sam
   to my team").
-- Pick who a task is for when you add it, with **Assign** on any task, or by
+- Pick who a task is for when you add it, under **For** in a task's **Edit**, or by
   asking ("add a follow-up for Sam to check the logs"). The task then shows
   "for Sam".
 - A discussion can say who it's with: pick them under **With** when you add
-  it, use **With…** on the discussion, or ask ("add a discussion with Sam
+  it or in the discussion's **Edit**, or ask ("add a discussion with Sam
   about the Q3 budget"). It shows "with Sam" and stays your own task.
 - The **People** filter above the lists shows **Everyone**, **Mine** or one
   person. Picking one person shows a **1:1 with** section first, listing the
@@ -180,7 +183,7 @@ claude.ai have no database.
 | Where | Works? |
 | --- | --- |
 | Claude Code CLI, desktop Code tab, VS Code | ✔ full: starts the organizer, changes tasks, plans and wraps up your day |
-| The organizer page, wherever you open it (web, desktop, mobile) | ✔ add, star, finish and remove tasks, add status notes |
+| The organizer page, wherever you open it (web, desktop, mobile) | ✔ add, edit, star, finish and remove tasks, add status notes and comments |
 | claude.ai Chat, Cowork, mobile chat | ⚠ can't change the organizer's tasks. Claude can still keep an older-style tracker there, with the tasks in the artifact's code and the same rules |
 | Claude Code cloud sessions (claude.ai/code) | ✔ only if it's on your claude.ai account and the session has the Artifact tools |
 

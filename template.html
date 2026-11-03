@@ -1,5 +1,5 @@
 <title>Daily Organizer</title>
-<meta name="daily-organizer-version" content="0.11.0">
+<meta name="daily-organizer-version" content="0.12.0">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -36,7 +36,7 @@
   color-scheme: dark;
 }
 
-body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.45; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.45; }
 /* minmax(0, 1fr) keeps the column to the page's width, so a wide row such as the day filter shrinks rather than pushing the page past a phone's screen. */
 .wrap {
   max-width: 760px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px;
@@ -59,28 +59,28 @@ button, input, select, textarea { font: inherit; color: inherit; }
 #day { min-width: 7.5em; }
 @media (max-width: 360px) { .filter { flex-wrap: wrap; } }
 .filter .view-toggle { flex: none; }
-.filter-label { flex: none; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.filter-label { flex: none; font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 .view-toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--surface); }
-.view-toggle button { border: 0; background: none; padding: 5px 12px; font-size: 13px; cursor: pointer; color: var(--muted); }
+.view-toggle button { border: 0; background: none; padding: 5px 12px; font-size: 14px; cursor: pointer; color: var(--muted); }
 .view-toggle button + button { border-left: 1px solid var(--line); }
 .view-toggle button[aria-pressed="true"] { background: var(--accent); color: var(--bg); font-weight: 500; }
 .wrap.is-table { max-width: 1120px; }
-#filter, #day { font-size: 13px; padding: 5px 8px; }
-.plan-chip, .carry-chip { font-size: 12px; color: var(--today); white-space: nowrap; }
+#filter, #day { font-size: 14px; padding: 5px 8px; }
+.plan-chip, .carry-chip { font-size: 13px; color: var(--today); white-space: nowrap; }
 .carry-chip { font-weight: 500; }
 .tasks .plan-chip, .tasks .carry-chip, .tasks .with-chip, .tasks .via { margin-left: 6px; }
-.tasks .via { font-size: 12px; color: var(--muted); white-space: nowrap; }
-.owner { font-size: 12px; font-weight: 500; color: var(--person); white-space: nowrap; }
-.prio { font-size: 12px; font-weight: 600; white-space: nowrap; }
+.tasks .via { font-size: 13px; color: var(--muted); white-space: nowrap; }
+.owner { font-size: 13px; font-weight: 500; color: var(--person); white-space: nowrap; }
+.prio { font-size: 13px; font-weight: 600; white-space: nowrap; }
 .prio-high { color: var(--danger); }
 .prio-low { color: var(--muted); font-weight: 500; }
-.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
-h1 { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: clamp(28px, 6vw, 38px); line-height: 1.1; text-wrap: balance; }
+.eyebrow { font-family: var(--font-mono); font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+h1 { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: clamp(29px, 6vw, 39px); line-height: 1.1; text-wrap: balance; }
 /* Today's figures: four big numbers, then today's plan as a bar. */
 .figures { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
 .fig { display: grid; gap: 4px; align-content: start; min-width: 0; padding: 8px 10px 9px; border: 1px solid var(--line); border-top: 3px solid var(--fig); border-radius: 6px; background: var(--surface); }
-.fig .num { font-family: var(--font-display); font-size: 32px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
-.fig .lbl { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.fig .num { font-family: var(--font-display); font-size: 33px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+.fig .lbl { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 .fig.is-zero .num { color: var(--muted); font-weight: 400; }
 #fig-open { --fig: var(--accent); }
 #fig-carry { --fig: var(--today); }
@@ -89,42 +89,52 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: c
 .progress { display: grid; gap: 4px; margin-top: 10px; }
 .progress .bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
 .progress .fill { height: 100%; width: 0; border-radius: 3px; background: var(--done); }
-.progress .ptext { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.progress .ptext { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
 
 .notice { margin: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--muted); }
 .notice.is-error { border-color: var(--danger); color: var(--danger); }
 
 section { display: grid; gap: 8px; min-width: 0; }
 .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-h2 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h2 { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 h2 .n { font-family: var(--font-mono); font-weight: 400; margin-left: 6px; font-variant-numeric: tabular-nums; }
 #sec-today h2 { color: var(--today); }
 #sec-with h2 { color: var(--discussion); }
 #sec-carry h2 { color: var(--today); }
 .wrap.is-tabs #sec-carry { margin-top: 20px; }
-.empty { margin: 0; color: var(--muted); font-size: 14px; }
+.empty { margin: 0; color: var(--muted); font-size: 15px; }
 
 .list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
 #sec-today .list { border-top-color: var(--today); }
 #sec-with .list { border-top-color: var(--discussion); }
 #sec-carry .list { border-top-color: var(--today); }
-.task { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 12px; padding: 10px 0; border-bottom: 1px solid var(--line); align-items: start; }
+.task { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 12px; padding: 10px 8px; border-bottom: 1px solid var(--line); align-items: start; cursor: pointer; }
+/* Rows light up under the pointer and stay tinted while open; a click opens a row's details. Panels inside a row keep the normal cursor. */
+.task.is-open, .tasks tr.is-open td { background: color-mix(in srgb, var(--accent) 5%, transparent); }
+@media (hover: hover) {
+  .task:hover, .tasks tr.row:hover td { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+}
+.tasks tr.row { cursor: pointer; }
+.details, .edit, .inline { cursor: auto; }
+.title-btn { background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+.title-btn::before { content: "▸"; display: inline-block; width: 1em; color: var(--muted); }
+.title-btn[aria-expanded="true"]::before { content: "▾"; }
 .task input[type="checkbox"] { width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--done); cursor: pointer; }
 .body { min-width: 0; display: grid; gap: 3px; }
 .title-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
 .title { overflow-wrap: anywhere; }
 .is-done .title { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line); }
-.tag { font-family: var(--font-mono); font-size: 11px; padding: 1px 6px; border-radius: 3px; border: 1px solid currentColor; line-height: 1.4; white-space: nowrap; }
+.tag { font-family: var(--font-mono); font-size: 12px; padding: 1px 6px; border-radius: 3px; border: 1px solid currentColor; line-height: 1.4; white-space: nowrap; }
 .tag-task { color: var(--accent); }
 .tag-idea { color: var(--idea); }
 .tag-follow-up { color: var(--today); }
 .tag-discussion { color: var(--discussion); }
-.ticket { font-family: var(--font-mono); font-size: 12px; color: var(--accent); max-width: 22ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.meta { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.ticket { font-family: var(--font-mono); font-size: 13px; color: var(--accent); max-width: 22ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.meta { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .stale { color: var(--today); font-weight: 500; }
-.note { font-size: 14px; color: var(--ink); overflow-wrap: anywhere; }
+.note { font-size: 15px; color: var(--ink); overflow-wrap: anywhere; }
 .note::before { content: "Status: "; color: var(--muted); }
-.comment { font-size: 14px; color: var(--done); overflow-wrap: anywhere; }
+.comment { font-size: 15px; color: var(--done); overflow-wrap: anywhere; }
 .comment::before { content: "Done: "; color: var(--muted); }
 
 .actions { display: flex; gap: 2px; align-items: center; }
@@ -134,36 +144,42 @@ h2 .n { font-family: var(--font-mono); font-weight: 400; margin-left: 6px; font-
 .link-btn { color: var(--accent); font-weight: 500; }
 .link-btn:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .star[aria-pressed="true"] { color: var(--today); }
-.star { font-size: 17px; line-height: 1; }
-.row-tools { display: flex; flex-wrap: wrap; gap: 0 2px; margin-left: -6px; }
-.link-btn { font-size: 13px; }
+.star { font-size: 18px; line-height: 1; }
+.link-btn { font-size: 14px; }
 .link-btn.danger { color: var(--danger); }
 .link-btn.danger:hover { background: color-mix(in srgb, var(--danger) 12%, transparent); }
 
 .inline { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.inline label { width: 100%; font-size: 13px; color: var(--muted); }
+.inline label { width: 100%; font-size: 14px; color: var(--muted); }
 .inline input[type="text"] { flex: 1 1 220px; min-width: 0; }
 input[type="text"], input[type="date"], select { padding: 6px 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); }
 /* Edit: every field of one task, in a grid that drops to one column on a phone. */
 .edit { grid-column: 2 / -1; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 10px; padding: 6px 0 2px; }
 .edit .field { display: grid; gap: 3px; align-content: start; min-width: 0; }
 .edit .wide { grid-column: 1 / -1; }
-.edit label { font-size: 12px; font-weight: 500; color: var(--muted); }
+.edit label { font-size: 13px; font-weight: 500; color: var(--muted); }
 .edit input, .edit select { width: 100%; min-width: 0; box-sizing: border-box; }
 .edit .field select + input { margin-top: 4px; }
-.edit .mono { font-family: var(--font-mono); font-size: 13px; }
-.edit .edit-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.edit .mono { font-family: var(--font-mono); font-size: 14px; }
+.edit .edit-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; align-items: center; }
+.edit .edit-actions .danger { margin-right: auto; }
 .btn { padding: 6px 12px; border-radius: 5px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; }
 .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--bg); font-weight: 500; }
 .btn-danger { border-color: var(--danger); color: var(--danger); }
 .btn:disabled { opacity: .5; cursor: default; }
 
-.log { grid-column: 2 / -1; display: grid; gap: 8px; padding: 4px 0 2px; }
+/* A row's details: the task's fields as a grid of facts, the status note in the table, then the comments. */
+.details { grid-column: 2 / -1; display: grid; gap: 12px; padding: 8px 0 2px; }
+.facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 14px; margin: 0; }
+.facts div { min-width: 0; }
+.facts dt, .log h3 { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.facts dd { margin: 0; overflow-wrap: anywhere; }
+.log { display: grid; gap: 8px; }
 .log ol { list-style: none; margin: 0; padding: 0 0 0 10px; border-left: 2px solid var(--line); display: grid; gap: 10px; }
 .log li { display: grid; gap: 2px; }
-.log .when { display: flex; flex-wrap: wrap; gap: 0 6px; align-items: baseline; font-family: var(--font-mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.log .when .link-btn { font-family: var(--font-body); font-size: 12px; padding: 0 4px; }
-.log .text { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; }
+.log .when { display: flex; flex-wrap: wrap; gap: 0 6px; align-items: baseline; font-family: var(--font-mono); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.log .when .link-btn { font-family: var(--font-body); font-size: 13px; padding: 0 4px; }
+.log .text { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 15px; }
 .log textarea { width: 100%; min-height: 64px; resize: vertical; padding: 6px 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); box-sizing: border-box; }
 .log .log-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
 .meta .link-btn { padding: 0 4px; margin-left: -4px; }
@@ -171,12 +187,12 @@ input[type="text"], input[type="date"], select { padding: 6px 8px; border: 1px s
 #settings summary { cursor: pointer; }
 #settings summary h2 { display: inline; }
 .settings { display: grid; gap: 6px; padding-top: 10px; max-width: 560px; }
-.settings label { font-size: 14px; font-weight: 500; }
-.settings input { font-family: var(--font-mono); font-size: 13px; min-width: 0; }
-.settings .hint { margin: 0; font-size: 13px; color: var(--muted); }
-.page-foot { margin: 0; font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.settings label { font-size: 15px; font-weight: 500; }
+.settings input { font-family: var(--font-mono); font-size: 14px; min-width: 0; }
+.settings .hint { margin: 0; font-size: 14px; color: var(--muted); }
+.page-foot { margin: 0; font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
 .settings .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-.settings #set-msg { font-size: 13px; color: var(--muted); }
+.settings #set-msg { font-size: 14px; color: var(--muted); }
 
 /* position: relative keeps the screen-reader-only headings inside the table's own scroll area, not the page's. */
 .table-wrap { position: relative; overflow-x: auto; border-top: 1px solid var(--line); container-type: inline-size; }
@@ -185,40 +201,40 @@ input[type="text"], input[type="date"], select { padding: 6px 8px; border: 1px s
 #sec-today .table-wrap { border-top-color: var(--today); }
 #sec-with .table-wrap { border-top-color: var(--discussion); }
 #sec-carry .table-wrap { border-top-color: var(--today); }
-table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
-.tasks th { text-align: left; font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); padding: 7px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
+.tasks th { text-align: left; font-size: 13px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); padding: 7px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
 .tasks td { padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
 .tasks tr.has-detail td { border-bottom: 0; }
 .tasks tr.detail td { padding-top: 0; }
 .tasks .c-check { width: 1%; padding-right: 0; }
-.tasks .c-task { min-width: 18ch; overflow-wrap: anywhere; }
+/* The Task column takes a third of the table and long titles wrap in it; the other columns share the rest, and the icon columns stay tight. */
+.tasks .c-task { min-width: 16ch; width: 34%; overflow-wrap: anywhere; }
 .tasks .c-note { min-width: 18ch; max-width: 36ch; overflow-wrap: anywhere; }
-.tasks .c-type, .tasks .c-prio, .tasks .c-ticket, .tasks .c-age, .tasks .c-log, .tasks .c-star, .tasks .c-actions { white-space: nowrap; width: 1%; }
-.tasks .c-age { font-family: var(--font-mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.tasks .c-type, .tasks .c-prio, .tasks .c-ticket, .tasks .c-age, .tasks .c-log, .tasks .c-star, .tasks .c-actions { white-space: nowrap; }
+.tasks .c-star, .tasks .c-actions { width: 1%; }
+.tasks .c-age { font-family: var(--font-mono); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .tasks .c-age.stale { color: var(--today); }
 .tasks .c-log .link-btn { padding: 0 4px; margin-left: -4px; }
-.tasks .c-actions .row-tools { flex-wrap: nowrap; margin-left: 0; }
 .tasks .c-actions .link-btn { padding: 0 4px; }
-.tasks .note::before, .tasks .comment::before { content: none; }
-.tasks .c-owner { white-space: nowrap; width: 1%; font-size: 13px; }
+.tasks .c-owner { white-space: nowrap; font-size: 14px; }
 .tasks .c-owner .me { color: var(--muted); }
 .team { display: grid; gap: 8px; padding-top: 18px; max-width: 560px; }
-.team h3 { margin: 0; font-size: 14px; font-weight: 500; }
+.team h3 { margin: 0; font-size: 15px; font-weight: 500; }
 .team ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .team li { display: flex; flex-wrap: wrap; gap: 2px 12px; align-items: baseline; }
-.team .muted { color: var(--muted); font-size: 13px; }
+.team .muted { color: var(--muted); font-size: 14px; }
 .team form { display: flex; flex-wrap: wrap; gap: 8px; }
 .team form input { flex: 1 1 200px; min-width: 0; }
-.team .hint { margin: 0; font-size: 13px; color: var(--muted); }
+.team .hint { margin: 0; font-size: 14px; color: var(--muted); }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 .add-box { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
 .add-box summary { cursor: pointer; padding: 10px 12px; color: var(--accent); font-weight: 500; }
 .add-box[open] summary { padding-bottom: 2px; }
 .add { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; padding: 8px 12px 12px; }
-.add #add-title { grid-column: 1 / -1; font-size: 16px; }
+.add #add-title { grid-column: 1 / -1; font-size: 17px; }
 .add .opt { display: flex; flex-wrap: wrap; gap: 8px; grid-column: 1 / -1; align-items: center; }
-.add #add-ticket { flex: 1 1 180px; min-width: 0; font-family: var(--font-mono); font-size: 13px; }
+.add #add-ticket { flex: 1 1 180px; min-width: 0; font-family: var(--font-mono); font-size: 14px; }
 .add #add-note { grid-column: 1 / -1; min-width: 0; }
 .add .btn-primary { grid-column: 1 / -1; justify-self: end; }
 
@@ -231,29 +247,29 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
 .wrap.is-tabs .panel .list, .wrap.is-tabs .panel .table-wrap { border-top: 0; }
 .wrap.is-tabs .panel .empty { padding-top: 10px; }
 .tabs { display: flex; flex-wrap: wrap; gap: 0 4px; border-bottom: 1px solid var(--line); }
-.tabs button { border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; padding: 8px 10px 6px; font-size: 14px; font-weight: 500; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.tabs button { border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; padding: 8px 10px 6px; font-size: 15px; font-weight: 500; color: var(--muted); cursor: pointer; white-space: nowrap; }
 .tabs button:hover { color: var(--ink); }
 .tabs button[aria-pressed="true"] { color: var(--ink); border-bottom-color: var(--accent); }
-.tabs .n { font-family: var(--font-mono); font-size: 12px; font-weight: 400; margin-left: 5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.tabs .n { font-family: var(--font-mono); font-size: 13px; font-weight: 400; margin-left: 5px; color: var(--muted); font-variant-numeric: tabular-nums; }
 /* With one tab shown, the tab names the list, so its heading is kept for screen readers only. */
 .wrap.is-tabs .panel h2 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* Jira flags: one row per ticket flagged on the Jira Dashboard, with its way onto the list at the right. */
 .flag-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 10px 0; border-bottom: 1px solid var(--line); align-items: start; }
-.flag-note { font-size: 14px; overflow-wrap: anywhere; }
+.flag-note { font-size: 15px; overflow-wrap: anywhere; }
 .flag-note::before { content: "Note: "; color: var(--muted); }
-.jstatus { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; padding: 1px 6px; border-radius: 3px; border: 1px solid currentColor; color: var(--muted); white-space: nowrap; }
+.jstatus { font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; padding: 1px 6px; border-radius: 3px; border: 1px solid currentColor; color: var(--muted); white-space: nowrap; }
 .jstatus.progress { color: var(--accent); }
 .jstatus.done { color: var(--done); }
-.on-list { font-size: 13px; color: var(--muted); white-space: nowrap; }
-.flag-act .btn { font-size: 13px; padding: 4px 10px; white-space: nowrap; }
+.on-list { font-size: 14px; color: var(--muted); white-space: nowrap; }
+.flag-act .btn { font-size: 14px; padding: 4px 10px; white-space: nowrap; }
 .tasks .flag-note::before { content: none; }
-.jira-foot { margin: 0; padding-top: 8px; font-size: 13px; color: var(--muted); }
+.jira-foot { margin: 0; padding-top: 8px; font-size: 14px; color: var(--muted); }
 .jira-foot a { color: var(--accent); }
 .sync { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: flex-end; gap: 2px 8px; }
-#jira-sync-msg { font-size: 13px; color: var(--muted); }
+#jira-sync-msg { font-size: 14px; color: var(--muted); }
 /* Before Jira flags are connected, or when Claude found no Jira Dashboard: what to do, in order. */
-.jira-setup { display: grid; gap: 6px; padding-top: 10px; font-size: 14px; max-width: 60ch; }
+.jira-setup { display: grid; gap: 6px; padding-top: 10px; font-size: 15px; max-width: 60ch; }
 .jira-setup p { margin: 0; }
 .jira-setup ol { margin: 0; padding-left: 22px; display: grid; gap: 4px; color: var(--muted); }
 .jira-setup a { color: var(--accent); }
@@ -261,12 +277,12 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
 .days { display: grid; gap: 0; border-top: 1px solid var(--line); }
 .days details { border-bottom: 1px solid var(--line); padding: 8px 0; }
 .days summary { cursor: pointer; display: flex; gap: 12px; flex-wrap: wrap; align-items: baseline; }
-.days summary .d { font-family: var(--font-mono); font-size: 13px; font-variant-numeric: tabular-nums; }
-.days summary .s { color: var(--muted); font-size: 13px; }
+.days summary .d { font-family: var(--font-mono); font-size: 14px; font-variant-numeric: tabular-nums; }
+.days summary .s { color: var(--muted); font-size: 14px; }
 .days .day-body { display: grid; gap: 6px; padding: 8px 0 4px 20px; }
 .days ul { margin: 0; padding-left: 18px; }
 .days .summary-text { white-space: pre-wrap; margin: 0; overflow-wrap: anywhere; }
-.days .k { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+.days .k { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: .06em; }
 
 @media (max-width: 480px) {
   .figures { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
@@ -406,7 +422,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
       <div class="section-head"><h2 id="h-someday">Someday<span class="n" id="n-someday"></span></h2></div>
       <ul class="list" id="list-someday"></ul>
       <div class="table-wrap" id="table-someday" hidden></div>
-      <p class="empty" id="empty-someday">Nothing for someday. Pick Someday as the day when you add a task, or use Move to Someday on one.</p>
+      <p class="empty" id="empty-someday">Nothing for someday. Pick Someday as the day when you add a task, or in a task's Edit.</p>
     </section>
 
     <section id="sec-ideas" class="panel" aria-labelledby="h-ideas">
@@ -481,7 +497,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
 (() => {
   const $ = (id) => document.getElementById(id);
   const state = { tasks: [], days: [], settings: {}, team: [], jira: [], teamLoaded: false, confirmed: false, slow: false, error: '', note: '', readOnly: false, closed: false };
-  const ui = { completing: null, noting: null, removing: null, editing: null, clearing: false, drafts: {}, logOpen: new Set(), logRemoving: null, logEditing: null, layout: 'list', tab: 'today', filter: 'all', day: null, picking: null, addWith: null, teamRemoving: null };
+  const ui = { completing: null, removing: null, editing: null, clearing: false, drafts: {}, open: new Set(), logRemoving: null, logEditing: null, layout: 'list', tab: 'today', filter: 'all', day: null, addWith: null, addDay: null, teamRemoving: null };
   const chains = new Map();
   const TYPES = ['task', 'idea', 'follow-up', 'discussion'];
   // The list tabs: one list at a time, or All of them stacked.
@@ -629,14 +645,6 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     return t.status !== 'done' && (t.status === 'waiting' || t.type === 'follow-up') && n !== null && n >= 3;
   };
 
-  function saveNote(t) {
-    const note = (ui.drafts['note-' + t.id] || '').trim();
-    ui.noting = null;
-    delete ui.drafts['note-' + t.id];
-    if (note !== (t.note || '')) patch(t.id, { note: note || null });
-    else render();
-  }
-
   // Edit: every field of a task in one form. The draft starts from the task as Edit found it, and Save writes
   // only the fields changed since, so a change made elsewhere in the meantime isn't undone.
   const isKey = (v) => /^\d{4}-\d{2}-\d{2}$/.test(v || '');
@@ -658,7 +666,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
       created: dateOf(t.created), comment: t.comment || '', doneAt: dateOf(t.doneAt),
     };
     ui.editing = { id: t.id, orig, draft: { ...orig, pick: false } };
-    ui.completing = ui.noting = ui.removing = ui.picking = null;
+    ui.completing = ui.removing = null;
     render();
     const f = $('edit-title-' + t.id); if (f) f.focus();
   }
@@ -755,6 +763,10 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
       done ? field('comment', 'What got done or decided', true, text('comment', { maxlength: 500, required: true }))
         : field('note', 'Status note', true, text('note', { maxlength: 300, placeholder: 'e.g. blocked on DNS change' })),
       el('div', { class: 'edit-actions' },
+        el('button', { type: 'button', class: 'link-btn danger', onclick: () => {
+          ui.editing = null; ui.removing = t.id; render();
+          const b = $('remove-' + t.id); if (b) b.focus();
+        } }, 'Remove task'),
         el('button', { type: 'button', class: 'btn', onclick: cancel }, 'Cancel'),
         el('button', { type: 'button', class: 'btn btn-primary', id: id('save'), disabled: !editValid(t, draft), onclick: () => saveEdit(t) }, 'Save changes'),
       ),
@@ -776,13 +788,8 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
   const prioRank = (t) => (t.priority === 'high' ? 0 : t.priority === 'low' ? 2 : 1);
   const prioChip = (t) => (PRIORITY[t.priority] && t.status !== 'done' ? el('span', { class: 'prio prio-' + t.priority }, PRIORITY[t.priority]) : null);
 
-  // The pickers on a task: `owner` is who it's for, `with` who a discussion is with, `priority` how much it matters.
+  // The team as Edit's For and With choices: `owner` is who a task is for, `with` who a discussion is with.
   const teamOptions = () => state.team.map((m) => [m.id, m.name || 'Unnamed']);
-  const PICKERS = {
-    owner: { question: 'Who is this task for?', options: () => [['', 'Me'], ...teamOptions()] },
-    with: { question: 'Who is this discussion with?', options: () => [['', 'No one'], ...teamOptions()] },
-    priority: { question: 'How important is this task?', options: () => [['high', 'High'], ['', 'Normal'], ['low', 'Low']] },
-  };
 
   function removeMember(m) {
     ui.teamRemoving = null;
@@ -807,14 +814,23 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     return day + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
   }
 
-  function toggleLog(id) {
-    if (ui.logOpen.has(id)) ui.logOpen.delete(id);
-    else ui.logOpen.add(id);
+  // Opens or closes a row's details. From the comments link it also puts the cursor in the new-comment box.
+  function toggleOpen(id, toComment) {
+    const opening = !ui.open.has(id);
+    if (opening) ui.open.add(id);
+    else ui.open.delete(id);
     ui.logRemoving = ui.logEditing = null;
     render();
     const f = $('log-' + id);
-    if (ui.logOpen.has(id) && f) f.focus();
+    if (opening && toComment && f) f.focus();
   }
+
+  // A click on a row, outside its buttons, links, fields and open panels, opens or closes its details. Selecting text doesn't.
+  const rowClick = (id) => (e) => {
+    if (e.target.closest('a, button, input, select, textarea, label, .details, .edit, .inline')) return;
+    if (window.getSelection && String(window.getSelection())) return;
+    toggleOpen(id);
+  };
 
   function addLog(t) {
     const key = 'log-' + t.id;
@@ -853,7 +869,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     return el('input', {
       type: 'text', id: key, value: ui.drafts[key] ?? '', ...attrs,
       oninput: (e) => { ui.drafts[key] = e.target.value; const b = $(key + '-save'); if (b && attrs.required) b.disabled = !e.target.value.trim(); },
-      onkeydown: (e) => { if (e.key === 'Enter') { e.preventDefault(); onEnter(); } if (e.key === 'Escape') { ui.completing = ui.noting = null; render(); } },
+      onkeydown: (e) => { if (e.key === 'Enter') { e.preventDefault(); onEnter(); } if (e.key === 'Escape') { ui.completing = null; render(); } },
     });
   }
 
@@ -880,117 +896,43 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     return el('span', { class: 'ticket', title: tk }, tk);
   }
 
-  // The pieces of one task, shared by the list and table layouts.
-  function parts(t, today) {
+  const cap = (s) => s[0].toUpperCase() + s.slice(1);
+  // A timestamp in full, in the user's local time: "Mon, 26 Oct 2026, 14:00".
+  function when(iso) {
+    const d = iso ? new Date(iso) : null;
+    if (!d || isNaN(d)) return null;
+    return d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) + ', ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+
+  // A row's details: every field at a glance, then the comments. The table has no Note column, so there they carry the status note too.
+  function details(t, withNote) {
     const done = t.status === 'done';
-    const planned = t.today === today;
     const editable = !state.readOnly;
     const typeName = TYPES.includes(t.type) ? t.type : 'task';
-    const added = daysSince(t.created);
-    const chase = toChase(t);
-    const realToday = dayKey();
-    // Push to tomorrow: on what's carried over, and on today's open tasks while today is shown.
-    const pushable = !done && t.today && (t.today < realToday || (t.today === realToday && today === realToday));
+    const today = dayKey();
     const log = logOf(t);
-    const logOpen = ui.logOpen.has(t.id);
-
-    const check = el('input', {
-      type: 'checkbox', id: 'chk-' + t.id, checked: done, disabled: !editable,
-      'aria-label': (done ? 'Reopen: ' : 'Complete: ') + (t.title || ''),
-      onchange: (e) => {
-        if (done) { reopen(t); return; }
-        e.target.checked = false;
-        ui.completing = t.id; ui.noting = ui.removing = ui.editing = null;
-        render();
-        const f = $('done-' + t.id); if (f) f.focus();
-      },
-    });
-
-    const logBtn = (short) => (log.length || editable ? el('button', {
-      type: 'button', class: 'link-btn', 'aria-expanded': String(logOpen), 'aria-controls': 'logbox-' + t.id,
-      title: log.length ? 'Show comments' : 'Add a comment',
-      onclick: () => toggleLog(t.id),
-    }, log.length ? (short ? String(log.length) : log.length + (log.length === 1 ? ' comment' : ' comments')) : (short ? 'Add' : 'Add comment')) : null);
-
-    const pickBtn = (field, label) => el('button', { type: 'button', class: 'link-btn', onclick: () => {
-      ui.picking = { id: t.id, field }; ui.completing = ui.noting = ui.removing = ui.editing = null; render();
-      const f = $('pick-' + t.id); if (f) f.focus();
-    } }, label);
-
-    const editing = Boolean(ui.editing && ui.editing.id === t.id);
-    const tools = editable ? el('div', { class: 'row-tools' },
-      el('button', { type: 'button', class: 'link-btn', 'aria-expanded': String(editing), 'aria-controls': 'editbox-' + t.id, onclick: () => startEdit(t) }, 'Edit'),
-      !done && t.someday ? el('button', { type: 'button', class: 'link-btn', onclick: () => patch(t.id, { someday: null, status: 'next' }) }, 'Move to Up Next') : null,
-      !done && !t.someday && t.status === 'next' ? el('button', { type: 'button', class: 'link-btn', onclick: () => patch(t.id, { status: 'waiting' }) }, 'Move to Waiting') : null,
-      !done && !t.someday && t.status === 'waiting' ? el('button', { type: 'button', class: 'link-btn', onclick: () => patch(t.id, { status: 'next' }) }, 'Move to Up Next') : null,
-      pushable ? el('button', { type: 'button', class: 'link-btn', onclick: () => planFor(t, addDays(realToday, 1)) }, 'Push to tomorrow') : null,
-      !done && !t.someday ? el('button', { type: 'button', class: 'link-btn', onclick: () => patch(t.id, { someday: true, today: null, status: 'next' }) }, 'Move to Someday') : null,
-      !done ? el('button', { type: 'button', class: 'link-btn', onclick: () => {
-        ui.noting = t.id; ui.completing = ui.removing = ui.editing = null; ui.drafts['note-' + t.id] = t.note || ''; render();
-        const f = $('note-' + t.id); if (f) f.focus();
-      } }, t.note ? 'Edit status' : 'Add status') : null,
-      !done ? pickBtn('priority', 'Priority') : null,
-      state.team.length && !done ? pickBtn('owner', t.owner ? 'Reassign' : 'Assign') : null,
-      state.team.length && !done && (typeName === 'discussion' || t.with) ? pickBtn('with', t.with ? 'Change who' : 'With…') : null,
-      el('button', { type: 'button', class: 'link-btn danger', onclick: () => { ui.removing = t.id; ui.completing = ui.noting = ui.editing = null; render(); } }, 'Remove'),
-    ) : null;
-
-    const star = !done && editable ? el('button', {
-      type: 'button', class: 'icon-btn star', 'aria-pressed': String(planned),
-      'aria-label': (planned ? 'Take off ' : 'Plan for ') + dayWord(today, dayKey()), title: (planned ? 'Take off ' : 'Plan for ') + dayWord(today, dayKey()),
-      onclick: () => (planned ? patch(t.id, { today: null }) : planFor(t, today)),
-    }, planned ? '★' : '☆') : null;
-
-    const tag = el('span', { class: 'tag tag-' + typeName }, typeName);
-    const ticket = t.ticket ? ticketNode(String(t.ticket)) : null;
-
-    const panels = [];
-    if (editing && editable) panels.push(editForm(t));
-    if (ui.picking && ui.picking.id === t.id) {
-      const field = ui.picking.field;
-      const key = 'pick-' + t.id;
-      const pick = el('select', { id: key }, PICKERS[field].options().map(([value, label]) => el('option', { value }, label)));
-      pick.value = t[field] || '';
-      panels.push(el('div', { class: 'inline' },
-        el('label', { for: key }, PICKERS[field].question),
-        pick,
-        el('button', { type: 'button', class: 'btn btn-primary', onclick: () => {
-          const value = $(key).value;
-          ui.picking = null;
-          if (value !== (t[field] || '')) patch(t.id, { [field]: value || null });
-          else render();
-        } }, 'Save'),
-        el('button', { type: 'button', class: 'btn', onclick: () => { ui.picking = null; render(); } }, 'Cancel'),
-      ));
-    }
-    if (ui.completing === t.id) {
-      const key = 'done-' + t.id;
-      panels.push(el('div', { class: 'inline' },
-        el('label', { for: key }, 'What got done or decided? A comment is needed to finish a task.'),
-        draftInput(key, { placeholder: 'e.g. Shipped the fix, PR merged', maxlength: 500, required: true }, () => complete(t)),
-        el('button', { type: 'button', class: 'btn btn-primary', id: key + '-save', disabled: !(ui.drafts[key] || '').trim(), onclick: () => complete(t) }, 'Mark done'),
-        el('button', { type: 'button', class: 'btn', onclick: () => { ui.completing = null; render(); } }, 'Cancel'),
-      ));
-    }
-    if (ui.noting === t.id) {
-      const key = 'note-' + t.id;
-      panels.push(el('div', { class: 'inline' },
-        el('label', { for: key }, 'Status note, e.g. blocked on DNS change'),
-        draftInput(key, { maxlength: 300 }, () => saveNote(t)),
-        el('button', { type: 'button', class: 'btn btn-primary', onclick: () => saveNote(t) }, 'Save'),
-        el('button', { type: 'button', class: 'btn', onclick: () => { ui.noting = null; render(); } }, 'Cancel'),
-      ));
-    }
-    if (ui.removing === t.id) {
-      panels.push(el('div', { class: 'inline' },
-        el('span', {}, 'Remove this task for good?'),
-        el('button', { type: 'button', class: 'btn btn-danger', onclick: () => { ui.removing = null; remove(t.id); } }, 'Remove'),
-        el('button', { type: 'button', class: 'btn', onclick: () => { ui.removing = null; render(); } }, 'Keep'),
-      ));
-    }
-    if (logOpen) {
-      const key = 'log-' + t.id;
-      panels.push(el('div', { class: 'log', id: 'logbox-' + t.id },
+    const fact = (label, value) => (value === null || value === undefined || value === '' ? null : el('div', {}, el('dt', {}, label), el('dd', {}, value)));
+    const day = t.someday ? 'Someday' : t.today ? cap(shortDay(t.today, today)) + (!done && t.today < today ? ' (carried over)' : '') : 'No day';
+    const list = done ? 'Done' : t.someday ? 'Someday' : typeName === 'idea' ? 'Ideas' : t.status === 'waiting' ? 'Waiting On' : 'Up Next';
+    const key = 'log-' + t.id;
+    return el('div', { class: 'details', id: 'details-' + t.id },
+      el('dl', { class: 'facts' },
+        fact('Type', cap(typeName)),
+        fact('List', list),
+        done ? null : fact('Priority', t.priority === 'high' ? 'High' : t.priority === 'low' ? 'Low' : 'Normal'),
+        fact('Day', day),
+        fact('For', t.owner ? memberName(t.owner) : 'Me'),
+        t.with ? fact('With', memberName(t.with)) : null,
+        t.ticket ? fact('Ticket', ticketNode(String(t.ticket))) : null,
+        fact('Added', when(t.created)),
+        done ? fact('Done', when(t.doneAt)) : null,
+        t.via === 'chat' ? fact('Added by', 'Claude, from a chat') : null,
+        t.flag ? fact('Jira flag', String(t.flag)) : null,
+      ),
+      withNote && !done && t.note ? el('div', { class: 'note' }, t.note) : null,
+      withNote && done && t.comment ? el('div', { class: 'comment' }, t.comment) : null,
+      el('div', { class: 'log', id: 'logbox-' + t.id },
+        el('h3', {}, 'Comments'),
         log.length ? el('ol', {}, log.map((entry, i) => {
           const rk = t.id + ':' + i;
           const ek = 'logedit-' + t.id;
@@ -1018,19 +960,91 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
             el('div', { class: 'when' }, el('span', {}, stamp(entry.at)), tools),
             el('div', { class: 'text' }, String(entry.text || '')),
           );
-        })) : null,
+        })) : (editable ? null : el('p', { class: 'empty' }, 'No comments.')),
         editable ? el('textarea', {
           id: key, maxlength: 2000, 'aria-label': 'New comment', placeholder: 'Progress, findings, next steps…',
           oninput: (e) => { ui.drafts[key] = e.target.value; },
           onkeydown: (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); addLog(t); } },
         }, ui.drafts[key] ?? '') : null,
-        editable ? el('div', { class: 'log-actions' },
-          el('button', { type: 'button', class: 'btn', onclick: () => toggleLog(t.id) }, 'Close'),
-          el('button', { type: 'button', class: 'btn btn-primary', onclick: () => addLog(t) }, 'Add comment'),
-        ) : null,
+        el('div', { class: 'log-actions' },
+          el('button', { type: 'button', class: 'btn', onclick: () => toggleOpen(t.id) }, 'Close'),
+          editable ? el('button', { type: 'button', class: 'btn btn-primary', onclick: () => addLog(t) }, 'Add comment') : null,
+        ),
+      ),
+    );
+  }
+
+  // The pieces of one task, shared by the list and table layouts.
+  function parts(t, today, inTable) {
+    const done = t.status === 'done';
+    const planned = t.today === today;
+    const editable = !state.readOnly;
+    const typeName = TYPES.includes(t.type) ? t.type : 'task';
+    const added = daysSince(t.created);
+    const chase = toChase(t);
+    const log = logOf(t);
+    const open = ui.open.has(t.id);
+
+    const check = el('input', {
+      type: 'checkbox', id: 'chk-' + t.id, checked: done, disabled: !editable,
+      'aria-label': (done ? 'Reopen: ' : 'Complete: ') + (t.title || ''),
+      onchange: (e) => {
+        if (done) { reopen(t); return; }
+        e.target.checked = false;
+        ui.completing = t.id; ui.removing = ui.editing = null;
+        render();
+        const f = $('done-' + t.id); if (f) f.focus();
+      },
+    });
+
+    // The title opens and closes the row's details, as a click anywhere else on the row does; the comments link opens them at the new-comment box.
+    const titleBtn = el('button', {
+      type: 'button', class: 'title-btn', 'aria-expanded': String(open), 'aria-controls': 'details-' + t.id,
+      onclick: () => toggleOpen(t.id),
+    }, el('span', { class: 'title' }, t.title || '(untitled)'));
+    const logBtn = (short) => (log.length || editable ? el('button', {
+      type: 'button', class: 'link-btn', 'aria-expanded': String(open), 'aria-controls': 'details-' + t.id,
+      title: log.length ? 'Show comments' : 'Add a comment',
+      onclick: () => toggleOpen(t.id, true),
+    }, log.length ? (short ? String(log.length) : log.length + (log.length === 1 ? ' comment' : ' comments')) : (short ? 'Add' : 'Add comment')) : null);
+
+    // Edit is a row's one tool: every change, removing the task included, starts there.
+    const editing = Boolean(ui.editing && ui.editing.id === t.id);
+    const tools = editable ? el('button', {
+      type: 'button', class: 'link-btn', 'aria-expanded': String(editing), 'aria-controls': 'editbox-' + t.id, 'aria-label': 'Edit: ' + (t.title || 'task'),
+      onclick: () => startEdit(t),
+    }, 'Edit') : null;
+
+    const star = !done && editable ? el('button', {
+      type: 'button', class: 'icon-btn star', 'aria-pressed': String(planned),
+      'aria-label': (planned ? 'Take off ' : 'Plan for ') + dayWord(today, dayKey()), title: (planned ? 'Take off ' : 'Plan for ') + dayWord(today, dayKey()),
+      onclick: () => (planned ? patch(t.id, { today: null }) : planFor(t, today)),
+    }, planned ? '★' : '☆') : null;
+
+    const tag = el('span', { class: 'tag tag-' + typeName }, typeName);
+    const ticket = t.ticket ? ticketNode(String(t.ticket)) : null;
+
+    // While a task is being edited, its form takes the place of its details.
+    const panels = [];
+    if (editing && editable) panels.push(editForm(t));
+    else if (open) panels.push(details(t, inTable));
+    if (ui.completing === t.id) {
+      const key = 'done-' + t.id;
+      panels.push(el('div', { class: 'inline' },
+        el('label', { for: key }, 'What got done or decided? A comment is needed to finish a task.'),
+        draftInput(key, { placeholder: 'e.g. Shipped the fix, PR merged', maxlength: 500, required: true }, () => complete(t)),
+        el('button', { type: 'button', class: 'btn btn-primary', id: key + '-save', disabled: !(ui.drafts[key] || '').trim(), onclick: () => complete(t) }, 'Mark done'),
+        el('button', { type: 'button', class: 'btn', onclick: () => { ui.completing = null; render(); } }, 'Cancel'),
       ));
     }
-    return { done, added, chase, check, logBtn, tools, star, tag, ticket, panels };
+    if (ui.removing === t.id) {
+      panels.push(el('div', { class: 'inline' },
+        el('span', {}, 'Remove this task for good?'),
+        el('button', { type: 'button', class: 'btn btn-danger', id: 'remove-' + t.id, onclick: () => { ui.removing = null; remove(t.id); } }, 'Remove'),
+        el('button', { type: 'button', class: 'btn', onclick: () => { ui.removing = null; render(); } }, 'Keep'),
+      ));
+    }
+    return { done, open, added, chase, check, titleBtn, logBtn, tools, star, tag, ticket, panels };
   }
 
   // Tasks Claude added from a chat carry `via: "chat"`.
@@ -1038,17 +1052,18 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
   const chaseText = (t, n) => (t.status === 'waiting' ? 'waiting ' : 'open ') + n + ' days';
 
   function listRow(t, today) {
-    const p = parts(t, today);
+    const p = parts(t, today, false);
     const meta = el('div', { class: 'meta' },
       el('span', {}, ago(p.added, 'added')),
       viaChip(t),
       p.chase ? el('span', { class: 'stale' }, chaseText(t, p.added)) : null,
       p.done && t.doneAt ? el('span', {}, ago(daysSince(t.doneAt), 'done')) : null,
       p.logBtn(false),
+      p.tools,
     );
     const body = el('div', { class: 'body' },
       el('div', { class: 'title-line' },
-        el('span', { class: 'title' }, t.title || '(untitled)'), p.tag, prioChip(t), p.ticket,
+        p.titleBtn, p.tag, prioChip(t), p.ticket,
         t.owner ? el('span', { class: 'owner' }, 'for ' + memberName(t.owner)) : null,
         withChip(t),
         planChip(t, today),
@@ -1057,13 +1072,13 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
       t.note && !p.done ? el('div', { class: 'note' }, t.note) : null,
       p.done && t.comment ? el('div', { class: 'comment' }, t.comment) : null,
       meta,
-      p.tools,
     );
-    return el('li', { class: 'task' + (p.done ? ' is-done' : '') }, p.check, body, el('div', { class: 'actions' }, p.star), p.panels);
+    return el('li', { class: 'task' + (p.done ? ' is-done' : '') + (p.open ? ' is-open' : ''), onclick: rowClick(t.id) }, p.check, body, el('div', { class: 'actions' }, p.star), p.panels);
   }
 
   // Table columns: [heading, shown only to screen readers].
-  const COLUMNS = [['Done', true], ['Task'], ['Type'], ['Priority'], ['Ticket'], ['Note'], ['Age'], ['Comments'], ['Today', true], ['Actions', true]];
+  // The status note has no column: it's in the row's details.
+  const COLUMNS = [['Done', true], ['Task'], ['Type'], ['Priority'], ['Ticket'], ['Age'], ['Comments'], ['Today', true], ['Actions', true]];
   const columns = (withOwner) => (withOwner ? [...COLUMNS.slice(0, 2), ['For'], ...COLUMNS.slice(2)] : COLUMNS);
 
   function ageCell(t, p) {
@@ -1076,25 +1091,21 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
   }
 
   function tableRows(t, today, withOwner) {
-    const p = parts(t, today);
-    const note = p.done
-      ? (t.comment ? el('span', { class: 'comment' }, t.comment) : null)
-      : (t.note ? el('span', { class: 'note' }, t.note) : null);
-    const tr = el('tr', { class: [p.done ? 'is-done' : '', p.panels.length ? 'has-detail' : ''].join(' ').trim() || null },
+    const p = parts(t, today, true);
+    const tr = el('tr', { class: ['row', p.done ? 'is-done' : '', p.open ? 'is-open' : '', p.panels.length ? 'has-detail' : ''].join(' ').trim().replace(/\s+/g, ' '), onclick: rowClick(t.id) },
       el('td', { class: 'c-check' }, p.check),
-      el('td', { class: 'c-task' }, el('span', { class: 'title' }, t.title || '(untitled)'), withChip(t), planChip(t, today), carryChip(t), viaChip(t)),
+      el('td', { class: 'c-task' }, p.titleBtn, withChip(t), planChip(t, today), carryChip(t), viaChip(t)),
       withOwner ? el('td', { class: 'c-owner' }, t.owner ? el('span', { class: 'owner' }, memberName(t.owner)) : el('span', { class: 'me' }, 'Me')) : null,
       el('td', { class: 'c-type' }, p.tag),
       el('td', { class: 'c-prio' }, prioChip(t)),
       el('td', { class: 'c-ticket' }, p.ticket),
-      el('td', { class: 'c-note' }, note),
       el('td', { class: 'c-age' + (p.chase ? ' stale' : ''), title: p.chase ? chaseText(t, p.added) : null }, ageCell(t, p)),
       el('td', { class: 'c-log' }, p.logBtn(true)),
       el('td', { class: 'c-star' }, p.star),
       el('td', { class: 'c-actions' }, p.tools),
     );
     if (!p.panels.length) return [tr];
-    return [tr, el('tr', { class: 'detail' }, el('td', { colspan: columns(withOwner).length }, p.panels))];
+    return [tr, el('tr', { class: 'detail' + (p.open ? ' is-open' : '') }, el('td', { colspan: columns(withOwner).length }, p.panels))];
   }
 
   function fill(name, items, today) {
@@ -1317,7 +1328,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     if (person) {
       const name = memberName(person);
       $('with-label').textContent = '1:1 with ' + name;
-      $('empty-with').textContent = 'Nothing to discuss with ' + name + ' yet. Add a discussion with ' + name + ', or use With… on one you have.';
+      $('empty-with').textContent = 'Nothing to discuss with ' + name + ' yet. Add a discussion with ' + name + ', or pick ' + name + ' under With in a discussion\'s Edit.';
     }
     fill('today', planned, sel);
     fill('carry', carried, sel);
@@ -1367,7 +1378,8 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     renderJira(sel, today, near ? selTitle : $('show-today-label').textContent);
     // The add box's Day: no day, one of the next seven, or Someday, which always goes in Up Next.
     const addDay = $('add-day');
-    if (document.activeElement !== addDay) syncSelect(addDay, [['', 'No day'], ...dayChoices(today), ['someday', 'Someday']]);
+    // It starts on today, until the user picks another day for the task they're adding.
+    if (document.activeElement !== addDay) syncSelect(addDay, [['', 'No day'], ...dayChoices(today), ['someday', 'Someday']], ui.addDay ?? today);
     $('add-status').hidden = addDay.value === 'someday';
 
     const clear = $('clear-done');
@@ -1436,7 +1448,8 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
     $('add-note').value = '';
     $('add-note').hidden = true;
     $('add-note-btn').hidden = false;
-    $('add-day').value = '';
+    ui.addDay = null;
+    $('add-day').value = dayKey();
     $('add-status').hidden = false;
     $('add-owner').value = '';
     $('add-priority').value = '';
@@ -1456,7 +1469,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 14px; }
   });
 
   $('add-type').addEventListener('change', render);
-  $('add-day').addEventListener('change', render);
+  $('add-day').addEventListener('change', (e) => { ui.addDay = e.target.value; render(); });
   $('add-note-btn').addEventListener('click', () => {
     $('add-note').hidden = false;
     $('add-note-btn').hidden = true;
