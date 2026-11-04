@@ -25,7 +25,7 @@ A bar above the lists holds the **Day** and **People** filters and a
 **List | Table** switch, which shows each section as a list or as a table
 with columns for type, priority, ticket, age and comments. Rows light up under
 the pointer; click one to open its details: every field, the status note in
-the table, and its comments. Each device
+the table, and its comments. Opening a row closes the one already open. Each device
 remembers its own tab and layout, so a phone can stay on the Today list while
 a desktop shows All as tables. The **Add a task** box above the tabs folds
 away when you don't need it, and each device remembers that too. Its **Day**

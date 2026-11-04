@@ -1,5 +1,5 @@
 <title>Daily Organizer</title>
-<meta name="daily-organizer-version" content="0.12.0">
+<meta name="daily-organizer-version" content="0.12.1">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -814,13 +814,18 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     return day + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
   }
 
-  // Opens or closes a row's details. From the comments link it also puts the cursor in the new-comment box.
+  // Opens or closes a row's details; opening one closes any other. The row clicked stays where it was on screen,
+  // though a row above it folds away. From the comments link it also puts the cursor in the new-comment box.
   function toggleOpen(id, toComment) {
     const opening = !ui.open.has(id);
-    if (opening) ui.open.add(id);
+    const anchor = () => document.querySelector('.title-btn[aria-controls="details-' + CSS.escape(id) + '"]');
+    const before = anchor() ? anchor().getBoundingClientRect().top : null;
+    if (opening) { ui.open.clear(); ui.open.add(id); }
     else ui.open.delete(id);
     ui.logRemoving = ui.logEditing = null;
     render();
+    const a = anchor();
+    if (before !== null && a) window.scrollBy(0, a.getBoundingClientRect().top - before);
     const f = $('log-' + id);
     if (opening && toComment && f) f.focus();
   }
