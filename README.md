@@ -214,15 +214,17 @@ moves without your yes.
 
 ## Where it works
 
-Claude creates the organizer and changes its tasks with the `Artifact` and
-`ArtifactData` tools. Claude Code sessions have both. Chat artifacts on
-claude.ai have no database.
+Claude creates the organizer and changes its tasks with claude.ai's artifact
+tools, which read and write the artifact's own database. Claude Code sessions
+have them, and so do claude.ai chats. An artifact made inside a chat, without
+an artifact link, has no database.
 
 | Where | Works? |
 | --- | --- |
 | Claude Code CLI, desktop Code tab, VS Code | ✔ full: starts the organizer, changes tasks, plans and wraps up your day |
 | The organizer page, wherever you open it (web, desktop, mobile) | ✔ add, edit, star, finish and remove tasks, add status notes and comments, keep topics with notes and checklists |
-| claude.ai Chat, Cowork, mobile chat | ⚠ can't change the organizer's tasks. Claude can still keep an older-style tracker there, with the tasks in the artifact's code and the same rules |
+| claude.ai Chat | ✔ reads and changes your organizer's tasks: add, update, finish, plan and wrap up from a chat (type `/daily-organizer` or ask by name). Starting a new organizer or updating its page from a chat isn't tested yet |
+| Cowork, mobile chat | not tested yet. Where Claude has the artifact tools it works as in Chat; where it doesn't, it says it can't reach the organizer, and the page still works |
 | Claude Code cloud sessions (claude.ai/code) | ✔ only if it's on your claude.ai account and the session has the Artifact tools |
 
 Outside Claude Code, skills need a Pro, Max, Team or Enterprise plan, with

@@ -199,8 +199,8 @@ A tracker made before this skill used a database keeps its tasks inside the page
 
 ## Without the data tool
 
-Making or writing the organizer needs the `Artifact` tool with `capabilities` and the `ArtifactData` tool. Claude Code sessions have both. Chat artifacts on claude.ai have no database. When this session lacks them:
-- **For an organizer that already exists:** say you can't change its rows from here. The user can add, complete and plan tasks on the page itself, wherever they open it, or ask from a Claude Code session.
+Making or writing the organizer needs claude.ai's artifact tools: publishing with `capabilities` (`Artifact`) and reading and writing rows (`ArtifactData`). They may go by other names, such as artifact database tools for listing, getting and writing rows; use whichever this session has. Claude Code sessions have them, and so do claude.ai chats. An artifact made inside a chat, with no artifact link (a chat artifact), has no database. When this session has no way to write the organizer's rows:
+- **For an organizer that already exists:** say you can't change its rows from here. The user can add, complete and plan tasks on the page itself, wherever they open it, or ask from a claude.ai chat or a Claude Code session, which have the tools.
 - **For a chat-artifact tracker:** keep working the older way. Tasks stay in the artifact's code, the same task rules apply, and missing fields (type, ticket, status note, comments, completion comment) get added to the artifact's code rather than tracked in chat. Keep its plain look.
 
 ## Updating the page
