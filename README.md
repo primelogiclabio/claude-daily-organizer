@@ -20,7 +20,8 @@ as **Carried over** under Today, marked "from Oct 9 · 23 days"; give one a new
 day with **Edit**.
 
 The header shows today in four figures (open today, carried over, to chase,
-done today) and a bar for how much of today's plan is done. "To chase" counts
+done today) and a bar for how much of today's plan is done. It stays at the
+top as you scroll; on a phone it shrinks to a short strip. "To chase" counts
 follow-ups and waiting tasks that are 3 or more days old.
 
 A bar above the lists holds the **Day** and **People** filters and a
@@ -29,11 +30,14 @@ with columns for type, priority, ticket, age and comments. Rows light up under
 the pointer; click one to open its details: every field, the status note in
 the table, and its comments. Opening a row closes the one already open. Each device
 remembers its own tab and layout, so a phone can stay on the Today list while
-a desktop shows All as tables. The **Add a task** box above the list folds
-away when you don't need it, and each device remembers that too. Its **Day**
-picker starts on today, and can plan a new task for one of the next six days,
-**Someday** or no day; **+ Note** adds a status note as you add it. Tasks Claude added from a chat
-say "via chat". The bottom of the page shows its version.
+a desktop shows All as tables. The **Add a task** box above the list starts
+folded each time the page opens, leaving the room to the list; click it to
+open the form. It starts from the list you're on: today on Today, no day on Up Next, Waiting On on
+Waiting, tomorrow on Upcoming, Someday on Someday, an idea on Ideas, and a
+discussion with the person you're viewing on People; anything you change
+yourself stays until you add the task. Its **Day** picker can plan a new task
+for one of the next six days, **Someday** or no day; **+ Note** adds a status note as you add it. Tasks Claude added from a chat
+say "via chat". The page's version shows beside the date and at the bottom.
 
 It used to be called **workday-tracker**. See [Renamed](#renamed-from-workday-tracker)
 if you had that installed.
@@ -94,6 +98,9 @@ pick shows its **Notes** in the middle pane, which takes all the width the
 window has to spare: bullet points, without dates, each of which you can
 edit or remove. Its **Checklist** sits on the right, with items to tick
 off and how many are done.
+A **With** dropdown under the topic's name says whom it's a joint effort or
+discussion with, from the same team as your tasks; the Topics screen has its
+own **Settings** for adding people, so you can add them from either screen.
 **Edit** on a topic renames or removes it. On a narrower screen the
 checklist goes under the notes; on a phone you see the list, then the topic
 you tap, with **‹ All topics** to go back. Each device remembers the screen
@@ -113,15 +120,22 @@ Tasks are yours unless you say otherwise. To hand some out:
 - Pick who a task is for when you add it, under **For** in a task's **Edit**, or by
   asking ("add a follow-up for Sam to check the logs"). The task then shows
   "for Sam".
-- A discussion is always yours, with one or more people: pick them under
-  **With** when you add it or in the discussion's **Edit**, as many as it
-  involves, or ask ("add a discussion with Sam and Priya about the Q3
+- A discussion is always yours, with one or more people: tick them in the
+  **With** dropdown when you add it or in the discussion's **Edit**, as many
+  as it involves, or ask ("add a discussion with Sam and Priya about the Q3
   budget"). It shows "with Sam and Priya", and it's on each one's 1:1 list.
   Discussions don't offer **For**.
 - The **People** filter above the lists shows **Everyone**, **Mine** or one
   person. Picking one person shows a **1:1 with** section first, listing the
   open discussions with them, then the tasks they have. Ask Claude "what's on
   my 1:1 with Sam?" for the same list. Each device remembers its choice.
+- The **People** item in the left pane lists the open tasks that involve
+  your team, for them or discussions with them, grouped by who's involved
+  ("Sam", "Priya", "Priya and Sam"). While People is shown, your team is
+  listed under it, each person with their count, and it folds away on every
+  other list: pick one to see only their tasks, discussions first, and a
+  new task starts as a discussion with them. On a phone the names are a
+  dropdown at the top of the list. Each device remembers the person.
 - Removing someone from the team gives their tasks back to you and takes
   them off the discussions they were part of.
 

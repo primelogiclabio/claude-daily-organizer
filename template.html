@@ -1,13 +1,13 @@
 <title>Daily Organizer</title>
-<meta name="daily-organizer-version" content="0.13.0">
+<meta name="daily-organizer-version" content="0.14.0">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
 /* Layout: the page takes the window's width. The dated header has today's figures, the plan bar and a Tasks | Topics switch.
-   Tasks: the lists in a pane down the left (Today with what's carried over, Up Next, Waiting On, Upcoming, Someday, Ideas, Jira flags and Done, or All of them stacked),
-   and beside it the day and people filters, a 1:1 agenda when one person is picked, the foldable add box, the list shown, the day log and settings.
+   Tasks: the lists in a pane down the left (Today with what's carried over, Up Next, Waiting On, Upcoming, Someday, Ideas, People with each team member under it, Jira flags and Done, or All of them stacked),
+   and beside it the day and people filters, a 1:1 agenda when one person is picked, the add box (folded until clicked), the list shown, the day log and settings.
    On a phone the pane becomes tabs right above the list. Topics: topics down the left, the picked one's notes in the middle and its checklist on the right. */
 :root {
   --bg: #f4f6f9;
@@ -52,7 +52,14 @@ button, input, select, textarea { font: inherit; color: inherit; }
 /* The hidden attribute wins over display rules such as section's grid, or hidden sections and filters would still show. */
 [hidden] { display: none !important; }
 
-.day { display: grid; gap: 2px; min-width: 0; }
+/* The header stays at the top while the page scrolls, on the page's background drawn edge to edge; a line marks its edge once content is under it.
+   Its height is kept in --head-h, so the left pane and scrolled-to rows sit below it. */
+.day { display: grid; gap: 2px; min-width: 0; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; padding-block: 10px; margin-block: -10px; background: var(--bg); box-shadow: 0 0 0 100vmax var(--bg); clip-path: inset(0 -100vmax); }
+.day.is-stuck { box-shadow: inset 0 -1px 0 var(--line), 0 0 0 100vmax var(--bg); }
+html { scroll-padding-top: calc(var(--head-h, 0px) + 8px); }
+/* The page's version sits beside the date, as well as in the footer. */
+.date-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; }
+.date-row .ver { font-family: var(--font-mono); font-size: 13px; color: var(--muted); white-space: nowrap; }
 /* The filters wrap to two rows on a phone: the day, then people with the layout switch kept at the right. */
 .filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
 .filters #view-toggle { margin-left: auto; }
@@ -84,6 +91,7 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: c
 .fig { display: grid; gap: 4px; align-content: start; min-width: 0; padding: 8px 10px 9px; border: 1px solid var(--line); border-top: 3px solid var(--fig); border-radius: 6px; background: var(--surface); }
 .fig .num { font-family: var(--font-display); font-size: 33px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
 .fig .lbl { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.fig .l-short { display: none; }
 .fig.is-zero .num { color: var(--muted); font-weight: 400; }
 #fig-open { --fig: var(--accent); }
 #fig-carry { --fig: var(--today); }
@@ -226,14 +234,22 @@ input[type="text"], input[type="date"], select { padding: 6px 8px; border: 1px s
 .points .item { position: relative; padding-left: 18px; font-size: 16px; }
 .points .item::before { content: "•"; position: absolute; left: 4px; color: var(--muted); }
 .topics .back { display: none; justify-self: start; padding-left: 0; }
+/* Who a topic is with sits under its name; the Topics screen's Settings holds the same team as the Tasks screen's. */
+.topic-with { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.topic-settings-btn { margin-top: 10px; }
+.topic-pick[aria-pressed="true"] { border-left-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.topic-settings { grid-column: 2 / -1; gap: 10px; padding: 14px 16px 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.topic-settings .team { padding-top: 0; }
 @media (max-width: 1000px) {
   .topics { grid-template-columns: minmax(160px, 210px) minmax(0, 1fr); }
   .topic-nav { grid-row: span 2; }
+  .topic-settings { grid-column: 2; }
 }
 @media (max-width: 700px) {
   .topics { grid-template-columns: minmax(0, 1fr); }
   .topic-nav { grid-row: auto; }
-  .topics.is-picked .topic-nav, .topics:not(.is-picked) .topic-main, .topics:not(.is-picked) .topic-side { display: none; }
+  .topic-settings { grid-column: auto; }
+  .topics.is-picked .topic-nav, .topics:not(.is-picked) .topic-main, .topics:not(.is-picked) .topic-side, .topics:not(.is-picked) .topic-settings { display: none; }
   .topics .back { display: inline-block; }
 }
 
@@ -279,14 +295,27 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 .team .hint { margin: 0; font-size: 14px; color: var(--muted); }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-/* Who a discussion is with: a toggle per team member, any number of them. */
-.with-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
-.with-pick .lbl { font-size: 14px; color: var(--muted); }
-.edit .with-pick .lbl { font-size: 13px; font-weight: 500; }
-.chip { padding: 3px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-size: 14px; cursor: pointer; }
-.chip:hover { border-color: var(--discussion); }
-.chip[aria-pressed="true"] { border-color: var(--discussion); background: color-mix(in srgb, var(--discussion) 14%, transparent); color: var(--discussion); font-weight: 500; }
-.chip[aria-pressed="true"]::before { content: "✓ "; }
+/* Who a discussion is with: a dropdown with a checkbox per team member, so a long team doesn't crowd the add box. */
+.multi { position: relative; min-width: 0; }
+.multi summary { list-style: none; display: flex; align-items: center; gap: 4px; max-width: 280px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); cursor: pointer; }
+.multi summary::-webkit-details-marker { display: none; }
+.multi summary::after { content: "▾"; margin-left: auto; padding-left: 6px; color: var(--muted); }
+.multi summary .lbl { color: var(--muted); }
+.multi summary .val { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.multi .menu { position: absolute; z-index: 5; top: calc(100% + 4px); left: 0; min-width: 100%; width: max-content; max-width: 280px; max-height: 260px; overflow: auto; display: grid; gap: 1px; padding: 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); box-shadow: 0 6px 18px color-mix(in srgb, var(--ink) 16%, transparent); box-sizing: border-box; }
+.multi .menu label { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 4px; cursor: pointer; overflow-wrap: anywhere; }
+.multi .menu label:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.multi .menu input { width: 16px; height: 16px; margin: 0; flex: none; accent-color: var(--discussion); }
+/* In Edit, which can sit inside a scrolling table, the list opens in place rather than over the page. */
+.edit .multi summary { max-width: none; }
+.edit .multi .menu { position: static; width: auto; max-width: none; margin-top: 4px; box-shadow: none; }
+/* People: open tasks grouped by the team members they involve; one person's on their own. */
+.people-select { display: none; justify-self: start; max-width: 100%; margin: 10px 0 4px; }
+.people-groups { display: grid; gap: 22px; }
+.people-group { display: grid; gap: 6px; min-width: 0; }
+.people-group h3 { margin: 0; font-size: 14px; font-weight: 600; color: var(--person); }
+.people-group h3 .link-btn { padding: 0 2px; font-size: 14px; font-weight: 600; color: var(--person); }
+.people-group h3 .n { margin-left: 6px; font-family: var(--font-mono); font-size: 13px; font-weight: 400; color: var(--muted); }
 /* The day bar and the add box sit together, above the list they act on. */
 .controls { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; min-width: 0; }
 .add-box { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
@@ -304,23 +333,34 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 .task-screen { display: grid; grid-template-columns: minmax(180px, 240px) minmax(0, 1fr); gap: 28px 20px; align-items: start; }
 .task-main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; min-width: 0; }
 .lists { display: grid; gap: 28px; min-width: 0; }
-.tabs { display: flex; flex-direction: column; gap: 2px; position: sticky; top: 16px; }
+/* A long team can make the pane taller than the window, so it scrolls on its own. */
+.tabs { display: flex; flex-direction: column; gap: 2px; position: sticky; top: calc(var(--head-h, 0px) + 12px); max-height: calc(100vh - var(--head-h, 0px) - 24px); overflow-y: auto; }
 .tabs button { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; width: 100%; padding: 7px 10px 8px; border: 0; border-left: 3px solid transparent; border-radius: 0 6px 6px 0; background: none; font-size: 15px; font-weight: 500; color: var(--muted); text-align: left; cursor: pointer; white-space: nowrap; }
 .tabs button:hover { color: var(--ink); background: color-mix(in srgb, var(--accent) 8%, transparent); }
 .tabs button[aria-pressed="true"] { color: var(--ink); border-left-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .tabs #show-all { margin-top: 8px; }
+/* Under People, the team, each with their open count; the person picked is marked rather than People itself. */
+.pane-people { display: grid; gap: 1px; }
+.tabs .pane-people button { padding: 5px 10px 6px 24px; font-size: 14px; }
+.tabs #show-people.has-person:not(:hover) { background: none; border-left-color: transparent; }
+/* The team shows under People only while People is the list shown; its arrow shows which. */
+.pcaret { margin-left: 6px; font-size: 12px; color: var(--muted); }
 .tabs #show-settings { margin-top: 18px; }
 .tabs .n { font-family: var(--font-mono); font-size: 13px; font-weight: 400; margin-left: 5px; color: var(--muted); font-variant-numeric: tabular-nums; }
 @media (max-width: 700px) {
   /* One column: the filters and the add box, then the tabs right over the list they show, then the day log and settings. */
   .task-screen { grid-template-columns: minmax(0, 1fr); }
   .task-main { display: contents; }
-  .tabs { order: 1; position: static; flex-direction: row; flex-wrap: wrap; gap: 0 4px; border-bottom: 1px solid var(--line); }
+  .tabs { order: 1; position: static; max-height: none; overflow: visible; flex-direction: row; flex-wrap: wrap; gap: 0 4px; border-bottom: 1px solid var(--line); }
   #lists, #sec-days, #sec-settings { order: 2; }
   .tabs button { display: inline; width: auto; padding: 8px 10px 6px; border-left: 0; border-bottom: 2px solid transparent; border-radius: 0; margin-bottom: -1px; background: none; }
   .tabs button:hover { background: none; }
   .tabs button[aria-pressed="true"] { border-bottom-color: var(--accent); background: none; }
   .tabs #show-all, .tabs #show-settings { margin-top: 0; }
+  /* On a phone the team is a dropdown at the top of the People list instead, and With's list opens in place. */
+  .pane-people, .pcaret { display: none; }
+  .people-select { display: block; }
+  .multi .menu { position: static; width: auto; max-width: none; margin-top: 4px; box-shadow: none; }
   /* With one list shown, the list sits right under the tabs and the tabs' line stands in for its own top border. */
   .wrap.is-tabs .tabs { margin-bottom: -24px; }
   .wrap.is-tabs .lists { gap: 4px; }
@@ -363,8 +403,27 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 .days .summary-text { white-space: pre-wrap; margin: 0; overflow-wrap: anywhere; }
 .days .k { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: .06em; }
 
+/* On a phone the header stays at the top too, so it stays short: a smaller date, the week without the date it repeats,
+   and the figures as one short row of numbers, each underlined in its colour. */
+@media (max-width: 700px) {
+  h1 { font-size: 24px; }
+  .eyebrow .wk-date { display: none; }
+  .figures { display: flex; flex-wrap: wrap; gap: 2px 10px; margin-top: 4px; }
+  .fig { display: flex; align-items: baseline; gap: 4px; flex: none; padding: 0 0 1px; border: 0; border-bottom: 2px solid var(--fig); border-radius: 0; background: none; }
+  .fig .num { font-size: 16px; }
+  .fig .lbl { font-size: 11px; letter-spacing: .03em; }
+  /* Short labels keep the four figures on one row; the plan's words sit beside its bar. */
+  .fig .l-long { display: none; }
+  .fig .l-short { display: inline; }
+  #progress { grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 8px; margin-top: 6px; }
+  #progress .ptext { font-size: 12px; }
+}
+/* The narrowest phones keep the figures on one row with less space between them. */
+@media (max-width: 360px) {
+  .figures { column-gap: 7px; }
+  .fig .lbl { letter-spacing: 0; }
+}
 @media (max-width: 480px) {
-  .figures { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .add { grid-template-columns: 1fr 1fr; }
   .task { grid-template-columns: auto 1fr; }
   .actions { grid-column: 2; }
@@ -382,12 +441,12 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
         <button type="button" id="screen-topics" aria-pressed="false">Topics<span class="n" id="tn-topics"></span></button>
       </div>
     </div>
-    <h1 id="date">Daily Organizer</h1>
+    <div class="date-row"><h1 id="date">Daily Organizer</h1><span class="ver" id="page-ver"></span></div>
     <div class="figures" id="figures" role="group" aria-label="Today in numbers">
-      <div class="fig" id="fig-open"><span class="num" id="num-open">0</span><span class="lbl">Open today</span></div>
-      <div class="fig" id="fig-carry"><span class="num" id="num-carry">0</span><span class="lbl">Carried over</span></div>
-      <div class="fig" id="fig-chase"><span class="num" id="num-chase">0</span><span class="lbl">To chase</span></div>
-      <div class="fig" id="fig-done"><span class="num" id="num-done">0</span><span class="lbl">Done today</span></div>
+      <div class="fig" id="fig-open"><span class="num" id="num-open">0</span><span class="lbl"><span class="l-long">Open today</span><span class="l-short">open</span></span></div>
+      <div class="fig" id="fig-carry"><span class="num" id="num-carry">0</span><span class="lbl"><span class="l-long">Carried over</span><span class="l-short">carried</span></span></div>
+      <div class="fig" id="fig-chase"><span class="num" id="num-chase">0</span><span class="lbl"><span class="l-long">To chase</span><span class="l-short">to chase</span></span></div>
+      <div class="fig" id="fig-done"><span class="num" id="num-done">0</span><span class="lbl"><span class="l-long">Done today</span><span class="l-short">done</span></span></div>
     </div>
     <div class="progress" id="progress" hidden>
       <div class="bar" id="progress-bar" role="progressbar" aria-label="Today's plan" aria-valuemin="0"><div class="fill" id="progress-fill"></div></div>
@@ -406,9 +465,15 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       </form>
       <ul class="topic-list" id="topic-list" aria-label="Your topics"></ul>
       <p class="empty" id="empty-topics">No topics yet. Name one above to keep notes and a checklist on it.</p>
+      <button type="button" class="topic-pick topic-settings-btn" id="topic-settings-btn" aria-pressed="false"><span class="tname">Settings</span></button>
     </div>
     <div class="topic-main" id="topic-main"></div>
     <aside class="topic-side" id="topic-side" aria-label="Checklist"></aside>
+    <section class="topic-settings" id="topic-settings" aria-labelledby="h-topic-settings" hidden>
+      <button type="button" class="link-btn back" id="topic-settings-back">‹ All topics</button>
+      <h2 id="h-topic-settings">Settings</h2>
+      <div id="topic-team-home"></div>
+    </section>
   </section>
 
   <div class="task-screen" id="task-screen">
@@ -419,6 +484,8 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       <button type="button" id="show-upcoming" aria-pressed="false">Upcoming<span class="n" id="tn-upcoming"></span></button>
       <button type="button" id="show-someday" aria-pressed="false">Someday<span class="n" id="tn-someday"></span></button>
       <button type="button" id="show-ideas" aria-pressed="false">Ideas<span class="n" id="tn-ideas"></span></button>
+      <button type="button" id="show-people" aria-pressed="false" aria-expanded="false" aria-controls="pane-people"><span>People<span class="pcaret" id="people-caret" aria-hidden="true"></span></span><span class="n" id="tn-people"></span></button>
+      <div class="pane-people" id="pane-people" role="group" aria-label="Person to show"></div>
       <button type="button" id="show-jira" aria-pressed="false">Jira<span class="n" id="tn-jira"></span></button>
       <button type="button" id="show-done" aria-pressed="false">Done<span class="n" id="tn-done"></span></button>
       <button type="button" id="show-all" aria-pressed="false">All</button>
@@ -445,7 +512,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
             <button type="button" id="view-table" aria-pressed="false">Table</button>
           </div>
         </div>
-        <details class="add-box" id="add-box" open>
+        <details class="add-box" id="add-box">
           <summary id="add-summary">Add a task</summary>
           <form class="add" id="add" autocomplete="off">
             <input type="text" id="add-title" placeholder="e.g. Check the DNS change" aria-label="Task" maxlength="300" required>
@@ -466,7 +533,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
                 <option value="low">Low priority</option>
               </select>
               <select id="add-owner" aria-label="For" hidden><option value="">Me</option></select>
-              <div class="with-pick" id="add-with" hidden></div>
+              <details class="multi" id="add-with" hidden></details>
               <input type="text" id="add-ticket" placeholder="Ticket (optional), e.g. OPS-142 or a link" aria-label="Ticket" maxlength="500">
               <select id="add-day" aria-label="Day"><option value="">No day</option></select>
               <button type="button" class="link-btn" id="add-note-btn">+ Note</button>
@@ -535,6 +602,13 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
           <p class="empty" id="empty-ideas">No ideas parked. Add one with the type set to Idea.</p>
         </section>
 
+        <section id="sec-people" class="panel" aria-labelledby="h-people" hidden>
+          <div class="section-head"><h2 id="h-people"><span id="people-label">People</span><span class="n" id="n-people"></span></h2></div>
+          <select class="people-select" id="people-select" aria-label="Person to show"></select>
+          <div class="people-groups" id="people-groups"></div>
+          <p class="empty" id="empty-people" hidden></p>
+        </section>
+
         <section id="sec-jira" class="panel" aria-labelledby="h-jira">
           <div class="section-head">
             <h2 id="h-jira">Flagged on the Jira Dashboard<span class="n" id="n-jira"></span></h2>
@@ -580,15 +654,15 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
           <p class="hint">Ticket keys such as OPS-142 link here. The key goes at the end, or wherever you write {key}. Tickets saved as full links work without this.</p>
           <div class="row"><button class="btn btn-primary" type="submit">Save</button><span id="set-msg" role="status"></span></div>
         </form>
-        <div class="team">
+        <div id="team-home"><div class="team" id="team-box">
           <h3>Team</h3>
           <ul id="team-list" hidden></ul>
           <form id="team-form" autocomplete="off">
             <input type="text" id="team-name" placeholder="Name, e.g. Sam" aria-label="Team member's name" maxlength="80">
             <button class="btn" type="submit">Add to team</button>
           </form>
-          <p class="hint">Tasks are yours unless you pick someone when you add or assign them. <span id="team-msg" role="status"></span></p>
-        </div>
+          <p class="hint">The same team serves tasks and topics. Tasks are yours unless you pick someone under For; discussions and topics say who they're with. <span id="team-msg" role="status"></span></p>
+        </div></div>
       </section>
     </div>
   </div>
@@ -600,13 +674,13 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 (() => {
   const $ = (id) => document.getElementById(id);
   const state = { tasks: [], days: [], settings: {}, team: [], jira: [], topics: [], teamLoaded: false, confirmed: false, slow: false, error: '', note: '', readOnly: false, closed: false };
-  const ui = { completing: null, removing: null, editing: null, clearing: false, drafts: {}, open: new Set(), logRemoving: null, logEditing: null, itemEditing: null, itemRemoving: null, screen: 'tasks', topicSel: null, topicPicked: false, topicEditing: null, topicRemoving: null, layout: 'list', tab: 'today', filter: 'all', day: null, addWith: null, addDay: null, teamRemoving: null };
+  const ui = { completing: null, removing: null, editing: null, clearing: false, drafts: {}, open: new Set(), logRemoving: null, logEditing: null, itemEditing: null, itemRemoving: null, screen: 'tasks', topicSel: null, topicPicked: false, topicEditing: null, topicRemoving: null, layout: 'list', tab: 'today', filter: 'all', day: null, addWith: null, addDay: null, addType: null, addStatus: null, person: null, withOpen: null, topicSettings: false, teamRemoving: null };
   const chains = new Map();
   const TYPES = ['task', 'idea', 'follow-up', 'discussion'];
   // The list tabs: one list at a time, or All of them stacked.
   const LISTS = ['today', 'next', 'waiting', 'upcoming', 'someday', 'ideas', 'jira', 'done'];
   // Settings sits at the bottom of the same pane, and shows in place of the lists.
-  const TABS = [...LISTS, 'all', 'settings'];
+  const TABS = [...LISTS, 'people', 'all', 'settings'];
   // The template's version, from its meta tag; Claude compares it with organizer/settings.pageVersion to offer updates.
   const PAGE_VERSION = (document.querySelector('meta[name="daily-organizer-version"]') || {}).content || '';
   let db = null;
@@ -770,6 +844,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       created: dateOf(t.created), comment: t.comment || '', doneAt: dateOf(t.doneAt),
     };
     ui.editing = { id: t.id, orig, draft: { ...orig, with: [...orig.with], pick: false } };
+    ui.withOpen = null;
     ui.completing = ui.removing = null;
     render();
     const f = $('edit-title-' + t.id); if (f) f.focus();
@@ -862,7 +937,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       // A discussion is always the user's own, so For shows on one only to clear an owner it already has.
       (hasTeam && draft.type !== 'discussion') || orig.owner ? field('owner', 'For', false, choose('owner', [['', 'Me'], ...people(orig.owner)])) : null,
       (hasTeam || orig.with.length) && (draft.type === 'discussion' || orig.with.length)
-        ? el('div', { class: 'field wide' }, withPicker(id('with'), draft.with, (ids) => { draft.with = ids; render(); }, orig.with)) : null,
+        ? el('div', { class: 'field wide' }, withSelect(id('with'), draft.with, (ids) => { draft.with = ids; render(); }, orig.with)) : null,
       field('ticket', 'Ticket', false, text('ticket', { class: 'mono', maxlength: 500, placeholder: 'OPS-142 or a link' })),
       field('created', 'Added', false, date('created', { max: today })),
       done ? field('doneAt', 'Done on', false, date('doneAt', { max: today })) : null,
@@ -896,26 +971,78 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   const personShown = () => (state.team.some((m) => m.id === ui.filter) ? ui.filter : null);
   const withChip = (t) => (withOf(t).length ? el('span', { class: 'owner with-chip' }, 'with ' + namesOf(withOf(t))) : null);
 
-  // Who a discussion is with: a toggle per team member, as many as it takes. `keep` lists former members still on it.
-  function withPicker(idBase, picked, onpick, keep) {
+  // Who a discussion is with: a dropdown with a checkbox per team member, as many as it takes. It stays open while
+  // people are ticked (the page redraws it open) and closes on a click elsewhere or Escape. `keep` lists former members still on it.
+  function withSelect(idBase, picked, onpick, keep) {
     const people = state.team.map((m) => [m.id, m.name || 'Unnamed']);
     for (const k of keep || []) if (!people.some(([v]) => v === k)) people.push([k, memberName(k)]);
-    return el('div', { class: 'with-pick', id: idBase, role: 'group', 'aria-label': 'With' },
-      el('span', { class: 'lbl', 'aria-hidden': 'true' }, 'With'),
-      people.map(([v, name]) => el('button', {
-        type: 'button', class: 'chip', id: idBase + '-' + v, 'aria-pressed': String(picked.includes(v)),
-        onclick: () => onpick(picked.includes(v) ? picked.filter((x) => x !== v) : [...picked, v]),
-      }, name)),
+    const value = !picked.length ? 'no one' : picked.length < 3 ? namesOf(picked) : memberName(picked[0]) + ' and ' + (picked.length - 1) + ' others';
+    const d = el('details', { class: 'multi', id: idBase, open: ui.withOpen === idBase },
+      el('summary', { id: idBase + '-btn', 'aria-label': 'With: ' + value }, el('span', { class: 'lbl' }, 'With'), el('span', { class: 'val' }, value)),
+      el('div', { class: 'menu', role: 'group', 'aria-label': 'With' }, people.map(([v, name]) => el('label', {},
+        el('input', { type: 'checkbox', id: idBase + '-' + v, checked: picked.includes(v), onchange: () => onpick(picked.includes(v) ? picked.filter((x) => x !== v) : [...picked, v]) }),
+        name,
+      ))),
     );
+    d.addEventListener('toggle', () => { if (d.open) ui.withOpen = idBase; else if (d.isConnected && ui.withOpen === idBase) ui.withOpen = null; });
+    return d;
   }
+
+  // A click outside an open With dropdown, or Escape, closes it.
+  document.addEventListener('click', (e) => {
+    if (e.target.closest && e.target.closest('details.multi')) return;
+    for (const d of document.querySelectorAll('details.multi[open]')) d.open = false;
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const d = document.querySelector('details.multi[open]');
+    if (d) { d.open = false; const s = d.querySelector('summary'); if (s) s.focus(); }
+  });
 
   // Priority: `high` or `low`; no field means Normal. Open tasks sort High, Normal, Low.
   const PRIORITY = { high: '▲ High', low: '▽ Low' };
   const prioRank = (t) => (t.priority === 'high' ? 0 : t.priority === 'low' ? 2 : 1);
   const prioChip = (t) => (PRIORITY[t.priority] && t.status !== 'done' ? el('span', { class: 'prio prio-' + t.priority }, PRIORITY[t.priority]) : null);
 
-  // Who the add box's discussion is with: as picked, else the person shown.
-  const addWithIds = () => ui.addWith ?? (personShown() ? [personShown()] : []);
+  // People: the team members a task involves, whom it's for and whom it's with. The People tab views everyone, or one person.
+  const involved = (t) => [...new Set([...(t.owner ? [t.owner] : []), ...withOf(t)])];
+  const viewedPerson = () => (ui.tab === 'people' && state.team.some((m) => m.id === ui.person) ? ui.person : null);
+
+  // Who the add box's discussion is with: as picked, else the person viewed on People, else the person the day bar shows.
+  const addWithIds = () => ui.addWith ?? (ui.tab === 'people' ? (viewedPerson() ? [viewedPerson()] : []) : personShown() ? [personShown()] : []);
+
+  // The add box starts from the tab shown: its type, list and day, and on People a discussion with the person viewed.
+  // A field picked by hand keeps the pick until the task is added or the tab changes.
+  function addDefaults(today) {
+    const d = { type: 'task', status: 'next', day: today };
+    if (ui.tab === 'today') d.day = ui.day || today;
+    else if (ui.tab === 'next') d.day = '';
+    else if (ui.tab === 'waiting') Object.assign(d, { status: 'waiting', day: '' });
+    else if (ui.tab === 'upcoming') d.day = addDays(today, 1);
+    else if (ui.tab === 'someday') d.day = 'someday';
+    else if (ui.tab === 'ideas') Object.assign(d, { type: 'idea', day: '' });
+    else if (ui.tab === 'people') Object.assign(d, { type: 'discussion', day: '' });
+    return d;
+  }
+  const clearAddPicks = () => { ui.addType = ui.addStatus = ui.addDay = ui.addWith = null; };
+
+  function syncAddBox(today) {
+    const d = addDefaults(today);
+    const type = $('add-type'), status = $('add-status'), day = $('add-day');
+    if (document.activeElement !== type) type.value = ui.addType ?? d.type;
+    if (document.activeElement !== status) status.value = ui.addStatus ?? d.status;
+    if (document.activeElement !== day) syncSelect(day, [['', 'No day'], ...dayChoices(today), ['someday', 'Someday']], ui.addDay ?? d.day);
+    status.hidden = day.value === 'someday';
+    $('add-submit').textContent = 'Add ' + (TYPES.includes(type.value) ? type.value : 'task');
+  }
+
+  function pickPerson(id) {
+    ui.tab = 'people';
+    ui.person = id;
+    clearAddPicks();
+    try { localStorage.setItem('organizer-tab', 'people'); localStorage.setItem('organizer-person', id || ''); } catch (e) { /* not remembered, still shows */ }
+    render();
+  }
 
   // The team as Edit's For and With choices: `owner` is who a task is for, `with` who a discussion is with.
   const teamOptions = () => state.team.map((m) => [m.id, m.name || 'Unnamed']);
@@ -927,6 +1054,9 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       if (t.owner === m.id) fields.owner = null;
       if (withOf(t).includes(m.id)) fields.with = withValue(withOf(t).filter((x) => x !== m.id));
       if (Object.keys(fields).length) patch(t.id, fields);
+    }
+    for (const tp of state.topics) {
+      if (withOf(tp).includes(m.id)) patchTopic(tp.id, { with: withValue(withOf(tp).filter((x) => x !== m.id)) });
     }
     write('team-' + m.id, () => db.collection('team').doc(m.id).delete());
     if (ui.filter === m.id) ui.filter = 'all';
@@ -1230,11 +1360,21 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   function pickTopic(id) {
     ui.topicSel = id;
     ui.topicPicked = true;
+    ui.topicSettings = false;
     ui.topicEditing = ui.topicRemoving = ui.logEditing = ui.logRemoving = ui.itemEditing = ui.itemRemoving = null;
     try { localStorage.setItem('organizer-topic', id); } catch (e) { /* not remembered, still shows */ }
     render();
     // On a phone the list gives way to the topic, so the cursor goes to its name.
     if (narrow()) { const h = $('topic-name'); if (h) h.focus(); }
+  }
+
+  // The Topics screen's Settings: the team, the same one the Tasks screen's Settings shows.
+  function openTopicSettings() {
+    ui.topicSettings = true;
+    ui.topicPicked = true;
+    ui.topicEditing = ui.topicRemoving = null;
+    render();
+    const f = $('team-name'); if (f && !f.disabled) f.focus();
   }
 
   function backToTopics(id) {
@@ -1296,6 +1436,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     const items = itemsIn(tp.checklist);
     const ticked = items.filter((c) => c.done).length;
     const bits = [];
+    if (withOf(tp).length) bits.push('with ' + namesOf(withOf(tp)));
     if (notes) bits.push(notes + (notes === 1 ? ' note' : ' notes'));
     if (items.length) bits.push(ticked + ' of ' + items.length + ' done');
     return el('li', {}, el('button', {
@@ -1320,6 +1461,12 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
           editable ? el('button', { type: 'button', class: 'link-btn', 'aria-label': 'Edit topic: ' + (tp.title || ''), onclick: () => startTopicEdit(tp) }, 'Edit') : null,
         ),
       ),
+      // Who the topic is with: the same team as tasks, as many as it involves, saved as soon as they're ticked.
+      editing ? null : el('div', { class: 'topic-with' },
+        !editable ? (withOf(tp).length ? el('span', { class: 'owner' }, 'With ' + namesOf(withOf(tp))) : null)
+          : state.team.length || withOf(tp).length ? withSelect('topic-with-' + tp.id, withOf(tp), (ids) => patchTopic(tp.id, { with: withValue(ids) }), withOf(tp))
+          : el('button', { type: 'button', class: 'link-btn', onclick: openTopicSettings }, 'Add people to say who this is with'),
+      ),
       editable && ui.topicRemoving === tp.id ? el('div', { class: 'inline' },
         el('span', {}, 'Remove this topic, with its notes and checklist, for good?'),
         el('button', { type: 'button', class: 'btn btn-danger', id: 'topic-remove-' + tp.id, onclick: () => removeTopic(tp) }, 'Remove'),
@@ -1332,13 +1479,16 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   function renderTopics() {
     const topics = [...state.topics].sort((a, b) => String(b.created || '').localeCompare(String(a.created || '')));
     const tp = shownTopic(topics);
-    $('topic-list').replaceChildren(...topics.map((t) => topicPick(t, Boolean(tp && t.id === tp.id))));
+    const inSettings = ui.topicSettings;
+    $('topic-list').replaceChildren(...topics.map((t) => topicPick(t, Boolean(tp && t.id === tp.id) && !inSettings)));
     $('topic-list').hidden = !topics.length;
     $('empty-topics').hidden = topics.length > 0;
     $('topic-main').replaceChildren(...(tp ? topicMain(tp).filter(Boolean) : []));
     $('topic-side').replaceChildren(...(tp ? [itemsBox(topicItems(tp))] : []));
-    $('topic-main').hidden = $('topic-side').hidden = !tp;
-    $('topics').classList.toggle('is-picked', Boolean(tp && ui.topicPicked));
+    $('topic-main').hidden = $('topic-side').hidden = !tp || inSettings;
+    $('topic-settings').hidden = !inSettings;
+    $('topic-settings-btn').setAttribute('aria-pressed', String(inSettings));
+    $('topics').classList.toggle('is-picked', inSettings || Boolean(tp && ui.topicPicked));
     $('tn-topics').textContent = topics.length ? String(topics.length) : '';
     for (const c of $('topic-add').elements) c.disabled = state.readOnly || !db;
   }
@@ -1477,23 +1627,97 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     return [tr, el('tr', { class: 'detail' + (p.open ? ' is-open' : '') }, el('td', { colspan: columns(withOwner).length }, p.panels))];
   }
 
-  function fill(name, items, today) {
-    const asTable = ui.layout === 'table';
+  function taskTable(items, today) {
     const withOwner = state.team.length > 0 || state.tasks.some((t) => t.owner);
-    const list = $('list-' + name);
-    const table = $('table-' + name);
-    list.replaceChildren(...(asTable ? [] : items.map((t) => listRow(t, today))));
-    table.replaceChildren(...(asTable && items.length ? [el('table', { class: 'tasks' },
+    return el('table', { class: 'tasks' },
       el('thead', {}, el('tr', {}, columns(withOwner).map(([label, hidden]) => el('th', { scope: 'col' }, hidden ? el('span', { class: 'sr' }, label) : label)))),
       el('tbody', {}, items.flatMap((t) => tableRows(t, today, withOwner))),
-    )] : []));
-    list.hidden = asTable || items.length === 0;
-    table.hidden = !asTable || items.length === 0;
+    );
+  }
+
+  // Whether a list is on screen: the tab shown, or All. Only those get rows, so a task's rows and their ids are on the page once.
+  function listShown(name) {
+    if (name === 'with') return Boolean(personShown()) && ui.tab !== 'people' && ui.tab !== 'settings';
+    if (name === 'carry') return ui.tab === 'all' || ui.tab === 'today';
+    return ui.tab === 'all' || ui.tab === name;
+  }
+
+  function fill(name, items, today) {
+    const asTable = ui.layout === 'table';
+    const rows = listShown(name) ? items : [];
+    const list = $('list-' + name);
+    const table = $('table-' + name);
+    list.replaceChildren(...(asTable ? [] : rows.map((t) => listRow(t, today))));
+    table.replaceChildren(...(asTable && rows.length ? [taskTable(rows, today)] : []));
+    list.hidden = asTable || rows.length === 0;
+    table.hidden = !asTable || rows.length === 0;
     const empty = $('empty-' + name);
     if (empty) empty.hidden = items.length > 0;
     $('n-' + name).textContent = items.length ? String(items.length) : '';
     const tab = $('tn-' + name);
     if (tab) tab.textContent = items.length ? String(items.length) : '';
+  }
+
+  // The People tab: everyone's open tasks grouped by the people each involves, or one person's alone. Discussions come
+  // first in each, then tasks for them. Rows are built only while the tab is shown, since the tasks are in other lists too.
+  function renderPeople(today, byPriority) {
+    const open = state.tasks.filter((t) => t.status !== 'done' && involved(t).length);
+    const person = viewedPerson();
+    const onTab = ui.tab === 'people';
+    const order = (a, b) => (a.type !== 'discussion') - (b.type !== 'discussion') || byPriority(a, b);
+    const countOf = (id) => open.filter((t) => involved(t).includes(id)).length;
+    const rowsOf = (items) => (ui.layout === 'table'
+      ? el('div', { class: 'table-wrap' }, taskTable(items, today))
+      : el('ul', { class: 'list' }, items.map((t) => listRow(t, today))));
+
+    $('pane-people').replaceChildren(...state.team.map((m) => el('button', {
+      type: 'button', id: 'pick-' + m.id, 'aria-pressed': String(person === m.id), onclick: () => pickPerson(m.id),
+    }, m.name || 'Unnamed', el('span', { class: 'n' }, countOf(m.id) ? String(countOf(m.id)) : ''))));
+    // The team shows under People while People is the list shown, and folds away on every other list.
+    $('people-caret').textContent = state.team.length ? (onTab ? '▾' : '▸') : '';
+    if (state.team.length) $('show-people').setAttribute('aria-expanded', String(onTab));
+    else $('show-people').removeAttribute('aria-expanded');
+    $('pane-people').hidden = !state.team.length || !onTab;
+    $('show-people').classList.toggle('has-person', Boolean(person));
+    const pick = $('people-select');
+    if (document.activeElement !== pick) syncSelect(pick, [['', 'Everyone'], ...state.team.map((m) => [m.id, (m.name || 'Unnamed') + (countOf(m.id) ? ' (' + countOf(m.id) + ')' : '')])], person || '');
+    pick.hidden = !state.team.length;
+    $('tn-people').textContent = open.length ? String(open.length) : '';
+
+    const box = $('people-groups');
+    const empty = $('empty-people');
+    if (person) {
+      const name = memberName(person);
+      const items = open.filter((t) => involved(t).includes(person)).sort(order);
+      $('people-label').textContent = name;
+      $('n-people').textContent = items.length ? String(items.length) : '';
+      box.replaceChildren(...(onTab && items.length ? [rowsOf(items)] : []));
+      empty.textContent = 'Nothing open with ' + name + '. Add a discussion with ' + name + ' above.';
+      empty.hidden = items.length > 0;
+      return;
+    }
+    // One group per set of people, single people first, by name.
+    const groups = new Map();
+    for (const t of open) {
+      const ids = involved(t).sort((a, b) => memberName(a).localeCompare(memberName(b)));
+      const key = ids.join(' ');
+      if (!groups.has(key)) groups.set(key, { ids, items: [] });
+      groups.get(key).items.push(t);
+    }
+    const list = [...groups.values()].sort((a, b) => a.ids.length - b.ids.length || namesOf(a.ids).localeCompare(namesOf(b.ids)));
+    $('people-label').textContent = 'People';
+    $('n-people').textContent = open.length ? String(open.length) : '';
+    box.replaceChildren(...(onTab ? list.map((g) => el('div', { class: 'people-group' },
+      el('h3', {}, g.ids.flatMap((id, i) => [
+        i ? (i === g.ids.length - 1 ? ' and ' : ', ') : null,
+        state.team.some((m) => m.id === id) ? el('button', { type: 'button', class: 'link-btn', title: 'Show only ' + memberName(id), onclick: () => pickPerson(id) }, memberName(id)) : memberName(id),
+      ]), el('span', { class: 'n' }, String(g.items.length))),
+      rowsOf(g.items.sort(order)),
+    )) : []));
+    empty.textContent = state.team.length
+      ? 'Nothing open with anyone on your team. Pick someone under For when you add a task, or under With on a discussion.'
+      : 'No team yet. Add people under Settings, then pick them under For, or under With on a discussion.';
+    empty.hidden = list.length > 0;
   }
 
   function renderDays(byId) {
@@ -1628,7 +1852,8 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 
     const filter = $('filter');
     if (document.activeElement !== filter) syncSelect(filter, [['all', 'Everyone'], ['me', 'Mine'], ...members], ui.filter);
-    $('filter-people').hidden = !has;
+    // On the People tab, the tab picks the person, so the day bar's People filter steps aside.
+    $('filter-people').hidden = !has || ui.tab === 'people';
     const owner = $('add-owner');
     if (document.activeElement !== owner) syncSelect(owner, [['', 'Me'], ...members]);
     // A discussion is always the user's own, with one or more people, so the add box asks who it's with rather than who it's for.
@@ -1636,7 +1861,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     owner.hidden = !has || discussion;
     // The add box's With follows the person shown until it's picked by hand.
     const withBox = $('add-with');
-    withBox.replaceWith(Object.assign(withPicker('add-with', addWithIds(), (ids) => { ui.addWith = ids; render(); }), { hidden: !has || !discussion }));
+    withBox.replaceWith(Object.assign(withSelect('add-with', addWithIds(), (ids) => { ui.addWith = ids; render(); }), { hidden: !has || !discussion }));
 
     const list = $('team-list');
     list.replaceChildren(...team.map((m) => {
@@ -1647,7 +1872,8 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
            el('button', { type: 'button', class: 'link-btn danger', onclick: () => removeMember(m) }, 'Remove'),
            el('button', { type: 'button', class: 'link-btn', onclick: () => { ui.teamRemoving = null; render(); } }, 'Keep')]
         : el('button', { type: 'button', class: 'link-btn danger', onclick: () => { ui.teamRemoving = m.id; render(); } }, 'Remove');
-      const counts = (open ? open + ' open' : 'no open tasks') + (talks ? ' · ' + talks + ' to discuss' : '');
+      const topics = state.topics.filter((tp) => withOf(tp).includes(m.id)).length;
+      const counts = (open ? open + ' open' : 'no open tasks') + (talks ? ' · ' + talks + ' to discuss' : '') + (topics ? ' · ' + topics + (topics === 1 ? ' topic' : ' topics') : '');
       return el('li', {}, el('span', {}, m.name || 'Unnamed'), el('span', { class: 'muted' }, counts), tools);
     }));
     list.hidden = !has;
@@ -1660,7 +1886,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     if (!ui.day || ui.day < today) ui.day = today;
     const sel = ui.day;
     const selWord = dayWord(sel, today);
-    $('week').textContent = 'Week ' + isoWeek(now) + ' · ' + today;
+    $('week').replaceChildren('Week ' + isoWeek(now), el('span', { class: 'wk-date' }, ' · ' + today));
     $('date').textContent = now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
 
     const notice = $('notice');
@@ -1673,6 +1899,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     const byId = new Map(state.tasks.map((t) => [t.id, t]));
     const byCreated = (a, b) => String(a.created || '').localeCompare(String(b.created || ''));
     const byPriority = (a, b) => prioRank(a) - prioRank(b) || byCreated(a, b);
+    syncAddBox(today);
     renderTeam();
     const shown = state.tasks.filter(matchesFilter);
     // With one person shown, their open discussions are the 1:1 agenda, kept out of the lists below.
@@ -1708,6 +1935,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     fill('someday', someday, sel);
     fill('ideas', ideas, sel);
     fill('done', done, sel);
+    renderPeople(today, byPriority);
     renderDays(byId);
 
     // Today's figures follow the People filter; the bar is today's plan, done of planned.
@@ -1748,11 +1976,9 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     $('empty-today').textContent = 'Nothing planned for ' + selWord + '. Star a task to add it, or ask Claude to plan ' + (sel === today ? 'your day' : selWord) + '.';
     renderJira(sel, today, near ? selTitle : $('show-today-label').textContent);
     renderTopics();
-    // The add box's Day: no day, one of the next seven, or Someday, which always goes in Up Next.
-    const addDay = $('add-day');
-    // It starts on today, until the user picks another day for the task they're adding.
-    if (document.activeElement !== addDay) syncSelect(addDay, [['', 'No day'], ...dayChoices(today), ['someday', 'Someday']], ui.addDay ?? today);
-    $('add-status').hidden = addDay.value === 'someday';
+    // The team list is one block, shown in the Settings of whichever screen is open.
+    const teamHome = ui.screen === 'topics' ? $('topic-team-home') : $('team-home');
+    if ($('team-box').parentNode !== teamHome) teamHome.append($('team-box'));
 
     const clear = $('clear-done');
     const allDone = state.tasks.filter((t) => t.status === 'done' && t.today !== sel);
@@ -1773,7 +1999,8 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     // The Topics screen takes the place of everything about tasks below the date.
     $('task-screen').hidden = state.closed || onTopics;
     const onSettings = ui.tab === 'settings';
-    $('sec-with').hidden = state.closed || !person || onSettings;
+    $('sec-with').hidden = state.closed || !listShown('with');
+    $('sec-people').hidden = ui.tab !== 'people';
     for (const id of ['controls', 'lists', 'sec-days']) $(id).hidden = onSettings;
     $('sec-settings').hidden = !onSettings;
     $('topics').hidden = state.closed || !onTopics;
@@ -1827,12 +2054,9 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     $('add-note').value = '';
     $('add-note').hidden = true;
     $('add-note-btn').hidden = false;
-    ui.addDay = null;
-    $('add-day').value = dayKey();
-    $('add-status').hidden = false;
+    clearAddPicks();
     $('add-owner').value = '';
     $('add-priority').value = '';
-    ui.addWith = null;
     render();
     $('add-title').focus();
   });
@@ -1869,7 +2093,16 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     });
   }
 
-  $('add-type').addEventListener('change', render);
+  $('add-type').addEventListener('change', (e) => { ui.addType = e.target.value; render(); });
+  $('people-select').addEventListener('change', (e) => pickPerson(e.target.value || null));
+  $('topic-settings-btn').addEventListener('click', openTopicSettings);
+  $('topic-settings-back').addEventListener('click', () => {
+    ui.topicSettings = false;
+    ui.topicPicked = false;
+    render();
+    $('topic-settings-btn').focus();
+  });
+  $('add-status').addEventListener('change', (e) => { ui.addStatus = e.target.value; });
   $('add-day').addEventListener('change', (e) => { ui.addDay = e.target.value; render(); });
   $('add-note-btn').addEventListener('click', () => {
     $('add-note').hidden = false;
@@ -1898,26 +2131,28 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     render();
   });
 
-  // The layout, the list tab, the person filter and the add box's fold are per-device preferences, so they live in this browser only.
+  // The layout, the list tab, the person filter, the screen and the topic and person picked are per-device preferences, so they live in this browser only.
   try { ui.filter = localStorage.getItem('organizer-filter') || 'all'; } catch (e) { /* storage blocked: show everyone */ }
   try { const tab = localStorage.getItem('organizer-tab'); if (TABS.includes(tab)) ui.tab = tab; } catch (e) { /* storage blocked: start on Today */ }
+  try { ui.person = localStorage.getItem('organizer-person') || null; } catch (e) { /* storage blocked: People shows everyone */ }
   try { if (localStorage.getItem('organizer-layout') === 'table') ui.layout = 'table'; } catch (e) { /* storage blocked: start in list */ }
   try { if (localStorage.getItem('organizer-screen') === 'topics') ui.screen = 'topics'; } catch (e) { /* storage blocked: start on tasks */ }
   try { ui.topicSel = localStorage.getItem('organizer-topic') || null; } catch (e) { /* storage blocked: show the newest topic */ }
+  // The Add a task box starts folded each time the page opens, leaving the room to the list; a click on it opens the form
+  // and puts the cursor in the title. Only a click on the summary moves focus: the page's own open/close fires toggle too.
   const addBox = $('add-box');
   let addByHand = false;
-  try { if (localStorage.getItem('organizer-add') === 'closed') addBox.open = false; } catch (e) { /* storage blocked: start open */ }
-  // Only a click on the summary is remembered and moves focus: the page's own open/close fires toggle too.
   $('add-summary').addEventListener('click', () => { addByHand = true; });
   addBox.addEventListener('toggle', () => {
     if (!addByHand) return;
     addByHand = false;
-    try { localStorage.setItem('organizer-add', addBox.open ? 'open' : 'closed'); } catch (e) { /* not remembered, still folds */ }
     if (addBox.open && !$('add-title').disabled) $('add-title').focus();
   });
   for (const name of TABS) {
     $('show-' + name).addEventListener('click', () => {
+      if (name === 'people') { pickPerson(null); return; }
       ui.tab = name;
+      clearAddPicks();
       // Settings isn't remembered: the page opens on the last list.
       if (name !== 'settings') { try { localStorage.setItem('organizer-tab', name); } catch (e) { /* not remembered, still switches */ } }
       render();
@@ -2048,6 +2283,17 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   }
 
   $('page-foot').textContent = PAGE_VERSION ? 'Daily Organizer · page ' + PAGE_VERSION : '';
+  $('page-ver').textContent = PAGE_VERSION ? 'v' + PAGE_VERSION : '';
+  if (PAGE_VERSION) $('page-ver').title = 'Daily Organizer page ' + PAGE_VERSION;
+
+  // The header's height, for the left pane and scrolled-to rows to sit below it, and its edge line once the page has scrolled.
+  const head = document.querySelector('header.day');
+  const noteHead = () => document.documentElement.style.setProperty('--head-h', Math.ceil(head.getBoundingClientRect().height) + 'px');
+  if (window.ResizeObserver) new ResizeObserver(noteHead).observe(head);
+  noteHead();
+  const stuck = () => head.classList.toggle('is-stuck', window.scrollY > 4);
+  window.addEventListener('scroll', stuck, { passive: true });
+  stuck();
 
   let shownDay = dayKey();
   setInterval(() => { if (dayKey() !== shownDay) { shownDay = dayKey(); render(); } }, 60000);
