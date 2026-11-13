@@ -91,6 +91,7 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: c
 .fig { display: grid; gap: 4px; align-content: start; min-width: 0; padding: 8px 10px 9px; border: 1px solid var(--line); border-top: 3px solid var(--fig); border-radius: 6px; background: var(--surface); }
 .fig .num { font-family: var(--font-display); font-size: 33px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
 .fig .lbl { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.fig .l-short { display: none; }
 .fig.is-zero .num { color: var(--muted); font-weight: 400; }
 #fig-open { --fig: var(--accent); }
 #fig-carry { --fig: var(--today); }
@@ -393,16 +394,24 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 .days .k { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: .06em; }
 
 /* On a phone the header stays at the top too, so it stays short: a smaller date, the week without the date it repeats,
-   and the figures as one line of numbers, each underlined in its colour. */
+   and the figures as one short row of numbers, each underlined in its colour. */
 @media (max-width: 700px) {
   h1 { font-size: 24px; }
   .eyebrow .wk-date { display: none; }
-  .figures { display: flex; flex-wrap: wrap; gap: 2px 14px; margin-top: 6px; }
-  .fig { display: flex; align-items: baseline; gap: 5px; padding: 0 0 1px; border: 0; border-bottom: 2px solid var(--fig); border-radius: 0; background: none; }
-  .fig .num { font-size: 18px; }
+  .figures { display: flex; flex-wrap: wrap; gap: 2px 10px; margin-top: 4px; }
+  .fig { display: flex; align-items: baseline; gap: 4px; flex: none; padding: 0 0 1px; border: 0; border-bottom: 2px solid var(--fig); border-radius: 0; background: none; }
+  .fig .num { font-size: 16px; }
   .fig .lbl { font-size: 11px; letter-spacing: .03em; }
-  .progress { margin-top: 6px; }
-  .progress .ptext { font-size: 13px; }
+  /* Short labels keep the four figures on one row; the plan's words sit beside its bar. */
+  .fig .l-long { display: none; }
+  .fig .l-short { display: inline; }
+  #progress { grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 8px; margin-top: 6px; }
+  #progress .ptext { font-size: 12px; }
+}
+/* The narrowest phones keep the figures on one row with less space between them. */
+@media (max-width: 360px) {
+  .figures { column-gap: 7px; }
+  .fig .lbl { letter-spacing: 0; }
 }
 @media (max-width: 480px) {
   .add { grid-template-columns: 1fr 1fr; }
@@ -424,10 +433,10 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     </div>
     <div class="date-row"><h1 id="date">Daily Organizer</h1><span class="ver" id="page-ver"></span></div>
     <div class="figures" id="figures" role="group" aria-label="Today in numbers">
-      <div class="fig" id="fig-open"><span class="num" id="num-open">0</span><span class="lbl">Open today</span></div>
-      <div class="fig" id="fig-carry"><span class="num" id="num-carry">0</span><span class="lbl">Carried over</span></div>
-      <div class="fig" id="fig-chase"><span class="num" id="num-chase">0</span><span class="lbl">To chase</span></div>
-      <div class="fig" id="fig-done"><span class="num" id="num-done">0</span><span class="lbl">Done today</span></div>
+      <div class="fig" id="fig-open"><span class="num" id="num-open">0</span><span class="lbl"><span class="l-long">Open today</span><span class="l-short">open</span></span></div>
+      <div class="fig" id="fig-carry"><span class="num" id="num-carry">0</span><span class="lbl"><span class="l-long">Carried over</span><span class="l-short">carried</span></span></div>
+      <div class="fig" id="fig-chase"><span class="num" id="num-chase">0</span><span class="lbl"><span class="l-long">To chase</span><span class="l-short">to chase</span></span></div>
+      <div class="fig" id="fig-done"><span class="num" id="num-done">0</span><span class="lbl"><span class="l-long">Done today</span><span class="l-short">done</span></span></div>
     </div>
     <div class="progress" id="progress" hidden>
       <div class="bar" id="progress-bar" role="progressbar" aria-label="Today's plan" aria-valuemin="0"><div class="fill" id="progress-fill"></div></div>
