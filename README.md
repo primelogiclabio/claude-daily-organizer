@@ -9,9 +9,11 @@ Ask Claude to start one and it publishes the page from
 past plans and end-of-day summaries. It installs from the
 [claude-tools](https://github.com/primelogiclabio/claude-tools) marketplace.
 
-Tabs show one list at a time, each with a count: **Today**, **Up Next**,
-**Waiting**, **Upcoming**, **Someday**, **Ideas**, **Jira** and **Done**. **All** shows
-every list stacked on one page. Ideas get their own tab, so Up Next holds only
+The page uses the window's full width. A pane down the left lists the lists,
+each with a count: **Today**, **Up Next**, **Waiting**, **Upcoming**,
+**Someday**, **Ideas**, **Jira** and **Done**, and shows one at a time. **All**
+shows every list stacked on one page. The pane stays in view as you scroll;
+on a phone it becomes tabs right above the list. Ideas get their own list, so Up Next holds only
 work to do. **Upcoming** holds tasks planned for later days, and **Someday**
 the ones you've set aside with no day. Unfinished tasks from earlier days show
 as **Carried over** under Today, marked "from Oct 9 · 23 days"; give one a new
@@ -27,7 +29,7 @@ with columns for type, priority, ticket, age and comments. Rows light up under
 the pointer; click one to open its details: every field, the status note in
 the table, and its comments. Opening a row closes the one already open. Each device
 remembers its own tab and layout, so a phone can stay on the Today list while
-a desktop shows All as tables. The **Add a task** box above the tabs folds
+a desktop shows All as tables. The **Add a task** box above the list folds
 away when you don't need it, and each device remembers that too. Its **Day**
 picker starts on today, and can plan a new task for one of the next six days,
 **Someday** or no day; **+ Note** adds a status note as you add it. Tasks Claude added from a chat

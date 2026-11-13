@@ -5,7 +5,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: one 760px column like a daybook page: the dated header with today's figures and plan bar, the day and people filters, a 1:1 agenda when one person is picked, the foldable add box, the list tabs over Today (with what's carried over), Up Next, Waiting On, Upcoming, Someday, Ideas, Jira flags (with how to connect them until Claude has synced) and Done (or All of them stacked), the day log, then settings and the page's version. The header's Tasks | Topics switch swaps all of that for the Topics screen: topics down the left, the picked one's notes in the middle and its checklist on the right. */
+/* Layout: the page takes the window's width. The dated header has today's figures, the plan bar and a Tasks | Topics switch.
+   Tasks: the lists in a pane down the left (Today with what's carried over, Up Next, Waiting On, Upcoming, Someday, Ideas, Jira flags and Done, or All of them stacked),
+   and beside it the day and people filters, a 1:1 agenda when one person is picked, the foldable add box, the list shown, the day log and settings.
+   On a phone the pane becomes tabs right above the list. Topics: topics down the left, the picked one's notes in the middle and its checklist on the right. */
 :root {
   --bg: #f4f6f9;
   --surface: #ffffff;
@@ -37,9 +40,9 @@
 }
 
 body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.45; }
-/* minmax(0, 1fr) keeps the column to the page's width, so a wide row such as the day filter shrinks rather than pushing the page past a phone's screen. */
+/* The page takes the window's whole width. minmax(0, 1fr) keeps the column to it, so a wide row such as the day filter shrinks rather than pushing the page past a phone's screen. */
 .wrap {
-  max-width: 760px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px;
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px;
   padding-block: 28px 56px;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
@@ -64,7 +67,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .view-toggle button { border: 0; background: none; padding: 5px 12px; font-size: 14px; cursor: pointer; color: var(--muted); }
 .view-toggle button + button { border-left: 1px solid var(--line); }
 .view-toggle button[aria-pressed="true"] { background: var(--accent); color: var(--bg); font-weight: 500; }
-.wrap.is-table { max-width: 1120px; }
 #filter, #day { font-size: 14px; padding: 5px 8px; }
 .plan-chip, .carry-chip { font-size: 13px; color: var(--today); white-space: nowrap; }
 .carry-chip { font-weight: 500; }
@@ -77,7 +79,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .eyebrow { font-family: var(--font-mono); font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 h1 { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: clamp(29px, 6vw, 39px); line-height: 1.1; text-wrap: balance; }
 /* Today's figures: four big numbers, then today's plan as a bar. */
-.figures { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+/* The figures and the bar keep a daybook's width rather than stretching across a wide window. */
+.figures { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 14px; max-width: 760px; }
 .fig { display: grid; gap: 4px; align-content: start; min-width: 0; padding: 8px 10px 9px; border: 1px solid var(--line); border-top: 3px solid var(--fig); border-radius: 6px; background: var(--surface); }
 .fig .num { font-family: var(--font-display); font-size: 33px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
 .fig .lbl { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
@@ -86,7 +89,7 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: c
 #fig-carry { --fig: var(--today); }
 #fig-chase { --fig: var(--person); }
 #fig-done { --fig: var(--done); }
-.progress { display: grid; gap: 4px; margin-top: 10px; }
+.progress { display: grid; gap: 4px; margin-top: 10px; max-width: 760px; }
 .progress .bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
 .progress .fill { height: 100%; width: 0; border-radius: 3px; background: var(--done); }
 .progress .ptext { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -101,7 +104,6 @@ h2 .n { font-family: var(--font-mono); font-weight: 400; margin-left: 6px; font-
 #sec-today h2 { color: var(--today); }
 #sec-with h2 { color: var(--discussion); }
 #sec-carry h2 { color: var(--today); }
-.wrap.is-tabs #sec-carry { margin-top: 20px; }
 .empty { margin: 0; color: var(--muted); font-size: 15px; }
 
 .list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
@@ -204,9 +206,7 @@ input[type="text"], input[type="date"], select { padding: 6px 8px; border: 1px s
    Narrower, the checklist goes under the notes; on a phone the screen shows the list, or one topic with a way back to it. */
 .head-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
 .screens .n { margin-left: 5px; font-family: var(--font-mono); font-size: 13px; font-weight: 400; font-variant-numeric: tabular-nums; }
-/* The Topics screen takes the window's whole width: the list stays at the left and the notes get the room. */
-.wrap.is-topics { max-width: none; }
-.topics { grid-template-columns: minmax(180px, 250px) minmax(0, 1fr) minmax(250px, 340px); gap: 20px; align-items: start; }
+.topics { grid-template-columns: minmax(180px, 240px) minmax(0, 1fr) minmax(250px, 340px); gap: 20px; align-items: start; }
 .topic-nav, .topic-main, .topic-side { display: grid; gap: 12px; align-content: start; min-width: 0; }
 .topic-main, .topic-side { padding: 14px 16px 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
 .topic-add { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -291,21 +291,38 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 .add #add-note { grid-column: 1 / -1; min-width: 0; }
 .add .btn-primary { grid-column: 1 / -1; justify-self: end; }
 
-/* The list tabs show one list at a time, or All of them stacked. They wrap on a phone rather than scroll sideways. */
+/* The lists sit in a pane down the left, which shows one list at a time, or All of them stacked, and stays in view as the page scrolls.
+   On a phone the pane becomes tabs right above the list, which wrap rather than scroll sideways. */
+.task-screen { display: grid; grid-template-columns: minmax(180px, 240px) minmax(0, 1fr); gap: 28px 20px; align-items: start; }
+.task-main { display: grid; gap: 28px; min-width: 0; }
 .lists { display: grid; gap: 28px; min-width: 0; }
-/* With one list shown, the list sits right under the tabs and the tabs' line stands in for its own top border. */
-.wrap.is-tabs .lists { gap: 4px; }
-.wrap.is-tabs .panel { gap: 0; }
-.wrap.is-tabs .panel .section-head { justify-content: flex-end; }
-.wrap.is-tabs .panel .list, .wrap.is-tabs .panel .table-wrap { border-top: 0; }
-.wrap.is-tabs .panel .empty { padding-top: 10px; }
-.tabs { display: flex; flex-wrap: wrap; gap: 0 4px; border-bottom: 1px solid var(--line); }
-.tabs button { border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; padding: 8px 10px 6px; font-size: 15px; font-weight: 500; color: var(--muted); cursor: pointer; white-space: nowrap; }
-.tabs button:hover { color: var(--ink); }
-.tabs button[aria-pressed="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.tabs { display: flex; flex-direction: column; gap: 2px; position: sticky; top: 16px; }
+.tabs button { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; width: 100%; padding: 7px 10px 8px; border: 0; border-left: 3px solid transparent; border-radius: 0 6px 6px 0; background: none; font-size: 15px; font-weight: 500; color: var(--muted); text-align: left; cursor: pointer; white-space: nowrap; }
+.tabs button:hover { color: var(--ink); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.tabs button[aria-pressed="true"] { color: var(--ink); border-left-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.tabs #show-all { margin-top: 8px; }
 .tabs .n { font-family: var(--font-mono); font-size: 13px; font-weight: 400; margin-left: 5px; color: var(--muted); font-variant-numeric: tabular-nums; }
-/* With one tab shown, the tab names the list, so its heading is kept for screen readers only. */
-.wrap.is-tabs .panel h2 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (max-width: 700px) {
+  /* One column: the filters and the add box, then the tabs right over the list they show, then the day log and settings. */
+  .task-screen { grid-template-columns: minmax(0, 1fr); }
+  .task-main { display: contents; }
+  .tabs { order: 1; position: static; flex-direction: row; flex-wrap: wrap; gap: 0 4px; border-bottom: 1px solid var(--line); }
+  #lists, #sec-days, #sec-settings { order: 2; }
+  .tabs button { display: inline; width: auto; padding: 8px 10px 6px; border-left: 0; border-bottom: 2px solid transparent; border-radius: 0; margin-bottom: -1px; background: none; }
+  .tabs button:hover { background: none; }
+  .tabs button[aria-pressed="true"] { border-bottom-color: var(--accent); background: none; }
+  .tabs #show-all { margin-top: 0; }
+  /* With one list shown, the list sits right under the tabs and the tabs' line stands in for its own top border. */
+  .wrap.is-tabs .tabs { margin-bottom: -24px; }
+  .wrap.is-tabs .lists { gap: 4px; }
+  .wrap.is-tabs #sec-carry { margin-top: 20px; }
+  .wrap.is-tabs .panel { gap: 0; }
+  .wrap.is-tabs .panel .section-head { justify-content: flex-end; }
+  .wrap.is-tabs .panel .list, .wrap.is-tabs .panel .table-wrap { border-top: 0; }
+  .wrap.is-tabs .panel .empty { padding-top: 10px; }
+  /* With one tab shown, the tab names the list, so its heading is kept for screen readers only. */
+  .wrap.is-tabs .panel h2 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}
 
 /* Jira flags: one row per ticket flagged on the Jira Dashboard, with its way onto the list at the right. */
 .flag-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 10px 0; border-bottom: 1px solid var(--line); align-items: start; }
@@ -385,64 +402,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     <aside class="topic-side" id="topic-side" aria-label="Checklist"></aside>
   </section>
 
-  <div class="filters" id="filters" role="group" aria-label="What to show">
-    <div class="filter">
-      <span class="filter-label" id="lbl-day">Day</span>
-      <div class="view-toggle" role="group" aria-labelledby="lbl-day">
-        <button type="button" id="tab-today" aria-pressed="true">Today</button>
-        <button type="button" id="tab-tomorrow" aria-pressed="false">Tomorrow</button>
-      </div>
-      <select id="day" aria-label="Day to show"></select>
-    </div>
-    <div class="filter" id="filter-people" hidden>
-      <label class="filter-label" for="filter">People</label>
-      <select id="filter"></select>
-    </div>
-    <div class="view-toggle" id="view-toggle" role="group" aria-label="Layout">
-      <button type="button" id="view-list" aria-pressed="true">List</button>
-      <button type="button" id="view-table" aria-pressed="false">Table</button>
-    </div>
-  </div>
-
-  <section id="sec-with" aria-labelledby="h-with" hidden>
-    <div class="section-head"><h2 id="h-with"><span id="with-label">1:1</span><span class="n" id="n-with"></span></h2></div>
-    <ul class="list" id="list-with"></ul>
-    <div class="table-wrap" id="table-with" hidden></div>
-    <p class="empty" id="empty-with"></p>
-  </section>
-
-  <details class="add-box" id="add-box" open>
-    <summary id="add-summary">Add a task</summary>
-    <form class="add" id="add" autocomplete="off">
-      <input type="text" id="add-title" placeholder="e.g. Check the DNS change" aria-label="Task" maxlength="300" required>
-      <div class="opt">
-        <select id="add-type" aria-label="Type">
-          <option value="task">Task</option>
-          <option value="idea">Idea</option>
-          <option value="follow-up">Follow-up</option>
-          <option value="discussion">Discussion</option>
-        </select>
-        <select id="add-status" aria-label="List">
-          <option value="next">Up Next</option>
-          <option value="waiting">Waiting On</option>
-        </select>
-        <select id="add-priority" aria-label="Priority">
-          <option value="">Normal priority</option>
-          <option value="high">High priority</option>
-          <option value="low">Low priority</option>
-        </select>
-        <select id="add-owner" aria-label="For" hidden><option value="">Me</option></select>
-        <select id="add-with" aria-label="With" hidden><option value="">With no one</option></select>
-        <input type="text" id="add-ticket" placeholder="Ticket (optional), e.g. OPS-142 or a link" aria-label="Ticket" maxlength="500">
-        <select id="add-day" aria-label="Day"><option value="">No day</option></select>
-        <button type="button" class="link-btn" id="add-note-btn">+ Note</button>
-      </div>
-      <input type="text" id="add-note" placeholder="Status note, e.g. blocked on DNS change" aria-label="Status note" maxlength="300" hidden>
-      <button class="btn btn-primary" type="submit" id="add-submit">Add task</button>
-    </form>
-  </details>
-
-  <div class="lists" id="lists">
+  <div class="task-screen" id="task-screen">
     <div class="tabs" id="tabs" role="group" aria-label="Lists to show">
       <button type="button" id="show-today" aria-pressed="true"><span id="show-today-label">Today</span><span class="n" id="tn-today"></span></button>
       <button type="button" id="show-next" aria-pressed="false">Up Next<span class="n" id="tn-next"></span></button>
@@ -455,113 +415,174 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       <button type="button" id="show-all" aria-pressed="false">All</button>
     </div>
 
-    <section id="sec-today" class="panel" aria-labelledby="h-today">
-      <div class="section-head">
-        <h2 id="h-today"><span id="today-label">Today</span><span class="n" id="n-today"></span></h2>
+    <div class="task-main">
+      <div class="filters" id="filters" role="group" aria-label="What to show">
+        <div class="filter">
+          <span class="filter-label" id="lbl-day">Day</span>
+          <div class="view-toggle" role="group" aria-labelledby="lbl-day">
+            <button type="button" id="tab-today" aria-pressed="true">Today</button>
+            <button type="button" id="tab-tomorrow" aria-pressed="false">Tomorrow</button>
+          </div>
+          <select id="day" aria-label="Day to show"></select>
+        </div>
+        <div class="filter" id="filter-people" hidden>
+          <label class="filter-label" for="filter">People</label>
+          <select id="filter"></select>
+        </div>
+        <div class="view-toggle" id="view-toggle" role="group" aria-label="Layout">
+          <button type="button" id="view-list" aria-pressed="true">List</button>
+          <button type="button" id="view-table" aria-pressed="false">Table</button>
+        </div>
       </div>
-      <ul class="list" id="list-today"></ul>
-      <div class="table-wrap" id="table-today" hidden></div>
-      <p class="empty" id="empty-today">Nothing planned for today. Star a task to add it, or ask Claude to plan your day.</p>
-    </section>
 
-    <section id="sec-carry" aria-labelledby="h-carry" hidden>
-      <div class="section-head"><h2 id="h-carry">Carried over<span class="n" id="n-carry"></span></h2></div>
-      <ul class="list" id="list-carry"></ul>
-      <div class="table-wrap" id="table-carry" hidden></div>
-    </section>
+      <section id="sec-with" aria-labelledby="h-with" hidden>
+        <div class="section-head"><h2 id="h-with"><span id="with-label">1:1</span><span class="n" id="n-with"></span></h2></div>
+        <ul class="list" id="list-with"></ul>
+        <div class="table-wrap" id="table-with" hidden></div>
+        <p class="empty" id="empty-with"></p>
+      </section>
 
-    <section id="sec-next" class="panel" aria-labelledby="h-next">
-      <div class="section-head"><h2 id="h-next">Up Next<span class="n" id="n-next"></span></h2></div>
-      <ul class="list" id="list-next"></ul>
-      <div class="table-wrap" id="table-next" hidden></div>
-      <p class="empty" id="empty-next">Nothing up next.</p>
-    </section>
-
-    <section id="sec-waiting" class="panel" aria-labelledby="h-waiting">
-      <div class="section-head"><h2 id="h-waiting">Waiting On<span class="n" id="n-waiting"></span></h2></div>
-      <ul class="list" id="list-waiting"></ul>
-      <div class="table-wrap" id="table-waiting" hidden></div>
-      <p class="empty" id="empty-waiting">Nothing waiting on anyone.</p>
-    </section>
-
-    <section id="sec-upcoming" class="panel" aria-labelledby="h-upcoming">
-      <div class="section-head"><h2 id="h-upcoming">Upcoming<span class="n" id="n-upcoming"></span></h2></div>
-      <ul class="list" id="list-upcoming"></ul>
-      <div class="table-wrap" id="table-upcoming" hidden></div>
-      <p class="empty" id="empty-upcoming">Nothing planned for later days. Pick a day when you add a task, or star one while a later day is shown.</p>
-    </section>
-
-    <section id="sec-someday" class="panel" aria-labelledby="h-someday">
-      <div class="section-head"><h2 id="h-someday">Someday<span class="n" id="n-someday"></span></h2></div>
-      <ul class="list" id="list-someday"></ul>
-      <div class="table-wrap" id="table-someday" hidden></div>
-      <p class="empty" id="empty-someday">Nothing for someday. Pick Someday as the day when you add a task, or in a task's Edit.</p>
-    </section>
-
-    <section id="sec-ideas" class="panel" aria-labelledby="h-ideas">
-      <div class="section-head"><h2 id="h-ideas">Ideas<span class="n" id="n-ideas"></span></h2></div>
-      <ul class="list" id="list-ideas"></ul>
-      <div class="table-wrap" id="table-ideas" hidden></div>
-      <p class="empty" id="empty-ideas">No ideas parked. Add one with the type set to Idea.</p>
-    </section>
-
-    <section id="sec-jira" class="panel" aria-labelledby="h-jira">
-      <div class="section-head">
-        <h2 id="h-jira">Flagged on the Jira Dashboard<span class="n" id="n-jira"></span></h2>
-        <div class="sync"><span id="jira-sync-msg" role="status"></span><button type="button" class="link-btn" id="jira-sync">Sync now</button></div>
-      </div>
-      <ul class="list" id="list-jira"></ul>
-      <div class="table-wrap" id="table-jira" hidden></div>
-      <p class="empty" id="empty-jira" hidden>No tickets flagged on the Jira Dashboard.</p>
-      <p class="jira-foot" id="jira-foot" hidden></p>
-      <div class="jira-setup" id="jira-setup">
-        <p id="jira-setup-lead">Jira flags aren't connected yet.</p>
-        <ol>
-          <li>Add the Atlassian connector to your claude.ai account, under Settings › Connectors.</li>
-          <li>Install the <a href="https://github.com/primelogiclabio/claude-jira-dashboard#try-it" target="_blank" rel="noopener noreferrer">Jira Dashboard skill</a> in Claude Code.</li>
-          <li>Ask Claude to start a Jira dashboard, and flag the tickets you want to discuss there.</li>
-          <li>Back here, press Sync now and paste it to Claude in Claude Code.</li>
-        </ol>
-      </div>
-    </section>
-
-    <section id="sec-done" class="panel" aria-labelledby="h-done">
-      <div class="section-head">
-        <h2 id="h-done">Done<span class="n" id="n-done"></span></h2>
-        <div id="clear-done"></div>
-      </div>
-      <ul class="list" id="list-done"></ul>
-      <div class="table-wrap" id="table-done" hidden></div>
-      <p class="empty" id="empty-done">Finished tasks land here with their completion comment.</p>
-    </section>
-  </div>
-
-  <section id="sec-days" aria-labelledby="h-days">
-    <div class="section-head"><h2 id="h-days">Days</h2></div>
-    <div class="days" id="days"></div>
-    <p class="empty" id="empty-days">Each day's plan and end-of-day summary are kept here.</p>
-  </section>
-
-  <section id="sec-settings" aria-labelledby="h-settings">
-    <details id="settings">
-      <summary><h2 id="h-settings">Settings</h2></summary>
-      <form class="settings" id="settings-form" autocomplete="off">
-        <label for="set-ticket">Ticket link</label>
-        <input type="text" id="set-ticket" placeholder="https://yourcompany.atlassian.net/browse/" maxlength="500">
-        <p class="hint">Ticket keys such as OPS-142 link here. The key goes at the end, or wherever you write {key}. Tickets saved as full links work without this.</p>
-        <div class="row"><button class="btn btn-primary" type="submit">Save</button><span id="set-msg" role="status"></span></div>
-      </form>
-      <div class="team">
-        <h3>Team</h3>
-        <ul id="team-list" hidden></ul>
-        <form id="team-form" autocomplete="off">
-          <input type="text" id="team-name" placeholder="Name, e.g. Sam" aria-label="Team member's name" maxlength="80">
-          <button class="btn" type="submit">Add to team</button>
+      <details class="add-box" id="add-box" open>
+        <summary id="add-summary">Add a task</summary>
+        <form class="add" id="add" autocomplete="off">
+          <input type="text" id="add-title" placeholder="e.g. Check the DNS change" aria-label="Task" maxlength="300" required>
+          <div class="opt">
+            <select id="add-type" aria-label="Type">
+              <option value="task">Task</option>
+              <option value="idea">Idea</option>
+              <option value="follow-up">Follow-up</option>
+              <option value="discussion">Discussion</option>
+            </select>
+            <select id="add-status" aria-label="List">
+              <option value="next">Up Next</option>
+              <option value="waiting">Waiting On</option>
+            </select>
+            <select id="add-priority" aria-label="Priority">
+              <option value="">Normal priority</option>
+              <option value="high">High priority</option>
+              <option value="low">Low priority</option>
+            </select>
+            <select id="add-owner" aria-label="For" hidden><option value="">Me</option></select>
+            <select id="add-with" aria-label="With" hidden><option value="">With no one</option></select>
+            <input type="text" id="add-ticket" placeholder="Ticket (optional), e.g. OPS-142 or a link" aria-label="Ticket" maxlength="500">
+            <select id="add-day" aria-label="Day"><option value="">No day</option></select>
+            <button type="button" class="link-btn" id="add-note-btn">+ Note</button>
+          </div>
+          <input type="text" id="add-note" placeholder="Status note, e.g. blocked on DNS change" aria-label="Status note" maxlength="300" hidden>
+          <button class="btn btn-primary" type="submit" id="add-submit">Add task</button>
         </form>
-        <p class="hint">Tasks are yours unless you pick someone when you add or assign them. <span id="team-msg" role="status"></span></p>
+      </details>
+
+      <div class="lists" id="lists">
+        <section id="sec-today" class="panel" aria-labelledby="h-today">
+          <div class="section-head">
+            <h2 id="h-today"><span id="today-label">Today</span><span class="n" id="n-today"></span></h2>
+          </div>
+          <ul class="list" id="list-today"></ul>
+          <div class="table-wrap" id="table-today" hidden></div>
+          <p class="empty" id="empty-today">Nothing planned for today. Star a task to add it, or ask Claude to plan your day.</p>
+        </section>
+
+        <section id="sec-carry" aria-labelledby="h-carry" hidden>
+          <div class="section-head"><h2 id="h-carry">Carried over<span class="n" id="n-carry"></span></h2></div>
+          <ul class="list" id="list-carry"></ul>
+          <div class="table-wrap" id="table-carry" hidden></div>
+        </section>
+
+        <section id="sec-next" class="panel" aria-labelledby="h-next">
+          <div class="section-head"><h2 id="h-next">Up Next<span class="n" id="n-next"></span></h2></div>
+          <ul class="list" id="list-next"></ul>
+          <div class="table-wrap" id="table-next" hidden></div>
+          <p class="empty" id="empty-next">Nothing up next.</p>
+        </section>
+
+        <section id="sec-waiting" class="panel" aria-labelledby="h-waiting">
+          <div class="section-head"><h2 id="h-waiting">Waiting On<span class="n" id="n-waiting"></span></h2></div>
+          <ul class="list" id="list-waiting"></ul>
+          <div class="table-wrap" id="table-waiting" hidden></div>
+          <p class="empty" id="empty-waiting">Nothing waiting on anyone.</p>
+        </section>
+
+        <section id="sec-upcoming" class="panel" aria-labelledby="h-upcoming">
+          <div class="section-head"><h2 id="h-upcoming">Upcoming<span class="n" id="n-upcoming"></span></h2></div>
+          <ul class="list" id="list-upcoming"></ul>
+          <div class="table-wrap" id="table-upcoming" hidden></div>
+          <p class="empty" id="empty-upcoming">Nothing planned for later days. Pick a day when you add a task, or star one while a later day is shown.</p>
+        </section>
+
+        <section id="sec-someday" class="panel" aria-labelledby="h-someday">
+          <div class="section-head"><h2 id="h-someday">Someday<span class="n" id="n-someday"></span></h2></div>
+          <ul class="list" id="list-someday"></ul>
+          <div class="table-wrap" id="table-someday" hidden></div>
+          <p class="empty" id="empty-someday">Nothing for someday. Pick Someday as the day when you add a task, or in a task's Edit.</p>
+        </section>
+
+        <section id="sec-ideas" class="panel" aria-labelledby="h-ideas">
+          <div class="section-head"><h2 id="h-ideas">Ideas<span class="n" id="n-ideas"></span></h2></div>
+          <ul class="list" id="list-ideas"></ul>
+          <div class="table-wrap" id="table-ideas" hidden></div>
+          <p class="empty" id="empty-ideas">No ideas parked. Add one with the type set to Idea.</p>
+        </section>
+
+        <section id="sec-jira" class="panel" aria-labelledby="h-jira">
+          <div class="section-head">
+            <h2 id="h-jira">Flagged on the Jira Dashboard<span class="n" id="n-jira"></span></h2>
+            <div class="sync"><span id="jira-sync-msg" role="status"></span><button type="button" class="link-btn" id="jira-sync">Sync now</button></div>
+          </div>
+          <ul class="list" id="list-jira"></ul>
+          <div class="table-wrap" id="table-jira" hidden></div>
+          <p class="empty" id="empty-jira" hidden>No tickets flagged on the Jira Dashboard.</p>
+          <p class="jira-foot" id="jira-foot" hidden></p>
+          <div class="jira-setup" id="jira-setup">
+            <p id="jira-setup-lead">Jira flags aren't connected yet.</p>
+            <ol>
+              <li>Add the Atlassian connector to your claude.ai account, under Settings › Connectors.</li>
+              <li>Install the <a href="https://github.com/primelogiclabio/claude-jira-dashboard#try-it" target="_blank" rel="noopener noreferrer">Jira Dashboard skill</a> in Claude Code.</li>
+              <li>Ask Claude to start a Jira dashboard, and flag the tickets you want to discuss there.</li>
+              <li>Back here, press Sync now and paste it to Claude in Claude Code.</li>
+            </ol>
+          </div>
+        </section>
+
+        <section id="sec-done" class="panel" aria-labelledby="h-done">
+          <div class="section-head">
+            <h2 id="h-done">Done<span class="n" id="n-done"></span></h2>
+            <div id="clear-done"></div>
+          </div>
+          <ul class="list" id="list-done"></ul>
+          <div class="table-wrap" id="table-done" hidden></div>
+          <p class="empty" id="empty-done">Finished tasks land here with their completion comment.</p>
+        </section>
       </div>
-    </details>
-  </section>
+
+      <section id="sec-days" aria-labelledby="h-days">
+        <div class="section-head"><h2 id="h-days">Days</h2></div>
+        <div class="days" id="days"></div>
+        <p class="empty" id="empty-days">Each day's plan and end-of-day summary are kept here.</p>
+      </section>
+
+      <section id="sec-settings" aria-labelledby="h-settings">
+        <details id="settings">
+          <summary><h2 id="h-settings">Settings</h2></summary>
+          <form class="settings" id="settings-form" autocomplete="off">
+            <label for="set-ticket">Ticket link</label>
+            <input type="text" id="set-ticket" placeholder="https://yourcompany.atlassian.net/browse/" maxlength="500">
+            <p class="hint">Ticket keys such as OPS-142 link here. The key goes at the end, or wherever you write {key}. Tickets saved as full links work without this.</p>
+            <div class="row"><button class="btn btn-primary" type="submit">Save</button><span id="set-msg" role="status"></span></div>
+          </form>
+          <div class="team">
+            <h3>Team</h3>
+            <ul id="team-list" hidden></ul>
+            <form id="team-form" autocomplete="off">
+              <input type="text" id="team-name" placeholder="Name, e.g. Sam" aria-label="Team member's name" maxlength="80">
+              <button class="btn" type="submit">Add to team</button>
+            </form>
+            <p class="hint">Tasks are yours unless you pick someone when you add or assign them. <span id="team-msg" role="status"></span></p>
+          </div>
+        </details>
+      </section>
+    </div>
+  </div>
 
   <p class="page-foot" id="page-foot"></p>
 </div>
@@ -1714,18 +1735,16 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 
     for (const c of $('add').elements) c.disabled = state.readOnly || !db;
     // The Topics screen takes the place of everything about tasks below the date.
-    for (const id of ['filters', 'add-box', 'lists', 'sec-days', 'sec-settings']) $(id).hidden = state.closed || onTopics;
-    $('sec-with').hidden = state.closed || !person || onTopics;
+    $('task-screen').hidden = state.closed || onTopics;
+    $('sec-with').hidden = state.closed || !person;
     $('topics').hidden = state.closed || !onTopics;
     $('screens').hidden = state.closed;
     $('screen-tasks').setAttribute('aria-pressed', String(!onTopics));
     $('screen-topics').setAttribute('aria-pressed', String(onTopics));
-    document.querySelector('.wrap').classList.toggle('is-topics', onTopics);
     for (const name of LISTS) $('sec-' + name).hidden = ui.tab !== 'all' && ui.tab !== name;
     $('sec-carry').hidden = !carried.length || (ui.tab !== 'all' && ui.tab !== 'today');
     for (const name of TABS) $('show-' + name).setAttribute('aria-pressed', String(ui.tab === name));
     document.querySelector('.wrap').classList.toggle('is-tabs', ui.tab !== 'all');
-    document.querySelector('.wrap').classList.toggle('is-table', ui.layout === 'table');
     $('view-list').setAttribute('aria-pressed', String(ui.layout === 'list'));
     $('view-table').setAttribute('aria-pressed', String(ui.layout === 'table'));
     for (const c of $('settings-form').elements) c.disabled = state.readOnly || !db;
