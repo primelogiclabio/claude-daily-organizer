@@ -52,7 +52,14 @@ button, input, select, textarea { font: inherit; color: inherit; }
 /* The hidden attribute wins over display rules such as section's grid, or hidden sections and filters would still show. */
 [hidden] { display: none !important; }
 
-.day { display: grid; gap: 2px; min-width: 0; }
+/* The header stays at the top while the page scrolls, on the page's background drawn edge to edge; a line marks its edge once content is under it.
+   Its height is kept in --head-h, so the left pane and scrolled-to rows sit below it. */
+.day { display: grid; gap: 2px; min-width: 0; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; padding-block: 10px; margin-block: -10px; background: var(--bg); box-shadow: 0 0 0 100vmax var(--bg); clip-path: inset(0 -100vmax); }
+.day.is-stuck { box-shadow: inset 0 -1px 0 var(--line), 0 0 0 100vmax var(--bg); }
+html { scroll-padding-top: calc(var(--head-h, 0px) + 8px); }
+/* The page's version sits beside the date, as well as in the footer. */
+.date-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; }
+.date-row .ver { font-family: var(--font-mono); font-size: 13px; color: var(--muted); white-space: nowrap; }
 /* The filters wrap to two rows on a phone: the day, then people with the layout switch kept at the right. */
 .filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
 .filters #view-toggle { margin-left: auto; }
@@ -318,7 +325,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 .task-main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; min-width: 0; }
 .lists { display: grid; gap: 28px; min-width: 0; }
 /* A long team can make the pane taller than the window, so it scrolls on its own. */
-.tabs { display: flex; flex-direction: column; gap: 2px; position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; }
+.tabs { display: flex; flex-direction: column; gap: 2px; position: sticky; top: calc(var(--head-h, 0px) + 12px); max-height: calc(100vh - var(--head-h, 0px) - 24px); overflow-y: auto; }
 .tabs button { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; width: 100%; padding: 7px 10px 8px; border: 0; border-left: 3px solid transparent; border-radius: 0 6px 6px 0; background: none; font-size: 15px; font-weight: 500; color: var(--muted); text-align: left; cursor: pointer; white-space: nowrap; }
 .tabs button:hover { color: var(--ink); background: color-mix(in srgb, var(--accent) 8%, transparent); }
 .tabs button[aria-pressed="true"] { color: var(--ink); border-left-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
@@ -385,8 +392,19 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 .days .summary-text { white-space: pre-wrap; margin: 0; overflow-wrap: anywhere; }
 .days .k { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: .06em; }
 
+/* On a phone the header stays at the top too, so it stays short: a smaller date, the week without the date it repeats,
+   and the figures as one line of numbers, each underlined in its colour. */
+@media (max-width: 700px) {
+  h1 { font-size: 24px; }
+  .eyebrow .wk-date { display: none; }
+  .figures { display: flex; flex-wrap: wrap; gap: 2px 14px; margin-top: 6px; }
+  .fig { display: flex; align-items: baseline; gap: 5px; padding: 0 0 1px; border: 0; border-bottom: 2px solid var(--fig); border-radius: 0; background: none; }
+  .fig .num { font-size: 18px; }
+  .fig .lbl { font-size: 11px; letter-spacing: .03em; }
+  .progress { margin-top: 6px; }
+  .progress .ptext { font-size: 13px; }
+}
 @media (max-width: 480px) {
-  .figures { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .add { grid-template-columns: 1fr 1fr; }
   .task { grid-template-columns: auto 1fr; }
   .actions { grid-column: 2; }
@@ -404,7 +422,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
         <button type="button" id="screen-topics" aria-pressed="false">Topics<span class="n" id="tn-topics"></span></button>
       </div>
     </div>
-    <h1 id="date">Daily Organizer</h1>
+    <div class="date-row"><h1 id="date">Daily Organizer</h1><span class="ver" id="page-ver"></span></div>
     <div class="figures" id="figures" role="group" aria-label="Today in numbers">
       <div class="fig" id="fig-open"><span class="num" id="num-open">0</span><span class="lbl">Open today</span></div>
       <div class="fig" id="fig-carry"><span class="num" id="num-carry">0</span><span class="lbl">Carried over</span></div>
@@ -1815,7 +1833,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     if (!ui.day || ui.day < today) ui.day = today;
     const sel = ui.day;
     const selWord = dayWord(sel, today);
-    $('week').textContent = 'Week ' + isoWeek(now) + ' · ' + today;
+    $('week').replaceChildren('Week ' + isoWeek(now), el('span', { class: 'wk-date' }, ' · ' + today));
     $('date').textContent = now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
 
     const notice = $('notice');
@@ -2203,6 +2221,17 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   }
 
   $('page-foot').textContent = PAGE_VERSION ? 'Daily Organizer · page ' + PAGE_VERSION : '';
+  $('page-ver').textContent = PAGE_VERSION ? 'v' + PAGE_VERSION : '';
+  if (PAGE_VERSION) $('page-ver').title = 'Daily Organizer page ' + PAGE_VERSION;
+
+  // The header's height, for the left pane and scrolled-to rows to sit below it, and its edge line once the page has scrolled.
+  const head = document.querySelector('header.day');
+  const noteHead = () => document.documentElement.style.setProperty('--head-h', Math.ceil(head.getBoundingClientRect().height) + 'px');
+  if (window.ResizeObserver) new ResizeObserver(noteHead).observe(head);
+  noteHead();
+  const stuck = () => head.classList.toggle('is-stuck', window.scrollY > 4);
+  window.addEventListener('scroll', stuck, { passive: true });
+  stuck();
 
   let shownDay = dayKey();
   setInterval(() => { if (dayKey() !== shownDay) { shownDay = dayKey(); render(); } }, 60000);

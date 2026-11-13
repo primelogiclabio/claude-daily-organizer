@@ -20,7 +20,8 @@ as **Carried over** under Today, marked "from Oct 9 · 23 days"; give one a new
 day with **Edit**.
 
 The header shows today in four figures (open today, carried over, to chase,
-done today) and a bar for how much of today's plan is done. "To chase" counts
+done today) and a bar for how much of today's plan is done. It stays at the
+top as you scroll; on a phone it shrinks to a short strip. "To chase" counts
 follow-ups and waiting tasks that are 3 or more days old.
 
 A bar above the lists holds the **Day** and **People** filters and a
@@ -36,7 +37,7 @@ Waiting, tomorrow on Upcoming, Someday on Someday, an idea on Ideas, and a
 discussion with the person you're viewing on People; anything you change
 yourself stays until you add the task. Its **Day** picker can plan a new task
 for one of the next six days, **Someday** or no day; **+ Note** adds a status note as you add it. Tasks Claude added from a chat
-say "via chat". The bottom of the page shows its version.
+say "via chat". The page's version shows beside the date and at the bottom.
 
 It used to be called **workday-tracker**. See [Renamed](#renamed-from-workday-tracker)
 if you had that installed.
