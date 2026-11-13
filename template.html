@@ -279,17 +279,22 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 .team .hint { margin: 0; font-size: 14px; color: var(--muted); }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-/* Who a discussion is with: a toggle per team member, any number of them. */
-.with-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
-.with-pick .lbl { font-size: 14px; color: var(--muted); }
-.edit .with-pick .lbl { font-size: 13px; font-weight: 500; }
-.chip { padding: 3px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-size: 14px; cursor: pointer; }
-.chip:hover { border-color: var(--discussion); }
-.chip[aria-pressed="true"] { border-color: var(--discussion); background: color-mix(in srgb, var(--discussion) 14%, transparent); color: var(--discussion); font-weight: 500; }
-.chip[aria-pressed="true"]::before { content: "✓ "; }
+/* Who a discussion is with: a dropdown with a checkbox per team member, so a long team doesn't crowd the add box. */
+.multi { position: relative; min-width: 0; }
+.multi summary { list-style: none; display: flex; align-items: center; gap: 4px; max-width: 280px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); cursor: pointer; }
+.multi summary::-webkit-details-marker { display: none; }
+.multi summary::after { content: "▾"; margin-left: auto; padding-left: 6px; color: var(--muted); }
+.multi summary .lbl { color: var(--muted); }
+.multi summary .val { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.multi .menu { position: absolute; z-index: 5; top: calc(100% + 4px); left: 0; min-width: 100%; width: max-content; max-width: 280px; max-height: 260px; overflow: auto; display: grid; gap: 1px; padding: 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); box-shadow: 0 6px 18px color-mix(in srgb, var(--ink) 16%, transparent); box-sizing: border-box; }
+.multi .menu label { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 4px; cursor: pointer; overflow-wrap: anywhere; }
+.multi .menu label:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.multi .menu input { width: 16px; height: 16px; margin: 0; flex: none; accent-color: var(--discussion); }
+/* In Edit, which can sit inside a scrolling table, the list opens in place rather than over the page. */
+.edit .multi summary { max-width: none; }
+.edit .multi .menu { position: static; width: auto; max-width: none; margin-top: 4px; box-shadow: none; }
 /* People: open tasks grouped by the team members they involve; one person's on their own. */
-.people-chips { display: none; flex-wrap: wrap; gap: 6px; padding: 10px 0 4px; }
-.people-chips .chip[aria-pressed="true"] { border-color: var(--person); background: color-mix(in srgb, var(--person) 14%, transparent); color: var(--person); }
+.people-select { display: none; justify-self: start; max-width: 100%; margin: 10px 0 4px; }
 .people-groups { display: grid; gap: 22px; }
 .people-group { display: grid; gap: 6px; min-width: 0; }
 .people-group h3 { margin: 0; font-size: 14px; font-weight: 600; color: var(--person); }
@@ -312,7 +317,8 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 .task-screen { display: grid; grid-template-columns: minmax(180px, 240px) minmax(0, 1fr); gap: 28px 20px; align-items: start; }
 .task-main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; min-width: 0; }
 .lists { display: grid; gap: 28px; min-width: 0; }
-.tabs { display: flex; flex-direction: column; gap: 2px; position: sticky; top: 16px; }
+/* A long team can make the pane taller than the window, so it scrolls on its own. */
+.tabs { display: flex; flex-direction: column; gap: 2px; position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; }
 .tabs button { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; width: 100%; padding: 7px 10px 8px; border: 0; border-left: 3px solid transparent; border-radius: 0 6px 6px 0; background: none; font-size: 15px; font-weight: 500; color: var(--muted); text-align: left; cursor: pointer; white-space: nowrap; }
 .tabs button:hover { color: var(--ink); background: color-mix(in srgb, var(--accent) 8%, transparent); }
 .tabs button[aria-pressed="true"] { color: var(--ink); border-left-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
@@ -327,15 +333,16 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   /* One column: the filters and the add box, then the tabs right over the list they show, then the day log and settings. */
   .task-screen { grid-template-columns: minmax(0, 1fr); }
   .task-main { display: contents; }
-  .tabs { order: 1; position: static; flex-direction: row; flex-wrap: wrap; gap: 0 4px; border-bottom: 1px solid var(--line); }
+  .tabs { order: 1; position: static; max-height: none; overflow: visible; flex-direction: row; flex-wrap: wrap; gap: 0 4px; border-bottom: 1px solid var(--line); }
   #lists, #sec-days, #sec-settings { order: 2; }
   .tabs button { display: inline; width: auto; padding: 8px 10px 6px; border-left: 0; border-bottom: 2px solid transparent; border-radius: 0; margin-bottom: -1px; background: none; }
   .tabs button:hover { background: none; }
   .tabs button[aria-pressed="true"] { border-bottom-color: var(--accent); background: none; }
   .tabs #show-all, .tabs #show-settings { margin-top: 0; }
-  /* On a phone the team shows as chips at the top of the People list instead. */
+  /* On a phone the team is a dropdown at the top of the People list instead, and With's list opens in place. */
   .pane-people { display: none; }
-  .people-chips { display: flex; }
+  .people-select { display: block; }
+  .multi .menu { position: static; width: auto; max-width: none; margin-top: 4px; box-shadow: none; }
   /* With one list shown, the list sits right under the tabs and the tabs' line stands in for its own top border. */
   .wrap.is-tabs .tabs { margin-bottom: -24px; }
   .wrap.is-tabs .lists { gap: 4px; }
@@ -483,7 +490,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
                 <option value="low">Low priority</option>
               </select>
               <select id="add-owner" aria-label="For" hidden><option value="">Me</option></select>
-              <div class="with-pick" id="add-with" hidden></div>
+              <details class="multi" id="add-with" hidden></details>
               <input type="text" id="add-ticket" placeholder="Ticket (optional), e.g. OPS-142 or a link" aria-label="Ticket" maxlength="500">
               <select id="add-day" aria-label="Day"><option value="">No day</option></select>
               <button type="button" class="link-btn" id="add-note-btn">+ Note</button>
@@ -554,7 +561,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 
         <section id="sec-people" class="panel" aria-labelledby="h-people" hidden>
           <div class="section-head"><h2 id="h-people"><span id="people-label">People</span><span class="n" id="n-people"></span></h2></div>
-          <div class="people-chips" id="people-chips" role="group" aria-label="Person to show"></div>
+          <select class="people-select" id="people-select" aria-label="Person to show"></select>
           <div class="people-groups" id="people-groups"></div>
           <p class="empty" id="empty-people" hidden></p>
         </section>
@@ -624,7 +631,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 (() => {
   const $ = (id) => document.getElementById(id);
   const state = { tasks: [], days: [], settings: {}, team: [], jira: [], topics: [], teamLoaded: false, confirmed: false, slow: false, error: '', note: '', readOnly: false, closed: false };
-  const ui = { completing: null, removing: null, editing: null, clearing: false, drafts: {}, open: new Set(), logRemoving: null, logEditing: null, itemEditing: null, itemRemoving: null, screen: 'tasks', topicSel: null, topicPicked: false, topicEditing: null, topicRemoving: null, layout: 'list', tab: 'today', filter: 'all', day: null, addWith: null, addDay: null, addType: null, addStatus: null, person: null, teamRemoving: null };
+  const ui = { completing: null, removing: null, editing: null, clearing: false, drafts: {}, open: new Set(), logRemoving: null, logEditing: null, itemEditing: null, itemRemoving: null, screen: 'tasks', topicSel: null, topicPicked: false, topicEditing: null, topicRemoving: null, layout: 'list', tab: 'today', filter: 'all', day: null, addWith: null, addDay: null, addType: null, addStatus: null, person: null, withOpen: null, teamRemoving: null };
   const chains = new Map();
   const TYPES = ['task', 'idea', 'follow-up', 'discussion'];
   // The list tabs: one list at a time, or All of them stacked.
@@ -794,6 +801,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       created: dateOf(t.created), comment: t.comment || '', doneAt: dateOf(t.doneAt),
     };
     ui.editing = { id: t.id, orig, draft: { ...orig, with: [...orig.with], pick: false } };
+    ui.withOpen = null;
     ui.completing = ui.removing = null;
     render();
     const f = $('edit-title-' + t.id); if (f) f.focus();
@@ -886,7 +894,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       // A discussion is always the user's own, so For shows on one only to clear an owner it already has.
       (hasTeam && draft.type !== 'discussion') || orig.owner ? field('owner', 'For', false, choose('owner', [['', 'Me'], ...people(orig.owner)])) : null,
       (hasTeam || orig.with.length) && (draft.type === 'discussion' || orig.with.length)
-        ? el('div', { class: 'field wide' }, withPicker(id('with'), draft.with, (ids) => { draft.with = ids; render(); }, orig.with)) : null,
+        ? el('div', { class: 'field wide' }, withSelect(id('with'), draft.with, (ids) => { draft.with = ids; render(); }, orig.with)) : null,
       field('ticket', 'Ticket', false, text('ticket', { class: 'mono', maxlength: 500, placeholder: 'OPS-142 or a link' })),
       field('created', 'Added', false, date('created', { max: today })),
       done ? field('doneAt', 'Done on', false, date('doneAt', { max: today })) : null,
@@ -920,18 +928,33 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   const personShown = () => (state.team.some((m) => m.id === ui.filter) ? ui.filter : null);
   const withChip = (t) => (withOf(t).length ? el('span', { class: 'owner with-chip' }, 'with ' + namesOf(withOf(t))) : null);
 
-  // Who a discussion is with: a toggle per team member, as many as it takes. `keep` lists former members still on it.
-  function withPicker(idBase, picked, onpick, keep) {
+  // Who a discussion is with: a dropdown with a checkbox per team member, as many as it takes. It stays open while
+  // people are ticked (the page redraws it open) and closes on a click elsewhere or Escape. `keep` lists former members still on it.
+  function withSelect(idBase, picked, onpick, keep) {
     const people = state.team.map((m) => [m.id, m.name || 'Unnamed']);
     for (const k of keep || []) if (!people.some(([v]) => v === k)) people.push([k, memberName(k)]);
-    return el('div', { class: 'with-pick', id: idBase, role: 'group', 'aria-label': 'With' },
-      el('span', { class: 'lbl', 'aria-hidden': 'true' }, 'With'),
-      people.map(([v, name]) => el('button', {
-        type: 'button', class: 'chip', id: idBase + '-' + v, 'aria-pressed': String(picked.includes(v)),
-        onclick: () => onpick(picked.includes(v) ? picked.filter((x) => x !== v) : [...picked, v]),
-      }, name)),
+    const value = !picked.length ? 'no one' : picked.length < 3 ? namesOf(picked) : memberName(picked[0]) + ' and ' + (picked.length - 1) + ' others';
+    const d = el('details', { class: 'multi', id: idBase, open: ui.withOpen === idBase },
+      el('summary', { id: idBase + '-btn', 'aria-label': 'With: ' + value }, el('span', { class: 'lbl' }, 'With'), el('span', { class: 'val' }, value)),
+      el('div', { class: 'menu', role: 'group', 'aria-label': 'With' }, people.map(([v, name]) => el('label', {},
+        el('input', { type: 'checkbox', id: idBase + '-' + v, checked: picked.includes(v), onchange: () => onpick(picked.includes(v) ? picked.filter((x) => x !== v) : [...picked, v]) }),
+        name,
+      ))),
     );
+    d.addEventListener('toggle', () => { if (d.open) ui.withOpen = idBase; else if (d.isConnected && ui.withOpen === idBase) ui.withOpen = null; });
+    return d;
   }
+
+  // A click outside an open With dropdown, or Escape, closes it.
+  document.addEventListener('click', (e) => {
+    if (e.target.closest && e.target.closest('details.multi')) return;
+    for (const d of document.querySelectorAll('details.multi[open]')) d.open = false;
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const d = document.querySelector('details.multi[open]');
+    if (d) { d.open = false; const s = d.querySelector('summary'); if (s) s.focus(); }
+  });
 
   // Priority: `high` or `low`; no field means Normal. Open tasks sort High, Normal, Low.
   const PRIORITY = { high: '▲ High', low: '▽ Low' };
@@ -1586,10 +1609,9 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     }, m.name || 'Unnamed', el('span', { class: 'n' }, countOf(m.id) ? String(countOf(m.id)) : ''))));
     $('pane-people').hidden = !state.team.length;
     $('show-people').classList.toggle('has-person', Boolean(person));
-    $('people-chips').replaceChildren(...(state.team.length ? [
-      el('button', { type: 'button', class: 'chip', id: 'chip-everyone', 'aria-pressed': String(!person), onclick: () => pickPerson(null) }, 'Everyone'),
-      ...state.team.map((m) => el('button', { type: 'button', class: 'chip', id: 'chip-' + m.id, 'aria-pressed': String(person === m.id), onclick: () => pickPerson(m.id) }, m.name || 'Unnamed')),
-    ] : []));
+    const pick = $('people-select');
+    if (document.activeElement !== pick) syncSelect(pick, [['', 'Everyone'], ...state.team.map((m) => [m.id, (m.name || 'Unnamed') + (countOf(m.id) ? ' (' + countOf(m.id) + ')' : '')])], person || '');
+    pick.hidden = !state.team.length;
     $('tn-people').textContent = open.length ? String(open.length) : '';
 
     const box = $('people-groups');
@@ -1769,7 +1791,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     owner.hidden = !has || discussion;
     // The add box's With follows the person shown until it's picked by hand.
     const withBox = $('add-with');
-    withBox.replaceWith(Object.assign(withPicker('add-with', addWithIds(), (ids) => { ui.addWith = ids; render(); }), { hidden: !has || !discussion }));
+    withBox.replaceWith(Object.assign(withSelect('add-with', addWithIds(), (ids) => { ui.addWith = ids; render(); }), { hidden: !has || !discussion }));
 
     const list = $('team-list');
     list.replaceChildren(...team.map((m) => {
@@ -1998,6 +2020,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   }
 
   $('add-type').addEventListener('change', (e) => { ui.addType = e.target.value; render(); });
+  $('people-select').addEventListener('change', (e) => pickPerson(e.target.value || null));
   $('add-status').addEventListener('change', (e) => { ui.addStatus = e.target.value; });
   $('add-day').addEventListener('change', (e) => { ui.addDay = e.target.value; render(); });
   $('add-note-btn').addEventListener('click', () => {

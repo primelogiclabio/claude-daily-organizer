@@ -116,9 +116,9 @@ Tasks are yours unless you say otherwise. To hand some out:
 - Pick who a task is for when you add it, under **For** in a task's **Edit**, or by
   asking ("add a follow-up for Sam to check the logs"). The task then shows
   "for Sam".
-- A discussion is always yours, with one or more people: pick them under
-  **With** when you add it or in the discussion's **Edit**, as many as it
-  involves, or ask ("add a discussion with Sam and Priya about the Q3
+- A discussion is always yours, with one or more people: tick them in the
+  **With** dropdown when you add it or in the discussion's **Edit**, as many
+  as it involves, or ask ("add a discussion with Sam and Priya about the Q3
   budget"). It shows "with Sam and Priya", and it's on each one's 1:1 list.
   Discussions don't offer **For**.
 - The **People** filter above the lists shows **Everyone**, **Mine** or one
@@ -129,8 +129,8 @@ Tasks are yours unless you say otherwise. To hand some out:
   your team, for them or discussions with them, grouped by who's involved
   ("Sam", "Priya", "Priya and Sam"). Each person is listed under it with
   their count: pick one to see only their tasks, discussions first, and a
-  new task starts as a discussion with them. On a phone the names are chips
-  at the top of the list. Each device remembers the person.
+  new task starts as a discussion with them. On a phone the names are a
+  dropdown at the top of the list. Each device remembers the person.
 - Removing someone from the team gives their tasks back to you and takes
   them off the discussions they were part of.
 
