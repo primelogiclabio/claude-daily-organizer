@@ -87,9 +87,11 @@ artifact on claude.ai, in the artifact's own database:
 **Topics** is a screen of its own, for subjects that aren't tasks, such as
 "Q4 planning" or "Kubernetes migration". The **Tasks | Topics** switch at
 the top of the page swaps between the two. Topics are listed down the left,
-under a **New topic** box. The topic you pick shows its **Notes** in the
-wide middle pane, dated entries you can edit or remove, and its
-**Checklist** on the right, with items to tick off and how many are done.
+under a **New topic** box, at the left edge of the window. The topic you
+pick shows its **Notes** in the middle pane, which takes all the width the
+window has to spare: bullet points, without dates, each of which you can
+edit or remove. Its **Checklist** sits on the right, with items to tick
+off and how many are done.
 **Edit** on a topic renames or removes it. On a narrower screen the
 checklist goes under the notes; on a phone you see the list, then the topic
 you tap, with **‹ All topics** to go back. Each device remembers the screen

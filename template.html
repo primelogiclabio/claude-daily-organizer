@@ -184,7 +184,7 @@ input[type="text"], input[type="date"], select { padding: 6px 8px; border: 1px s
 .log .log-actions, .details > .log-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
 .meta .link-btn { padding: 0 4px; margin-left: -4px; }
 
-/* A checklist: short items ticked off in the order they were added, each with its own Edit and Remove. */
+/* A checklist, or a topic's notes: short items in the order they were added, each with its own Edit and Remove. A checklist's items tick off. */
 .checklist { display: grid; gap: 8px; align-content: start; min-width: 0; }
 .checklist h3 .n { margin-left: 6px; font-family: var(--font-mono); font-weight: 400; letter-spacing: 0; text-transform: none; font-variant-numeric: tabular-nums; }
 .checklist ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
@@ -200,12 +200,13 @@ input[type="text"], input[type="date"], select { padding: 6px 8px; border: 1px s
 .checklist .add-item { display: flex; gap: 6px; }
 .checklist input[type="text"] { flex: 1 1 auto; width: 100%; min-width: 0; box-sizing: border-box; }
 
-/* The Topics screen: topics down the left, the picked topic's notes in the wide middle and its checklist on the right.
+/* The Topics screen: topics down the left, the picked topic's notes (bullet points) in the wide middle and its checklist on the right.
    Narrower, the checklist goes under the notes; on a phone the screen shows the list, or one topic with a way back to it. */
 .head-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
 .screens .n { margin-left: 5px; font-family: var(--font-mono); font-size: 13px; font-weight: 400; font-variant-numeric: tabular-nums; }
-.wrap.is-topics { max-width: 1180px; }
-.topics { grid-template-columns: minmax(170px, 230px) minmax(0, 1fr) minmax(230px, 310px); gap: 20px; align-items: start; }
+/* The Topics screen takes the window's whole width: the list stays at the left and the notes get the room. */
+.wrap.is-topics { max-width: none; }
+.topics { grid-template-columns: minmax(180px, 250px) minmax(0, 1fr) minmax(250px, 340px); gap: 20px; align-items: start; }
 .topic-nav, .topic-main, .topic-side { display: grid; gap: 12px; align-content: start; min-width: 0; }
 .topic-main, .topic-side { padding: 14px 16px 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
 .topic-add { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -220,7 +221,10 @@ input[type="text"], input[type="date"], select { padding: 6px 8px; border: 1px s
 .topic-head { display: grid; gap: 2px; }
 .topic-name { font-family: var(--font-display); font-size: 25px; font-weight: 600; line-height: 1.15; letter-spacing: 0; text-transform: none; color: var(--ink); overflow-wrap: anywhere; }
 .topic-main .edit, .topic-main .inline { grid-column: auto; padding-top: 0; }
-.topic-main .log textarea { min-height: 96px; }
+/* A topic's notes are bullet points, a little larger than the checklist's items. */
+.points li { grid-template-columns: minmax(0, 1fr) auto; }
+.points .item { position: relative; padding-left: 18px; font-size: 16px; }
+.points .item::before { content: "•"; position: absolute; left: 4px; color: var(--muted); }
 .topics .back { display: none; justify-self: start; padding-left: 0; }
 @media (max-width: 1000px) {
   .topics { grid-template-columns: minmax(160px, 210px) minmax(0, 1fr); }
@@ -906,10 +910,9 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     toggleOpen(id);
   };
 
-  // Dated entries: a task's comments and a topic's notes. A box says whose they are: `key` (unique on the page,
+  // Dated entries: a task's comments. A box says whose they are: `key` (unique on the page,
   // part of its element ids), `entries` (oldest first), `save` (writes the whole list) and `words` (what to call one).
   const COMMENT_WORDS = { title: 'Comments', one: 'comment', add: 'Add comment', placeholder: 'Progress, findings, next steps…', none: 'No comments.' };
-  const NOTE_WORDS = { title: 'Notes', one: 'note', add: 'Add note', placeholder: 'A note on this topic…', none: 'No notes.' };
   const taskLog = (t) => ({ key: t.id, entries: logOf(t), save: (log) => patch(t.id, { log }), words: COMMENT_WORDS });
 
   function addEntry(box) {
@@ -992,19 +995,23 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     );
   }
 
-  // A checklist: short items in the order added, `{id, text}`, with `done: true` and `doneAt` once ticked.
-  // A box says whose it is: `key` (unique on the page) and `items`, and `save` writes the whole list.
-  // Items are found by `id`; one written without an id is found by its place in the list.
-  const itemsOf = (o) => (Array.isArray(o.checklist) ? o.checklist.filter((c) => c && typeof c === 'object') : []);
+  // Short items in the order added, `{id, text}`: a checklist, whose items tick off (`done: true` and `doneAt`), or a
+  // topic's notes, which are bullet points. A box says whose it is: `key` (unique on the page), `items`, `save` (writes
+  // the whole list) and `kind`, 'check' or 'points'. Items are found by `id`; one without an id by its place in the list.
+  const itemsIn = (v) => (Array.isArray(v) ? v.filter((c) => c && typeof c === 'object') : []);
+  const ITEM_WORDS = {
+    check: { title: 'Checklist', one: 'item', label: 'New checklist item', placeholder: 'Add an item', none: 'No items yet.' },
+    points: { title: 'Notes', one: 'note', label: 'New note', placeholder: 'Add a point', none: 'No notes yet.' },
+  };
   const itemKey = (c, i) => (c.id ? String(c.id) : '#' + i);
-  const newItemId = () => 'c-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const newItemId = (prefix) => prefix + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
   function addItem(box) {
     const key = 'item-' + box.key;
     const text = (ui.drafts[key] || '').trim();
     if (!text) return;
     delete ui.drafts[key];
-    box.save([...box.items, { id: newItemId(), text }]);
+    box.save([...box.items, { id: newItemId(box.kind === 'points' ? 'n-' : 'c-'), text }]);
     render();
   }
 
@@ -1033,14 +1040,16 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     render();
   }
 
-  function checklistBox(box) {
+  function itemsBox(box) {
     const editable = !state.readOnly;
+    const check = box.kind !== 'points';
+    const w = ITEM_WORDS[check ? 'check' : 'points'];
     const items = box.items;
     const ticked = items.filter((c) => c.done).length;
     const key = 'item-' + box.key;
     const ek = 'itemedit-' + box.key;
-    return el('div', { class: 'checklist', id: 'checklist-' + box.key },
-      el('h3', {}, 'Checklist', items.length ? el('span', { class: 'n' }, ticked + ' of ' + items.length + ' done') : null),
+    return el('div', { class: 'checklist' + (check ? '' : ' points'), id: 'items-' + box.key },
+      el('h3', {}, w.title, check && items.length ? el('span', { class: 'n' }, ticked + ' of ' + items.length + ' done') : null),
       items.length ? el('ul', {}, items.map((c, i) => {
         const ik = itemKey(c, i);
         const rk = box.key + ':' + ik;
@@ -1049,7 +1058,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
           const cancel = () => { ui.itemEditing = null; delete ui.drafts[ek]; render(); };
           return el('li', { class: 'is-editing' },
             el('input', {
-              type: 'text', id: ek, value: ui.drafts[ek] ?? '', maxlength: 300, 'aria-label': 'Edit item',
+              type: 'text', id: ek, value: ui.drafts[ek] ?? '', maxlength: check ? 300 : 1000, 'aria-label': 'Edit ' + w.one,
               oninput: (e) => { ui.drafts[ek] = e.target.value; const b = $(ek + '-save'); if (b) b.disabled = !e.target.value.trim(); },
               onkeydown: (e) => { if (e.key === 'Enter') { e.preventDefault(); saveItemEdit(box, ik); } if (e.key === 'Escape') cancel(); },
             }),
@@ -1062,20 +1071,20 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
         const tools = !editable ? null : ui.itemRemoving === rk
           ? [el('button', { type: 'button', class: 'link-btn danger', onclick: () => { ui.itemRemoving = null; changeItem(box, ik, () => null); } }, 'Remove'),
              el('button', { type: 'button', class: 'link-btn', onclick: () => { ui.itemRemoving = null; render(); } }, 'Keep')]
-          : [el('button', { type: 'button', class: 'link-btn', 'aria-label': 'Edit item: ' + text, onclick: () => {
+          : [el('button', { type: 'button', class: 'link-btn', 'aria-label': 'Edit ' + w.one + ': ' + text, onclick: () => {
               ui.itemEditing = { key: box.key, id: ik }; ui.itemRemoving = null; ui.drafts[ek] = text; render();
               const f = $(ek); if (f) f.focus();
             } }, 'Edit'),
-             el('button', { type: 'button', class: 'link-btn', 'aria-label': 'Remove item: ' + text, onclick: () => { ui.itemRemoving = rk; render(); } }, 'Remove')];
-        return el('li', { class: c.done ? 'is-checked' : null },
-          el('input', { type: 'checkbox', id: 'chk-' + box.key + '-' + ik, checked: Boolean(c.done), disabled: !editable, 'aria-label': text, onchange: () => tickItem(box, ik) }),
+             el('button', { type: 'button', class: 'link-btn', 'aria-label': 'Remove ' + w.one + ': ' + text, onclick: () => { ui.itemRemoving = rk; render(); } }, 'Remove')];
+        return el('li', { class: check && c.done ? 'is-checked' : null },
+          check ? el('input', { type: 'checkbox', id: 'chk-' + box.key + '-' + ik, checked: Boolean(c.done), disabled: !editable, 'aria-label': text, onchange: () => tickItem(box, ik) }) : null,
           el('span', { class: 'item' }, text),
           tools ? el('span', { class: 'item-tools' }, tools) : null,
         );
-      })) : el('p', { class: 'empty' }, 'No items yet.'),
+      })) : el('p', { class: 'empty' }, w.none),
       editable ? el('div', { class: 'add-item' },
         el('input', {
-          type: 'text', id: key, value: ui.drafts[key] ?? '', maxlength: 300, 'aria-label': 'New checklist item', placeholder: 'Add an item',
+          type: 'text', id: key, value: ui.drafts[key] ?? '', maxlength: check ? 300 : 1000, 'aria-label': w.label, placeholder: w.placeholder,
           oninput: (e) => { ui.drafts[key] = e.target.value; },
           onkeydown: (e) => { if (e.key === 'Enter') { e.preventDefault(); addItem(box); } },
         }),
@@ -1151,14 +1160,13 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     );
   }
 
-  // Topics: subjects that aren't tasks, each with dated notes and a checklist, on a screen of their own. The topics are
+  // Topics: subjects that aren't tasks, each with notes (bullet points) and a checklist, on a screen of their own. The topics are
   // listed down the left, newest first; the one picked shows its notes in the middle and its checklist on the right.
   // On a phone the screen shows the list, or the topic picked with a way back to the list.
   const topicRef = (id) => db.collection('topics').doc(id);
   const patchTopic = (id, fields) => write('topic-' + id, () => topicRef(id).update(fields));
-  const notesOf = (tp) => (Array.isArray(tp.notes) ? tp.notes : []);
-  const topicNotes = (tp) => ({ key: 'topic-' + tp.id, entries: notesOf(tp), save: (notes) => patchTopic(tp.id, { notes }), words: NOTE_WORDS });
-  const topicItems = (tp) => ({ key: 'topic-' + tp.id, items: itemsOf(tp), save: (checklist) => patchTopic(tp.id, { checklist }) });
+  const topicNotes = (tp) => ({ key: 'tnotes-' + tp.id, kind: 'points', items: itemsIn(tp.notes), save: (notes) => patchTopic(tp.id, { notes }) });
+  const topicItems = (tp) => ({ key: 'topic-' + tp.id, kind: 'check', items: itemsIn(tp.checklist), save: (checklist) => patchTopic(tp.id, { checklist }) });
   // The topic shown is the one picked on this device, else the newest.
   const shownTopic = (topics) => topics.find((tp) => tp.id === ui.topicSel) || topics[0] || null;
   const narrow = () => window.matchMedia('(max-width: 700px)').matches;
@@ -1228,8 +1236,8 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   }
 
   function topicPick(tp, current) {
-    const notes = notesOf(tp).length;
-    const items = itemsOf(tp);
+    const notes = itemsIn(tp.notes).length;
+    const items = itemsIn(tp.checklist);
     const ticked = items.filter((c) => c.done).length;
     const bits = [];
     if (notes) bits.push(notes + (notes === 1 ? ' note' : ' notes'));
@@ -1243,7 +1251,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     ));
   }
 
-  // The middle pane: the topic's name, with Edit to rename or remove it, then its notes.
+  // The middle pane: the topic's name, with Edit to rename or remove it, then its notes as bullet points.
   function topicMain(tp) {
     const editable = !state.readOnly;
     const editing = editable && Boolean(ui.topicEditing && ui.topicEditing.id === tp.id);
@@ -1261,7 +1269,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
         el('button', { type: 'button', class: 'btn btn-danger', id: 'topic-remove-' + tp.id, onclick: () => removeTopic(tp) }, 'Remove'),
         el('button', { type: 'button', class: 'btn', onclick: () => { ui.topicRemoving = null; render(); } }, 'Keep'),
       ) : null,
-      entriesBox(topicNotes(tp)),
+      itemsBox(topicNotes(tp)),
     ];
   }
 
@@ -1272,7 +1280,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     $('topic-list').hidden = !topics.length;
     $('empty-topics').hidden = topics.length > 0;
     $('topic-main').replaceChildren(...(tp ? topicMain(tp).filter(Boolean) : []));
-    $('topic-side').replaceChildren(...(tp ? [checklistBox(topicItems(tp))] : []));
+    $('topic-side').replaceChildren(...(tp ? [itemsBox(topicItems(tp))] : []));
     $('topic-main').hidden = $('topic-side').hidden = !tp;
     $('topics').classList.toggle('is-picked', Boolean(tp && ui.topicPicked));
     $('tn-topics').textContent = topics.length ? String(topics.length) : '';
