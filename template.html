@@ -1,11 +1,11 @@
 <title>Daily Organizer</title>
-<meta name="daily-organizer-version" content="0.12.1">
+<meta name="daily-organizer-version" content="0.13.0">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: one 760px column like a daybook page: the dated header with today's figures and plan bar, the day and people filters, a 1:1 agenda when one person is picked, the foldable add box, the list tabs over Today (with what's carried over), Up Next, Waiting On, Upcoming, Someday, Ideas, Jira flags (with how to connect them until Claude has synced) and Done (or All of them stacked), the day log, then settings and the page's version. */
+/* Layout: one 760px column like a daybook page: the dated header with today's figures and plan bar, the day and people filters, a 1:1 agenda when one person is picked, the foldable add box, the list tabs over Today (with what's carried over), Up Next, Waiting On, Upcoming, Someday, Ideas, Topics (each with notes and a checklist), Jira flags (with how to connect them until Claude has synced) and Done (or All of them stacked), the day log, then settings and the page's version. */
 :root {
   --bg: #f4f6f9;
   --surface: #ffffff;
@@ -172,7 +172,7 @@ input[type="text"], input[type="date"], select { padding: 6px 8px; border: 1px s
 .details { grid-column: 2 / -1; display: grid; gap: 12px; padding: 8px 0 2px; }
 .facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 14px; margin: 0; }
 .facts div { min-width: 0; }
-.facts dt, .log h3 { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.facts dt, .log h3, .checklist h3 { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
 .facts dd { margin: 0; overflow-wrap: anywhere; }
 .log { display: grid; gap: 8px; }
 .log ol { list-style: none; margin: 0; padding: 0 0 0 10px; border-left: 2px solid var(--line); display: grid; gap: 10px; }
@@ -181,8 +181,35 @@ input[type="text"], input[type="date"], select { padding: 6px 8px; border: 1px s
 .log .when .link-btn { font-family: var(--font-body); font-size: 13px; padding: 0 4px; }
 .log .text { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 15px; }
 .log textarea { width: 100%; min-height: 64px; resize: vertical; padding: 6px 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); box-sizing: border-box; }
-.log .log-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.log .log-actions, .details > .log-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
 .meta .link-btn { padding: 0 4px; margin-left: -4px; }
+
+/* A checklist: short items ticked off in the order they were added, each with its own Edit and Remove. */
+.checklist { display: grid; gap: 8px; align-content: start; min-width: 0; }
+.checklist h3 .n { margin-left: 6px; font-family: var(--font-mono); font-weight: 400; letter-spacing: 0; text-transform: none; font-variant-numeric: tabular-nums; }
+.checklist ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.checklist li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 8px; align-items: start; padding: 3px 0; }
+.checklist li.is-editing { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+.checklist li input[type="checkbox"] { width: 17px; height: 17px; margin: 3px 0 0; accent-color: var(--done); cursor: pointer; }
+.checklist .item { font-size: 15px; overflow-wrap: anywhere; }
+.checklist .is-checked .item { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line); }
+.checklist .item-tools { display: flex; flex-wrap: wrap; gap: 0 2px; }
+.checklist .item-tools .link-btn { padding: 0 4px; font-size: 13px; color: var(--muted); }
+.checklist .item-tools .link-btn:hover { color: var(--accent); }
+.checklist .item-tools .link-btn.danger { color: var(--danger); }
+.checklist .add-item { display: flex; gap: 6px; }
+.checklist input[type="text"] { flex: 1 1 auto; width: 100%; min-width: 0; box-sizing: border-box; }
+
+/* Topics: subjects that aren't tasks, each a row that opens to its notes and its checklist, side by side when there's room. */
+.topic-add { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 0; }
+.topic-add input { flex: 1 1 220px; min-width: 0; }
+.wrap.is-tabs #sec-topics .topic-add { padding-top: 12px; }
+.task.topic { grid-template-columns: minmax(0, 1fr); }
+.topic > .details, .topic > .edit, .topic > .inline { grid-column: 1 / -1; }
+.topic .meta .all-checked { color: var(--done); }
+.topic-open { container-type: inline-size; }
+.panes { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px 28px; align-items: start; }
+@container (min-width: 520px) { .panes { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); } }
 
 #settings summary { cursor: pointer; }
 #settings summary h2 { display: inline; }
@@ -246,8 +273,9 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 .wrap.is-tabs .panel .section-head { justify-content: flex-end; }
 .wrap.is-tabs .panel .list, .wrap.is-tabs .panel .table-wrap { border-top: 0; }
 .wrap.is-tabs .panel .empty { padding-top: 10px; }
-.tabs { display: flex; flex-wrap: wrap; gap: 0 4px; border-bottom: 1px solid var(--line); }
-.tabs button { border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; padding: 8px 10px 6px; font-size: 15px; font-weight: 500; color: var(--muted); cursor: pointer; white-space: nowrap; }
+/* Ten tabs fit one row of the 760px page: keep their padding tight when adding another. */
+.tabs { display: flex; flex-wrap: wrap; gap: 0 2px; border-bottom: 1px solid var(--line); }
+.tabs button { border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; padding: 8px 7px 6px; font-size: 15px; font-weight: 500; color: var(--muted); cursor: pointer; white-space: nowrap; }
 .tabs button:hover { color: var(--ink); }
 .tabs button[aria-pressed="true"] { color: var(--ink); border-bottom-color: var(--accent); }
 .tabs .n { font-family: var(--font-mono); font-size: 13px; font-weight: 400; margin-left: 5px; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -377,6 +405,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       <button type="button" id="show-upcoming" aria-pressed="false">Upcoming<span class="n" id="tn-upcoming"></span></button>
       <button type="button" id="show-someday" aria-pressed="false">Someday<span class="n" id="tn-someday"></span></button>
       <button type="button" id="show-ideas" aria-pressed="false">Ideas<span class="n" id="tn-ideas"></span></button>
+      <button type="button" id="show-topics" aria-pressed="false">Topics<span class="n" id="tn-topics"></span></button>
       <button type="button" id="show-jira" aria-pressed="false">Jira<span class="n" id="tn-jira"></span></button>
       <button type="button" id="show-done" aria-pressed="false">Done<span class="n" id="tn-done"></span></button>
       <button type="button" id="show-all" aria-pressed="false">All</button>
@@ -430,6 +459,16 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       <ul class="list" id="list-ideas"></ul>
       <div class="table-wrap" id="table-ideas" hidden></div>
       <p class="empty" id="empty-ideas">No ideas parked. Add one with the type set to Idea.</p>
+    </section>
+
+    <section id="sec-topics" class="panel" aria-labelledby="h-topics">
+      <div class="section-head"><h2 id="h-topics">Topics<span class="n" id="n-topics"></span></h2></div>
+      <form class="topic-add" id="topic-add" autocomplete="off">
+        <input type="text" id="topic-title" placeholder="New topic, e.g. Q4 planning" aria-label="New topic" maxlength="300" required>
+        <button class="btn btn-primary" type="submit">Add topic</button>
+      </form>
+      <ul class="list" id="list-topics"></ul>
+      <p class="empty" id="empty-topics">No topics yet. Name one above to keep notes and a checklist on it.</p>
     </section>
 
     <section id="sec-jira" class="panel" aria-labelledby="h-jira">
@@ -496,12 +535,12 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 <script>
 (() => {
   const $ = (id) => document.getElementById(id);
-  const state = { tasks: [], days: [], settings: {}, team: [], jira: [], teamLoaded: false, confirmed: false, slow: false, error: '', note: '', readOnly: false, closed: false };
-  const ui = { completing: null, removing: null, editing: null, clearing: false, drafts: {}, open: new Set(), logRemoving: null, logEditing: null, layout: 'list', tab: 'today', filter: 'all', day: null, addWith: null, addDay: null, teamRemoving: null };
+  const state = { tasks: [], days: [], settings: {}, team: [], jira: [], topics: [], teamLoaded: false, confirmed: false, slow: false, error: '', note: '', readOnly: false, closed: false };
+  const ui = { completing: null, removing: null, editing: null, clearing: false, drafts: {}, open: new Set(), logRemoving: null, logEditing: null, itemEditing: null, itemRemoving: null, topicOpen: null, topicEditing: null, topicRemoving: null, layout: 'list', tab: 'today', filter: 'all', day: null, addWith: null, addDay: null, teamRemoving: null };
   const chains = new Map();
   const TYPES = ['task', 'idea', 'follow-up', 'discussion'];
   // The list tabs: one list at a time, or All of them stacked.
-  const LISTS = ['today', 'next', 'waiting', 'upcoming', 'someday', 'ideas', 'jira', 'done'];
+  const LISTS = ['today', 'next', 'waiting', 'upcoming', 'someday', 'ideas', 'topics', 'jira', 'done'];
   const TABS = [...LISTS, 'all'];
   // The template's version, from its meta tag; Claude compares it with organizer/settings.pageVersion to offer updates.
   const PAGE_VERSION = (document.querySelector('meta[name="daily-organizer-version"]') || {}).content || '';
@@ -831,43 +870,188 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   }
 
   // A click on a row, outside its buttons, links, fields and open panels, opens or closes its details. Selecting text doesn't.
-  const rowClick = (id) => (e) => {
+  const rowClick = (toggle) => (e) => {
     if (e.target.closest('a, button, input, select, textarea, label, .details, .edit, .inline')) return;
     if (window.getSelection && String(window.getSelection())) return;
-    toggleOpen(id);
+    toggle();
   };
 
-  function addLog(t) {
-    const key = 'log-' + t.id;
+  // Dated entries: a task's comments and a topic's notes. A box says whose they are: `key` (unique on the page,
+  // part of its element ids), `entries` (oldest first), `save` (writes the whole list) and `words` (what to call one).
+  const COMMENT_WORDS = { title: 'Comments', one: 'comment', add: 'Add comment', placeholder: 'Progress, findings, next steps…', none: 'No comments.' };
+  const NOTE_WORDS = { title: 'Notes', one: 'note', add: 'Add note', placeholder: 'A note on this topic…', none: 'No notes.' };
+  const taskLog = (t) => ({ key: t.id, entries: logOf(t), save: (log) => patch(t.id, { log }), words: COMMENT_WORDS });
+
+  function addEntry(box) {
+    const key = 'log-' + box.key;
     const text = (ui.drafts[key] || '').trim();
     if (!text) return;
     delete ui.drafts[key];
-    patch(t.id, { log: [...logOf(t), { at: new Date().toISOString(), text }] });
+    box.save([...box.entries, { at: new Date().toISOString(), text }]);
     render();
   }
 
-  function removeLog(t, entry) {
+  function removeEntry(box, entry) {
     ui.logRemoving = null;
-    patch(t.id, { log: logOf(t).filter((e) => !(e.at === entry.at && e.text === entry.text)) });
+    box.save(box.entries.filter((e) => !(e.at === entry.at && e.text === entry.text)));
   }
 
-  // Editing a comment changes its text and keeps its date. The entry is found by its date and text, like Remove.
-  function startLogEdit(t, entry) {
-    ui.logEditing = { id: t.id, at: entry.at, text: entry.text };
-    ui.drafts['logedit-' + t.id] = String(entry.text || '');
+  // Editing an entry changes its text and keeps its date. The entry is found by its date and text, like Remove.
+  function startEntryEdit(box, entry) {
+    ui.logEditing = { id: box.key, at: entry.at, text: entry.text };
+    ui.drafts['logedit-' + box.key] = String(entry.text || '');
     ui.logRemoving = null;
     render();
-    const f = $('logedit-' + t.id); if (f) f.focus();
+    const f = $('logedit-' + box.key); if (f) f.focus();
   }
 
-  function saveLogEdit(t, entry) {
-    const key = 'logedit-' + t.id;
+  function saveEntryEdit(box, entry) {
+    const key = 'logedit-' + box.key;
     const text = (ui.drafts[key] || '').trim();
     if (!text) return;
     ui.logEditing = null;
     delete ui.drafts[key];
-    if (text !== entry.text) patch(t.id, { log: logOf(t).map((e) => (e.at === entry.at && e.text === entry.text ? { ...e, text } : e)) });
+    if (text !== entry.text) box.save(box.entries.map((e) => (e.at === entry.at && e.text === entry.text ? { ...e, text } : e)));
     render();
+  }
+
+  // The entries with their Edit and Remove, then a box for a new one. `close`, if given, adds a Close button.
+  function entriesBox(box, close) {
+    const editable = !state.readOnly;
+    const w = box.words;
+    const key = 'log-' + box.key;
+    const ek = 'logedit-' + box.key;
+    return el('div', { class: 'log', id: 'logbox-' + box.key },
+      el('h3', {}, w.title),
+      box.entries.length ? el('ol', {}, box.entries.map((entry, i) => {
+        const rk = box.key + ':' + i;
+        if (editable && ui.logEditing && ui.logEditing.id === box.key && ui.logEditing.at === entry.at && ui.logEditing.text === entry.text) {
+          const cancel = () => { ui.logEditing = null; delete ui.drafts[ek]; render(); };
+          return el('li', {},
+            el('div', { class: 'when' }, el('span', {}, stamp(entry.at))),
+            el('textarea', {
+              id: ek, maxlength: 2000, 'aria-label': 'Edit ' + w.one,
+              oninput: (e) => { ui.drafts[ek] = e.target.value; const b = $(ek + '-save'); if (b) b.disabled = !e.target.value.trim(); },
+              onkeydown: (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveEntryEdit(box, entry); } if (e.key === 'Escape') cancel(); },
+            }, ui.drafts[ek] ?? ''),
+            el('div', { class: 'log-actions' },
+              el('button', { type: 'button', class: 'btn', onclick: cancel }, 'Cancel'),
+              el('button', { type: 'button', class: 'btn btn-primary', id: ek + '-save', disabled: !(ui.drafts[ek] || '').trim(), onclick: () => saveEntryEdit(box, entry) }, 'Save ' + w.one),
+            ),
+          );
+        }
+        const tools = !editable ? null : ui.logRemoving === rk
+          ? [el('button', { type: 'button', class: 'link-btn danger', onclick: () => removeEntry(box, entry) }, 'Remove'),
+             el('button', { type: 'button', class: 'link-btn', onclick: () => { ui.logRemoving = null; render(); } }, 'Keep')]
+          : [el('button', { type: 'button', class: 'link-btn', 'aria-label': 'Edit this ' + w.one, onclick: () => startEntryEdit(box, entry) }, 'Edit'),
+             el('button', { type: 'button', class: 'link-btn', 'aria-label': 'Remove this ' + w.one, onclick: () => { ui.logRemoving = rk; render(); } }, 'Remove')];
+        return el('li', {},
+          el('div', { class: 'when' }, el('span', {}, stamp(entry.at)), tools),
+          el('div', { class: 'text' }, String(entry.text || '')),
+        );
+      })) : (editable ? null : el('p', { class: 'empty' }, w.none)),
+      editable ? el('textarea', {
+        id: key, maxlength: 2000, 'aria-label': 'New ' + w.one, placeholder: w.placeholder,
+        oninput: (e) => { ui.drafts[key] = e.target.value; },
+        onkeydown: (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); addEntry(box); } },
+      }, ui.drafts[key] ?? '') : null,
+      close || editable ? el('div', { class: 'log-actions' },
+        close ? el('button', { type: 'button', class: 'btn', onclick: close }, 'Close') : null,
+        editable ? el('button', { type: 'button', class: 'btn btn-primary', onclick: () => addEntry(box) }, w.add) : null,
+      ) : null,
+    );
+  }
+
+  // A checklist: short items in the order added, `{id, text}`, with `done: true` and `doneAt` once ticked.
+  // A box says whose it is: `key` (unique on the page) and `items`, and `save` writes the whole list.
+  // Items are found by `id`; one written without an id is found by its place in the list.
+  const itemsOf = (o) => (Array.isArray(o.checklist) ? o.checklist.filter((c) => c && typeof c === 'object') : []);
+  const itemKey = (c, i) => (c.id ? String(c.id) : '#' + i);
+  const newItemId = () => 'c-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+  function addItem(box) {
+    const key = 'item-' + box.key;
+    const text = (ui.drafts[key] || '').trim();
+    if (!text) return;
+    delete ui.drafts[key];
+    box.save([...box.items, { id: newItemId(), text }]);
+    render();
+  }
+
+  // Changes one item: `change` gets the item and returns the new one, or null to remove it.
+  function changeItem(box, ik, change) {
+    box.save(box.items.flatMap((c, i) => {
+      if (itemKey(c, i) !== ik) return [c];
+      const next = change(c);
+      return next ? [next] : [];
+    }));
+  }
+
+  const tickItem = (box, ik) => changeItem(box, ik, (c) => {
+    if (!c.done) return { ...c, done: true, doneAt: new Date().toISOString() };
+    const { done, doneAt, ...rest } = c;
+    return rest;
+  });
+
+  function saveItemEdit(box, ik) {
+    const key = 'itemedit-' + box.key;
+    const text = (ui.drafts[key] || '').trim();
+    if (!text) return;
+    ui.itemEditing = null;
+    delete ui.drafts[key];
+    changeItem(box, ik, (c) => (c.text === text ? c : { ...c, text }));
+    render();
+  }
+
+  function checklistBox(box) {
+    const editable = !state.readOnly;
+    const items = box.items;
+    const ticked = items.filter((c) => c.done).length;
+    const key = 'item-' + box.key;
+    const ek = 'itemedit-' + box.key;
+    return el('div', { class: 'checklist', id: 'checklist-' + box.key },
+      el('h3', {}, 'Checklist', items.length ? el('span', { class: 'n' }, ticked + ' of ' + items.length + ' done') : null),
+      items.length ? el('ul', {}, items.map((c, i) => {
+        const ik = itemKey(c, i);
+        const rk = box.key + ':' + ik;
+        const text = String(c.text || '');
+        if (editable && ui.itemEditing && ui.itemEditing.key === box.key && ui.itemEditing.id === ik) {
+          const cancel = () => { ui.itemEditing = null; delete ui.drafts[ek]; render(); };
+          return el('li', { class: 'is-editing' },
+            el('input', {
+              type: 'text', id: ek, value: ui.drafts[ek] ?? '', maxlength: 300, 'aria-label': 'Edit item',
+              oninput: (e) => { ui.drafts[ek] = e.target.value; const b = $(ek + '-save'); if (b) b.disabled = !e.target.value.trim(); },
+              onkeydown: (e) => { if (e.key === 'Enter') { e.preventDefault(); saveItemEdit(box, ik); } if (e.key === 'Escape') cancel(); },
+            }),
+            el('span', { class: 'item-tools' },
+              el('button', { type: 'button', class: 'link-btn', onclick: cancel }, 'Cancel'),
+              el('button', { type: 'button', class: 'link-btn', id: ek + '-save', disabled: !(ui.drafts[ek] || '').trim(), onclick: () => saveItemEdit(box, ik) }, 'Save'),
+            ),
+          );
+        }
+        const tools = !editable ? null : ui.itemRemoving === rk
+          ? [el('button', { type: 'button', class: 'link-btn danger', onclick: () => { ui.itemRemoving = null; changeItem(box, ik, () => null); } }, 'Remove'),
+             el('button', { type: 'button', class: 'link-btn', onclick: () => { ui.itemRemoving = null; render(); } }, 'Keep')]
+          : [el('button', { type: 'button', class: 'link-btn', 'aria-label': 'Edit item: ' + text, onclick: () => {
+              ui.itemEditing = { key: box.key, id: ik }; ui.itemRemoving = null; ui.drafts[ek] = text; render();
+              const f = $(ek); if (f) f.focus();
+            } }, 'Edit'),
+             el('button', { type: 'button', class: 'link-btn', 'aria-label': 'Remove item: ' + text, onclick: () => { ui.itemRemoving = rk; render(); } }, 'Remove')];
+        return el('li', { class: c.done ? 'is-checked' : null },
+          el('input', { type: 'checkbox', id: 'chk-' + box.key + '-' + ik, checked: Boolean(c.done), disabled: !editable, 'aria-label': text, onchange: () => tickItem(box, ik) }),
+          el('span', { class: 'item' }, text),
+          tools ? el('span', { class: 'item-tools' }, tools) : null,
+        );
+      })) : el('p', { class: 'empty' }, 'No items yet.'),
+      editable ? el('div', { class: 'add-item' },
+        el('input', {
+          type: 'text', id: key, value: ui.drafts[key] ?? '', maxlength: 300, 'aria-label': 'New checklist item', placeholder: 'Add an item',
+          oninput: (e) => { ui.drafts[key] = e.target.value; },
+          onkeydown: (e) => { if (e.key === 'Enter') { e.preventDefault(); addItem(box); } },
+        }),
+        el('button', { type: 'button', class: 'btn', onclick: () => addItem(box) }, 'Add'),
+      ) : null,
+    );
   }
 
   function draftInput(key, attrs, onEnter) {
@@ -912,14 +1096,11 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   // A row's details: every field at a glance, then the comments. The table has no Note column, so there they carry the status note too.
   function details(t, withNote) {
     const done = t.status === 'done';
-    const editable = !state.readOnly;
     const typeName = TYPES.includes(t.type) ? t.type : 'task';
     const today = dayKey();
-    const log = logOf(t);
-    const fact = (label, value) => (value === null || value === undefined || value === '' ? null : el('div', {}, el('dt', {}, label), el('dd', {}, value)));
+    const fact =(label, value) => (value === null || value === undefined || value === '' ? null : el('div', {}, el('dt', {}, label), el('dd', {}, value)));
     const day = t.someday ? 'Someday' : t.today ? cap(shortDay(t.today, today)) + (!done && t.today < today ? ' (carried over)' : '') : 'No day';
     const list = done ? 'Done' : t.someday ? 'Someday' : typeName === 'idea' ? 'Ideas' : t.status === 'waiting' ? 'Waiting On' : 'Up Next';
-    const key = 'log-' + t.id;
     return el('div', { class: 'details', id: 'details-' + t.id },
       el('dl', { class: 'facts' },
         fact('Type', cap(typeName)),
@@ -936,47 +1117,125 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       ),
       withNote && !done && t.note ? el('div', { class: 'note' }, t.note) : null,
       withNote && done && t.comment ? el('div', { class: 'comment' }, t.comment) : null,
-      el('div', { class: 'log', id: 'logbox-' + t.id },
-        el('h3', {}, 'Comments'),
-        log.length ? el('ol', {}, log.map((entry, i) => {
-          const rk = t.id + ':' + i;
-          const ek = 'logedit-' + t.id;
-          if (editable && ui.logEditing && ui.logEditing.id === t.id && ui.logEditing.at === entry.at && ui.logEditing.text === entry.text) {
-            const cancel = () => { ui.logEditing = null; delete ui.drafts[ek]; render(); };
-            return el('li', {},
-              el('div', { class: 'when' }, el('span', {}, stamp(entry.at))),
-              el('textarea', {
-                id: ek, maxlength: 2000, 'aria-label': 'Edit comment',
-                oninput: (e) => { ui.drafts[ek] = e.target.value; const b = $(ek + '-save'); if (b) b.disabled = !e.target.value.trim(); },
-                onkeydown: (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveLogEdit(t, entry); } if (e.key === 'Escape') cancel(); },
-              }, ui.drafts[ek] ?? ''),
-              el('div', { class: 'log-actions' },
-                el('button', { type: 'button', class: 'btn', onclick: cancel }, 'Cancel'),
-                el('button', { type: 'button', class: 'btn btn-primary', id: ek + '-save', disabled: !(ui.drafts[ek] || '').trim(), onclick: () => saveLogEdit(t, entry) }, 'Save comment'),
-              ),
-            );
-          }
-          const tools = !editable ? null : ui.logRemoving === rk
-            ? [el('button', { type: 'button', class: 'link-btn danger', onclick: () => removeLog(t, entry) }, 'Remove'),
-               el('button', { type: 'button', class: 'link-btn', onclick: () => { ui.logRemoving = null; render(); } }, 'Keep')]
-            : [el('button', { type: 'button', class: 'link-btn', 'aria-label': 'Edit this comment', onclick: () => startLogEdit(t, entry) }, 'Edit'),
-               el('button', { type: 'button', class: 'link-btn', 'aria-label': 'Remove this comment', onclick: () => { ui.logRemoving = rk; render(); } }, 'Remove')];
-          return el('li', {},
-            el('div', { class: 'when' }, el('span', {}, stamp(entry.at)), tools),
-            el('div', { class: 'text' }, String(entry.text || '')),
-          );
-        })) : (editable ? null : el('p', { class: 'empty' }, 'No comments.')),
-        editable ? el('textarea', {
-          id: key, maxlength: 2000, 'aria-label': 'New comment', placeholder: 'Progress, findings, next steps…',
-          oninput: (e) => { ui.drafts[key] = e.target.value; },
-          onkeydown: (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); addLog(t); } },
-        }, ui.drafts[key] ?? '') : null,
-        el('div', { class: 'log-actions' },
-          el('button', { type: 'button', class: 'btn', onclick: () => toggleOpen(t.id) }, 'Close'),
-          editable ? el('button', { type: 'button', class: 'btn btn-primary', onclick: () => addLog(t) }, 'Add comment') : null,
-        ),
+      entriesBox(taskLog(t), () => toggleOpen(t.id)),
+    );
+  }
+
+  // Topics: subjects that aren't tasks, each with dated notes and a checklist, newest first. One is open at a time,
+  // apart from the open task, and the topic clicked keeps its place on screen as another folds away.
+  const topicRef = (id) => db.collection('topics').doc(id);
+  const patchTopic = (id, fields) => write('topic-' + id, () => topicRef(id).update(fields));
+  const notesOf = (tp) => (Array.isArray(tp.notes) ? tp.notes : []);
+  const topicNotes = (tp) => ({ key: 'topic-' + tp.id, entries: notesOf(tp), save: (notes) => patchTopic(tp.id, { notes }), words: NOTE_WORDS });
+  const topicItems = (tp) => ({ key: 'topic-' + tp.id, items: itemsOf(tp), save: (checklist) => patchTopic(tp.id, { checklist }) });
+
+  function toggleTopic(id) {
+    const anchor = () => $('topic-title-' + id);
+    const before = anchor() ? anchor().getBoundingClientRect().top : null;
+    ui.topicOpen = ui.topicOpen === id ? null : id;
+    ui.logRemoving = ui.logEditing = ui.itemEditing = ui.itemRemoving = null;
+    render();
+    const a = anchor();
+    if (before !== null && a) window.scrollBy(0, a.getBoundingClientRect().top - before);
+  }
+
+  function startTopicEdit(tp) {
+    if (ui.topicEditing && ui.topicEditing.id === tp.id) { ui.topicEditing = null; render(); return; }
+    ui.topicEditing = { id: tp.id, orig: tp.title || '', title: tp.title || '' };
+    ui.topicRemoving = null;
+    render();
+    const f = $('topic-edit-title-' + tp.id); if (f) f.focus();
+  }
+
+  function saveTopicEdit(tp) {
+    const title = ui.topicEditing.title.trim();
+    if (!title) return;
+    if (title !== ui.topicEditing.orig) patchTopic(tp.id, { title });
+    ui.topicEditing = null;
+    render();
+  }
+
+  function topicEditForm(tp) {
+    const ed = ui.topicEditing;
+    const id = (name) => 'topic-edit-' + name + '-' + tp.id;
+    const cancel = () => { ui.topicEditing = null; render(); };
+    return el('div', { class: 'edit', id: 'topic-edit-' + tp.id, role: 'group', 'aria-label': 'Edit ' + (tp.title || 'topic') },
+      el('div', { class: 'field wide' },
+        el('label', { for: id('title') }, 'Title'),
+        el('input', {
+          type: 'text', id: id('title'), value: ed.title, maxlength: 300, required: true,
+          oninput: (e) => { ed.title = e.target.value; const b = $(id('save')); if (b) b.disabled = !ed.title.trim(); },
+          onkeydown: (e) => { if (e.key === 'Enter') { e.preventDefault(); saveTopicEdit(tp); } if (e.key === 'Escape') cancel(); },
+        }),
+      ),
+      el('div', { class: 'edit-actions' },
+        el('button', { type: 'button', class: 'link-btn danger', onclick: () => {
+          ui.topicEditing = null; ui.topicRemoving = tp.id; render();
+          const b = $('topic-remove-' + tp.id); if (b) b.focus();
+        } }, 'Remove topic'),
+        el('button', { type: 'button', class: 'btn', onclick: cancel }, 'Cancel'),
+        el('button', { type: 'button', class: 'btn btn-primary', id: id('save'), disabled: !ed.title.trim(), onclick: () => saveTopicEdit(tp) }, 'Save changes'),
       ),
     );
+  }
+
+  function removeTopic(tp) {
+    ui.topicRemoving = null;
+    if (ui.topicOpen === tp.id) ui.topicOpen = null;
+    write('topic-' + tp.id, () => topicRef(tp.id).delete());
+    render();
+  }
+
+  function topicRow(tp) {
+    const editable = !state.readOnly;
+    const open = ui.topicOpen === tp.id;
+    const editing = editable && Boolean(ui.topicEditing && ui.topicEditing.id === tp.id);
+    const notes = notesOf(tp);
+    const items = itemsOf(tp);
+    const ticked = items.filter((c) => c.done).length;
+    const titleBtn = el('button', {
+      type: 'button', class: 'title-btn', id: 'topic-title-' + tp.id, 'aria-expanded': String(open), 'aria-controls': 'topic-details-' + tp.id,
+      onclick: () => toggleTopic(tp.id),
+    }, el('span', { class: 'title' }, tp.title || '(untitled)'));
+    const meta = el('div', { class: 'meta' },
+      notes.length ? el('span', {}, notes.length + (notes.length === 1 ? ' note' : ' notes')) : null,
+      items.length ? el('span', { class: ticked === items.length ? 'all-checked' : null }, ticked + ' of ' + items.length + ' checked') : null,
+      el('span', {}, ago(daysSince(tp.created), 'added')),
+      editable ? el('button', {
+        type: 'button', class: 'link-btn', 'aria-expanded': String(editing), 'aria-controls': 'topic-edit-' + tp.id, 'aria-label': 'Edit topic: ' + (tp.title || ''),
+        onclick: () => startTopicEdit(tp),
+      }, 'Edit') : null,
+    );
+    // While a topic is being edited, its form takes the place of its notes and checklist.
+    const panels = [];
+    if (editing) panels.push(topicEditForm(tp));
+    else if (open) {
+      panels.push(el('div', { class: 'details topic-open', id: 'topic-details-' + tp.id },
+        el('div', { class: 'panes' }, entriesBox(topicNotes(tp)), checklistBox(topicItems(tp))),
+        el('div', { class: 'log-actions' }, el('button', { type: 'button', class: 'btn', onclick: () => toggleTopic(tp.id) }, 'Close')),
+      ));
+    }
+    if (editable && ui.topicRemoving === tp.id) {
+      panels.push(el('div', { class: 'inline' },
+        el('span', {}, 'Remove this topic, with its notes and checklist, for good?'),
+        el('button', { type: 'button', class: 'btn btn-danger', id: 'topic-remove-' + tp.id, onclick: () => removeTopic(tp) }, 'Remove'),
+        el('button', { type: 'button', class: 'btn', onclick: () => { ui.topicRemoving = null; render(); } }, 'Keep'),
+      ));
+    }
+    return el('li', { class: 'task topic' + (open ? ' is-open' : ''), onclick: rowClick(() => toggleTopic(tp.id)) },
+      el('div', { class: 'body' }, el('div', { class: 'title-line' }, titleBtn), meta),
+      panels,
+    );
+  }
+
+  function renderTopics() {
+    const topics = [...state.topics].sort((a, b) => String(b.created || '').localeCompare(String(a.created || '')));
+    $('list-topics').replaceChildren(...topics.map(topicRow));
+    $('list-topics').hidden = !topics.length;
+    $('empty-topics').hidden = topics.length > 0;
+    $('n-topics').textContent = topics.length ? String(topics.length) : '';
+    $('tn-topics').textContent = topics.length ? String(topics.length) : '';
+    for (const c of $('topic-add').elements) c.disabled = state.readOnly || !db;
   }
 
   // The pieces of one task, shared by the list and table layouts.
@@ -1078,7 +1337,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       p.done && t.comment ? el('div', { class: 'comment' }, t.comment) : null,
       meta,
     );
-    return el('li', { class: 'task' + (p.done ? ' is-done' : '') + (p.open ? ' is-open' : ''), onclick: rowClick(t.id) }, p.check, body, el('div', { class: 'actions' }, p.star), p.panels);
+    return el('li', { class: 'task' + (p.done ? ' is-done' : '') + (p.open ? ' is-open' : ''), onclick: rowClick(() => toggleOpen(t.id)) }, p.check, body, el('div', { class: 'actions' }, p.star), p.panels);
   }
 
   // Table columns: [heading, shown only to screen readers].
@@ -1097,7 +1356,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 
   function tableRows(t, today, withOwner) {
     const p = parts(t, today, true);
-    const tr = el('tr', { class: ['row', p.done ? 'is-done' : '', p.open ? 'is-open' : '', p.panels.length ? 'has-detail' : ''].join(' ').trim().replace(/\s+/g, ' '), onclick: rowClick(t.id) },
+    const tr = el('tr', { class: ['row', p.done ? 'is-done' : '', p.open ? 'is-open' : '', p.panels.length ? 'has-detail' : ''].join(' ').trim().replace(/\s+/g, ' '), onclick: rowClick(() => toggleOpen(t.id)) },
       el('td', { class: 'c-check' }, p.check),
       el('td', { class: 'c-task' }, p.titleBtn, withChip(t), planChip(t, today), carryChip(t), viaChip(t)),
       withOwner ? el('td', { class: 'c-owner' }, t.owner ? el('span', { class: 'owner' }, memberName(t.owner)) : el('span', { class: 'me' }, 'Me')) : null,
@@ -1381,6 +1640,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     $('show-today-label').textContent = near ? selTitle : fromKey(sel).toLocaleDateString(undefined, { weekday: 'short' });
     $('empty-today').textContent = 'Nothing planned for ' + selWord + '. Star a task to add it, or ask Claude to plan ' + (sel === today ? 'your day' : selWord) + '.';
     renderJira(sel, today, near ? selTitle : $('show-today-label').textContent);
+    renderTopics();
     // The add box's Day: no day, one of the next seven, or Someday, which always goes in Up Next.
     const addDay = $('add-day');
     // It starts on today, until the user picks another day for the task they're adding.
@@ -1471,6 +1731,21 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     } catch (e) {
       msg.textContent = 'Ask Claude in Claude Code: “' + SYNC_ASK + '”';
     }
+  });
+
+  // A new topic opens at once, ready for its notes and checklist; the cursor stays here for the next topic.
+  $('topic-add').addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!db || state.readOnly) return;
+    const input = $('topic-title');
+    const title = input.value.trim();
+    if (!title) return;
+    const ref = db.collection('topics').doc();
+    write('topic-' + ref.id, () => ref.set({ title, created: new Date().toISOString() }));
+    input.value = '';
+    ui.topicOpen = ref.id;
+    ui.topicEditing = ui.topicRemoving = null;
+    render();
   });
 
   $('add-type').addEventListener('change', render);
@@ -1613,6 +1888,11 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     // Jira flags are optional: if they can't load, the Jira tab just stays hidden.
     db.collection('jira').onSnapshot((snap) => {
       state.jira = snap.docs.map((d) => ({ ...d.data(), key: d.data().key || d.id }));
+      render();
+    }, () => {});
+    // Topics are optional too: if they can't load, the Topics tab just shows none.
+    db.collection('topics').onSnapshot((snap) => {
+      state.topics = snap.docs.map((d) => ({ ...d.data(), id: d.id }));
       render();
     }, () => {});
     // Settings are optional: if they can't load, tickets just stay plain text.

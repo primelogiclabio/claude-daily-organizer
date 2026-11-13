@@ -1,11 +1,11 @@
 ---
 name: daily-organizer
-description: "Keeps the user's personal daily organizer artifact on claude.ai: Today, Up Next, Waiting On and Done lists in the artifact's database. Use to start it, add, update, finish or review tasks (also when called a workday tracker or task list), plan or wrap up the day, or change the organizer page."
+description: "Keeps the user's personal daily organizer artifact on claude.ai: Today, Up Next, Waiting On and Done lists in the artifact's database. Use to start it, add, update, finish or review tasks (also when called a workday tracker or task list), keep topics with notes and checklists, plan or wrap up the day, or change the organizer page."
 ---
 
 # Daily organizer
 
-A personal, day-to-day organizer kept as a claude.ai artifact: a page with **Today**, **Up Next**, **Waiting On**, **Upcoming**, **Someday**, **Ideas** and **Done**, and a **Days** log of past plans and summaries, shown as lists or tables. Tabs show one list at a time, with counts, and the **All** tab shows them all stacked. Open tasks planned for a later day are under **Upcoming**; those planned for a day gone by show as **Carried over** under the day's tasks, marked with the day they were planned for. Tasks set aside with no day are under **Someday**. Tickets flagged on the user's Jira Dashboard show under **Jira** once Claude has copied them in, each with **Add as task**. Open ideas live under **Ideas**, not Up Next or Waiting On, unless they have a day or are set aside for someday. Clicking a row opens its details (every field, then the comments; in the table, which has no note column, the status note too), and closes any other row that was open. Each task's **Edit** changes any of its fields on the page, and each comment has its own **Edit**. The add box's **Day** starts on today. The header shows today's figures (open today, carried over, to chase, done today) and a bar for how much of today's plan is done. A bar above the lists picks the day shown, whose tasks to show (once there's a team) and **List | Table**; the tab, the layout, the person and whether the **Add a task** box is folded are remembered per device. The page is built from `template.html` in this skill's folder. Its tasks aren't in the page's code: they're rows in the artifact's own database, which the page shows live and Claude reads and writes with the `ArtifactData` tool.
+A personal, day-to-day organizer kept as a claude.ai artifact: a page with **Today**, **Up Next**, **Waiting On**, **Upcoming**, **Someday**, **Ideas** and **Done**, and a **Days** log of past plans and summaries, shown as lists or tables. Tabs show one list at a time, with counts, and the **All** tab shows them all stacked. Open tasks planned for a later day are under **Upcoming**; those planned for a day gone by show as **Carried over** under the day's tasks, marked with the day they were planned for. Tasks set aside with no day are under **Someday**. Tickets flagged on the user's Jira Dashboard show under **Jira** once Claude has copied them in, each with **Add as task**. Open ideas live under **Ideas**, not Up Next or Waiting On, unless they have a day or are set aside for someday. **Topics** holds subjects that aren't tasks, such as "Q4 planning": each opens to its dated notes and a checklist, side by side. Clicking a row opens its details (every field, then the comments; in the table, which has no note column, the status note too), and closes any other row that was open. Each task's **Edit** changes any of its fields on the page, and each comment has its own **Edit**. The add box's **Day** starts on today. The header shows today's figures (open today, carried over, to chase, done today) and a bar for how much of today's plan is done. A bar above the lists picks the day shown, whose tasks to show (once there's a team) and **List | Table**; the tab, the layout, the person and whether the **Add a task** box is folded are remembered per device. The page is built from `template.html` in this skill's folder. Its tasks aren't in the page's code: they're rows in the artifact's own database, which the page shows live and Claude reads and writes with the `ArtifactData` tool.
 
 It's for one person's own work. Don't apply these rules to a team or project tracker, or to a repo's `PROGRESS.md`; if it's unclear which list the user means, ask.
 
@@ -33,6 +33,11 @@ The organizer is the artifact the user points at: by a link, by name ("my daily 
   - `via`, optional: `"chat"` on tasks Claude added. Tasks added on the page have none.
   - `flag`, optional: the Jira ticket key of the Jira Dashboard flag the task was made from, such as `OPS-142`.
 - `team/<id>`, one document per team member: `name`, `created`
+- `topics/<id>`, one document per topic (see Topics):
+  - `title`
+  - `created`: ISO timestamp
+  - `notes`, optional: dated notes, as a list of `{at, text}` entries, oldest first, like a task's `log`
+  - `checklist`, optional: items in the order added, as a list of `{id, text}` entries; a ticked item also has `done: true` and `doneAt` (ISO timestamp). Item ids are letters, digits and dashes, such as `c-` plus the time in milliseconds.
 - `jira/<KEY>`, one document per ticket flagged on the Jira Dashboard, copied in by Claude (see Jira flags): `key`, `summary`, `status`, `statusCategory`, `assignee`, `url`, `note`, `flaggedAt`, `updated`
 - `days/<YYYY-MM-DD>`, one document per day:
   - `plan`: task ids
@@ -84,6 +89,19 @@ The page's **Settings** section lists the team, and the add box and each task's 
 - To remove someone, first give their tasks back to the user and clear `with` on their discussions (one `batch` of `owner` and `with` deletes), then `delete` their `team` document. Say how many tasks came back.
 - When the user asks what someone has, `query` `tasks` where `owner` is that member's id.
 - When the user asks for their 1:1 with someone, or what to raise with them, list the open tasks whose `with` is that member's id, then the open tasks they own. Older discussions may name the person only in the title: mention those too, and offer to set their `with`.
+
+## Topics
+
+A topic is a subject the user keeps notes and a checklist on, apart from the task lists: a project to think through, a meeting series, a list of things to check. It isn't a task: it has no type, status, day or owner, and plan-my-day and wrap-up leave topics out unless the user asks about one. The page lists them under **Topics**, newest first, with a **New topic** box; each topic's **Edit** renames or removes it.
+
+- **Creating.** "Start a topic for Q4 planning": `set` `topics/<new id>` with `title` and `created`. Ids are like task ids, such as `p-` plus the time in milliseconds.
+- **Finding one.** Match the topic by its title, and ask if more than one matches or none does. When the user says "add a note to Q4 planning" and there's both a topic and a task by that name, ask which.
+- **Notes.** To add one, `update` `notes` with the topic's existing entries plus `{at, text}` (now) at the end. To change one, write the whole list with only that entry's `text` changed and its `at` kept. An `update` replaces the whole list, as with comments, so never leave out the other entries.
+- **Checklist.** To add items, `update` `checklist` with the existing items plus each new `{id, text}` at the end, in one write. To tick an item, write the list with `done: true` and `doneAt` (now) on it; to untick, write it without those two. Find items by `id`; an item without an `id` is found by its place in the list. Rename or remove an item the same way, keeping the rest.
+- **Reviewing.** When the user asks what's on a topic, give its notes (newest last) and its open checklist items, then how many are done.
+- **Removing.** Only when the user asks: `delete` the topic's document. It takes the notes and checklist with it.
+
+Every write to an existing topic passes its `if_version`, as with tasks.
 
 ## Changing tasks
 

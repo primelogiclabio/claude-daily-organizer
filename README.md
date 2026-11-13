@@ -10,7 +10,7 @@ past plans and end-of-day summaries. It installs from the
 [claude-tools](https://github.com/primelogiclabio/claude-tools) marketplace.
 
 Tabs show one list at a time, each with a count: **Today**, **Up Next**,
-**Waiting**, **Upcoming**, **Someday**, **Ideas** and **Done**. **All** shows
+**Waiting**, **Upcoming**, **Someday**, **Ideas**, **Topics**, **Jira** and **Done**. **All** shows
 every list stacked on one page. Ideas get their own tab, so Up Next holds only
 work to do. **Upcoming** holds tasks planned for later days, and **Someday**
 the ones you've set aside with no day. Unfinished tasks from earlier days show
@@ -81,6 +81,20 @@ artifact on claude.ai, in the artifact's own database:
   such as what you tried and what's next. The status note says where a task
   stands now; the comments keep the history. Say "add a comment to the DNS
   task: …", or open the task on the page and add one there.
+
+## Topics
+
+The **Topics** tab keeps subjects that aren't tasks, such as "Q4 planning"
+or "Kubernetes migration". Name one in its **New topic** box and it opens
+to two panes: **Notes**, dated entries you can edit or remove, and a
+**Checklist** of items to tick off, with how many are done. The panes sit
+side by side on a wide screen and stack on a phone. **Edit** on a topic
+renames or removes it.
+
+Claude keeps the same notes and checklists: "start a topic for Q4
+planning", "add a note to Q4 planning: …", "add 'book the room' and 'send
+the agenda' to its checklist", "tick off book the room", "what's left on
+Q4 planning?". Plan-my-day and wrap-up leave topics out unless you ask.
 
 ## Team
 
@@ -183,7 +197,7 @@ claude.ai have no database.
 | Where | Works? |
 | --- | --- |
 | Claude Code CLI, desktop Code tab, VS Code | ✔ full: starts the organizer, changes tasks, plans and wraps up your day |
-| The organizer page, wherever you open it (web, desktop, mobile) | ✔ add, edit, star, finish and remove tasks, add status notes and comments |
+| The organizer page, wherever you open it (web, desktop, mobile) | ✔ add, edit, star, finish and remove tasks, add status notes and comments, keep topics with notes and checklists |
 | claude.ai Chat, Cowork, mobile chat | ⚠ can't change the organizer's tasks. Claude can still keep an older-style tracker there, with the tasks in the artifact's code and the same rules |
 | Claude Code cloud sessions (claude.ai/code) | ✔ only if it's on your claude.ai account and the session has the Artifact tools |
 
