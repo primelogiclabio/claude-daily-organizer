@@ -9,9 +9,11 @@ Ask Claude to start one and it publishes the page from
 past plans and end-of-day summaries. It installs from the
 [claude-tools](https://github.com/primelogiclabio/claude-tools) marketplace.
 
-Tabs show one list at a time, each with a count: **Today**, **Up Next**,
-**Waiting**, **Upcoming**, **Someday**, **Ideas** and **Done**. **All** shows
-every list stacked on one page. Ideas get their own tab, so Up Next holds only
+The page uses the window's full width. A pane down the left lists the lists,
+each with a count: **Today**, **Up Next**, **Waiting**, **Upcoming**,
+**Someday**, **Ideas**, **Jira** and **Done**, and shows one at a time. **All**
+shows every list stacked on one page. The pane stays in view as you scroll;
+on a phone it becomes tabs right above the list. **Settings** is the pane's last item. Ideas get their own list, so Up Next holds only
 work to do. **Upcoming** holds tasks planned for later days, and **Someday**
 the ones you've set aside with no day. Unfinished tasks from earlier days show
 as **Carried over** under Today, marked "from Oct 9 · 23 days"; give one a new
@@ -27,7 +29,7 @@ with columns for type, priority, ticket, age and comments. Rows light up under
 the pointer; click one to open its details: every field, the status note in
 the table, and its comments. Opening a row closes the one already open. Each device
 remembers its own tab and layout, so a phone can stay on the Today list while
-a desktop shows All as tables. The **Add a task** box above the tabs folds
+a desktop shows All as tables. The **Add a task** box above the list folds
 away when you don't need it, and each device remembers that too. Its **Day**
 picker starts on today, and can plan a new task for one of the next six days,
 **Someday** or no day; **+ Note** adds a status note as you add it. Tasks Claude added from a chat
@@ -82,24 +84,46 @@ artifact on claude.ai, in the artifact's own database:
   stands now; the comments keep the history. Say "add a comment to the DNS
   task: …", or open the task on the page and add one there.
 
+## Topics
+
+**Topics** is a screen of its own, for subjects that aren't tasks, such as
+"Q4 planning" or "Kubernetes migration". The **Tasks | Topics** switch at
+the top of the page swaps between the two. Topics are listed down the left,
+under a **New topic** box, at the left edge of the window. The topic you
+pick shows its **Notes** in the middle pane, which takes all the width the
+window has to spare: bullet points, without dates, each of which you can
+edit or remove. Its **Checklist** sits on the right, with items to tick
+off and how many are done.
+**Edit** on a topic renames or removes it. On a narrower screen the
+checklist goes under the notes; on a phone you see the list, then the topic
+you tap, with **‹ All topics** to go back. Each device remembers the screen
+and the topic.
+
+Claude keeps the same notes and checklists: "start a topic for Q4
+planning", "add a note to Q4 planning: …", "add 'book the room' and 'send
+the agenda' to its checklist", "tick off book the room", "what's left on
+Q4 planning?". Plan-my-day and wrap-up leave topics out unless you ask.
+
 ## Team
 
 Tasks are yours unless you say otherwise. To hand some out:
 
-- Add people under **Settings › Team** on the page, or tell Claude ("add Sam
-  to my team").
+- Add people under **Settings › Team** on the page (Settings is the last item
+  in the left pane), or tell Claude ("add Sam to my team").
 - Pick who a task is for when you add it, under **For** in a task's **Edit**, or by
   asking ("add a follow-up for Sam to check the logs"). The task then shows
   "for Sam".
-- A discussion can say who it's with: pick them under **With** when you add
-  it or in the discussion's **Edit**, or ask ("add a discussion with Sam
-  about the Q3 budget"). It shows "with Sam" and stays your own task.
+- A discussion is always yours, with one or more people: pick them under
+  **With** when you add it or in the discussion's **Edit**, as many as it
+  involves, or ask ("add a discussion with Sam and Priya about the Q3
+  budget"). It shows "with Sam and Priya", and it's on each one's 1:1 list.
+  Discussions don't offer **For**.
 - The **People** filter above the lists shows **Everyone**, **Mine** or one
   person. Picking one person shows a **1:1 with** section first, listing the
   open discussions with them, then the tasks they have. Ask Claude "what's on
   my 1:1 with Sam?" for the same list. Each device remembers its choice.
-- Removing someone from the team gives their tasks back to you, and their
-  discussions no longer say who they're with.
+- Removing someone from the team gives their tasks back to you and takes
+  them off the discussions they were part of.
 
 "Plan my day" plans from your own tasks, and suggests checking in on tasks
 someone else has had for 3 days or more. "Wrap up my day" lists what's still
@@ -183,7 +207,7 @@ claude.ai have no database.
 | Where | Works? |
 | --- | --- |
 | Claude Code CLI, desktop Code tab, VS Code | ✔ full: starts the organizer, changes tasks, plans and wraps up your day |
-| The organizer page, wherever you open it (web, desktop, mobile) | ✔ add, edit, star, finish and remove tasks, add status notes and comments |
+| The organizer page, wherever you open it (web, desktop, mobile) | ✔ add, edit, star, finish and remove tasks, add status notes and comments, keep topics with notes and checklists |
 | claude.ai Chat, Cowork, mobile chat | ⚠ can't change the organizer's tasks. Claude can still keep an older-style tracker there, with the tasks in the artifact's code and the same rules |
 | Claude Code cloud sessions (claude.ai/code) | ✔ only if it's on your claude.ai account and the session has the Artifact tools |
 

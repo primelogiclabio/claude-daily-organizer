@@ -1,11 +1,11 @@
 ---
 name: daily-organizer
-description: "Keeps the user's personal daily organizer artifact on claude.ai: Today, Up Next, Waiting On and Done lists in the artifact's database. Use to start it, add, update, finish or review tasks (also when called a workday tracker or task list), plan or wrap up the day, or change the organizer page."
+description: "Keeps the user's personal daily organizer artifact on claude.ai: Today, Up Next, Waiting On and Done lists in the artifact's database. Use to start it, add, update, finish or review tasks (also when called a workday tracker or task list), keep topics with notes and checklists, plan or wrap up the day, or change the organizer page."
 ---
 
 # Daily organizer
 
-A personal, day-to-day organizer kept as a claude.ai artifact: a page with **Today**, **Up Next**, **Waiting On**, **Upcoming**, **Someday**, **Ideas** and **Done**, and a **Days** log of past plans and summaries, shown as lists or tables. Tabs show one list at a time, with counts, and the **All** tab shows them all stacked. Open tasks planned for a later day are under **Upcoming**; those planned for a day gone by show as **Carried over** under the day's tasks, marked with the day they were planned for. Tasks set aside with no day are under **Someday**. Tickets flagged on the user's Jira Dashboard show under **Jira** once Claude has copied them in, each with **Add as task**. Open ideas live under **Ideas**, not Up Next or Waiting On, unless they have a day or are set aside for someday. Clicking a row opens its details (every field, then the comments; in the table, which has no note column, the status note too), and closes any other row that was open. Each task's **Edit** changes any of its fields on the page, and each comment has its own **Edit**. The add box's **Day** starts on today. The header shows today's figures (open today, carried over, to chase, done today) and a bar for how much of today's plan is done. A bar above the lists picks the day shown, whose tasks to show (once there's a team) and **List | Table**; the tab, the layout, the person and whether the **Add a task** box is folded are remembered per device. The page is built from `template.html` in this skill's folder. Its tasks aren't in the page's code: they're rows in the artifact's own database, which the page shows live and Claude reads and writes with the `ArtifactData` tool.
+A personal, day-to-day organizer kept as a claude.ai artifact: a page with **Today**, **Up Next**, **Waiting On**, **Upcoming**, **Someday**, **Ideas** and **Done**, and a **Days** log of past plans and summaries, shown as lists or tables. The page takes the window's full width. A pane down the left lists them, with counts, and shows one at a time, or **All** of them stacked; on a phone the pane becomes tabs above the list. Open tasks planned for a later day are under **Upcoming**; those planned for a day gone by show as **Carried over** under the day's tasks, marked with the day they were planned for. Tasks set aside with no day are under **Someday**. Tickets flagged on the user's Jira Dashboard show under **Jira** once Claude has copied them in, each with **Add as task**. Open ideas live under **Ideas**, not Up Next or Waiting On, unless they have a day or are set aside for someday. A **Tasks | Topics** switch in the header swaps the lists for the **Topics** screen, for subjects that aren't tasks, such as "Q4 planning": topics down the left, the picked topic's notes (bullet points) in the middle, which takes the rest of the window's width, and its checklist on the right. Clicking a row opens its details (every field, then the comments; in the table, which has no note column, the status note too), and closes any other row that was open. Each task's **Edit** changes any of its fields on the page, and each comment has its own **Edit**. The add box's **Day** starts on today. The header shows today's figures (open today, carried over, to chase, done today) and a bar for how much of today's plan is done. A bar above the lists picks the day shown, whose tasks to show (once there's a team) and **List | Table**; the tab, the layout, the person, whether the **Add a task** box is folded, the screen and the topic picked are remembered per device. The page is built from `template.html` in this skill's folder. Its tasks aren't in the page's code: they're rows in the artifact's own database, which the page shows live and Claude reads and writes with the `ArtifactData` tool.
 
 It's for one person's own work. Don't apply these rules to a team or project tracker, or to a repo's `PROGRESS.md`; if it's unclear which list the user means, ask.
 
@@ -27,12 +27,17 @@ The organizer is the artifact the user points at: by a link, by name ("my daily 
   - `doneAt`: ISO timestamp, set with `comment`
   - `today`, optional: the `YYYY-MM-DD` date the task is planned for: today, or a later day. The field keeps the name `today` so older rows still work.
   - `owner`, optional: the id of the team member the task is for. No `owner` means it's the user's own.
-  - `with`, optional, for discussions: the id of the team member the discussion is with. It doesn't change whose task it is.
+  - `with`, optional, for discussions: who the discussion is with, as one team member's id, or a list of ids when it's with more than one of them. Older rows hold one id. A discussion is always the user's own, with those people; `with` doesn't make it theirs.
   - `priority`, optional: `high` or `low`. No `priority` means Normal.
   - `someday`, optional: `true` for an open task set aside with no day. It has no `today`, and its `status` is `next`.
   - `via`, optional: `"chat"` on tasks Claude added. Tasks added on the page have none.
   - `flag`, optional: the Jira ticket key of the Jira Dashboard flag the task was made from, such as `OPS-142`.
 - `team/<id>`, one document per team member: `name`, `created`
+- `topics/<id>`, one document per topic (see Topics):
+  - `title`
+  - `created`: ISO timestamp
+  - `notes`, optional: the topic's notes, written as bullet points: a list of `{id, text}` entries in the order added, with no dates. Note ids are like item ids, such as `n-` plus the time in milliseconds.
+  - `checklist`, optional: items in the order added, as a list of `{id, text}` entries; a ticked item also has `done: true` and `doneAt` (ISO timestamp). Item ids are letters, digits and dashes, such as `c-` plus the time in milliseconds.
 - `jira/<KEY>`, one document per ticket flagged on the Jira Dashboard, copied in by Claude (see Jira flags): `key`, `summary`, `status`, `statusCategory`, `assignee`, `url`, `note`, `flaggedAt`, `updated`
 - `days/<YYYY-MM-DD>`, one document per day:
   - `plan`: task ids
@@ -63,7 +68,7 @@ Dates are the user's local date. New task ids are letters, digits and dashes, su
 
 ## Task rules
 
-1. **Type.** Every task is a `task`, `idea`, `follow-up` or `discussion`. Ask when the user doesn't say. Default to `task` only for a clearly actionable to-do. A stray thought is likely an `idea`, something waiting on another person or system is likely a `follow-up`, and a topic to talk through with someone (a point for a 1:1 or a meeting) is likely a `discussion`: ask rather than guess. When the user says who a discussion is with and they're on the team, set `with` to their id, so it shows on that person's 1:1 agenda. If they aren't on the team, ask whether to add them; if not, name them in the title, such as "Q3 budget with Sam". `owner` still means whose task it is.
+1. **Type.** Every task is a `task`, `idea`, `follow-up` or `discussion`. Ask when the user doesn't say. Default to `task` only for a clearly actionable to-do. A stray thought is likely an `idea`, something waiting on another person or system is likely a `follow-up`, and a topic to talk through with someone (a point for a 1:1 or a meeting) is likely a `discussion`: ask rather than guess. When the user says who a discussion is with and they're on the team, set `with` to their id, or to a list of ids when it's with more than one of them, so it shows on each one's 1:1 agenda. If someone isn't on the team, ask whether to add them; if not, name them in the title, such as "Q3 budget with Sam". A discussion is always the user's own: don't give it an `owner`.
 2. **Completing needs a comment.** A task is done only with a short comment saying what was done or decided. If the user says "mark X done" without one, ask for it first. The page enforces the same rule.
 3. **Ticket, optional.** A ticket key such as `OPS-142`, or a full URL, at creation or later. Never required. A full URL always links. A key links once the organizer has a ticket link (below), and shows as plain text until then.
 4. **Status note, optional.** A short, changing note such as "blocked on DNS change", separate from the completion comment. Useful for anything that sits more than a day.
@@ -78,12 +83,26 @@ A plain "add a task" with nothing else is the user's own `task` in Up Next, Norm
 
 ## Team
 
-The page's **Settings** section lists the team, and the add box and each task's **Edit** let the user pick who a task is for (**For**) and who a discussion is with (**With**). The page can also show one person at a time: their tasks, with a **1:1 with** section above them listing the open discussions with that person.
+The page's **Settings**, the last item in its left pane, lists the team, and the add box and each task's **Edit** let the user pick who a task is for (**For**) and who a discussion is with (**With**, any number of people). Discussions have no **For**: they're always the user's own. The page can also show one person at a time: their tasks, with a **1:1 with** section above them listing the open discussions with that person.
 - To add someone, `set` `team/<new id>` with `name` and `created`. Ids are letters, digits and dashes, such as `m-` plus the time in milliseconds.
-- To assign a task, `update` its `owner`. To give it back to the user, write `owner` as `{"__delete__": true}`. Set or clear a discussion's `with` the same way.
-- To remove someone, first give their tasks back to the user and clear `with` on their discussions (one `batch` of `owner` and `with` deletes), then `delete` their `team` document. Say how many tasks came back.
+- To assign a task, `update` its `owner`. To give it back to the user, write `owner` as `{"__delete__": true}`.
+- To add someone to a discussion, `update` `with` to the list of everyone it's with (one id becomes a list). To take someone off, write who's left: a list for two or more, one id for one, or `{"__delete__": true}` for no one.
+- To remove someone, first give their tasks back to the user and take them off their discussions' `with` (one `batch`), then `delete` their `team` document. Say how many tasks came back.
 - When the user asks what someone has, `query` `tasks` where `owner` is that member's id.
-- When the user asks for their 1:1 with someone, or what to raise with them, list the open tasks whose `with` is that member's id, then the open tasks they own. Older discussions may name the person only in the title: mention those too, and offer to set their `with`.
+- When the user asks for their 1:1 with someone, or what to raise with them, list the open tasks whose `with` is or includes that member's id, then the open tasks they own. Older discussions may name the person only in the title: mention those too, and offer to set their `with`.
+
+## Topics
+
+A topic is a subject the user keeps notes and a checklist on, apart from the task lists: a project to think through, a meeting series, a list of things to check. It isn't a task: it has no type, status, day or owner, and plan-my-day and wrap-up leave topics out unless the user asks about one. The page's **Topics** screen lists them down the left, newest first, under a **New topic** box; the topic picked shows its notes as bullet points in the middle and its checklist on the right, and its **Edit** renames or removes it. On a phone the screen shows the list, or one topic with a way back.
+
+- **Creating.** "Start a topic for Q4 planning": `set` `topics/<new id>` with `title` and `created`. Ids are like task ids, such as `p-` plus the time in milliseconds.
+- **Finding one.** Match the topic by its title, and ask if more than one matches or none does. When the user says "add a note to Q4 planning" and there's both a topic and a task by that name, ask which.
+- **Notes.** Notes are bullet points, one short point each, without dates. To add points, `update` `notes` with the topic's existing points plus each new `{id, text}` at the end, in one write; when the user gives a paragraph, split it into points only if they wrote it as points. Change or remove a point the same way as a checklist item (below). An `update` replaces the whole list, as with comments, so never leave out the other points.
+- **Checklist.** To add items, `update` `checklist` with the existing items plus each new `{id, text}` at the end, in one write. To tick an item, write the list with `done: true` and `doneAt` (now) on it; to untick, write it without those two. Find items by `id`; an item without an `id` is found by its place in the list. Rename or remove an item the same way, keeping the rest.
+- **Reviewing.** When the user asks what's on a topic, give its notes as bullet points, then its open checklist items and how many are done.
+- **Removing.** Only when the user asks: `delete` the topic's document. It takes the notes and checklist with it.
+
+Every write to an existing topic passes its `if_version`, as with tasks.
 
 ## Changing tasks
 
@@ -107,7 +126,7 @@ The page's **Edit** is the one button on a task row. It changes the title, type,
 
 ## Ticket link
 
-The page's **Settings** section has a **Ticket link** field, saved as `ticketUrl` in `organizer/settings`.
+The page's **Settings** has a **Ticket link** field, saved as `ticketUrl` in `organizer/settings`.
 - When the user says where their tickets live (for example "our Jira is acme.atlassian.net"), set it with `ArtifactData`: `https://acme.atlassian.net/browse/` adds the key at the end, and `https://linear.app/acme/issue/{key}` puts it where `{key}` is. Use `set` if the document doesn't exist yet, else `update` with its `if_version`.
 - Then show one example link built from a ticket they already have, so they can check it opens the right page.
 - If the user adds a ticket key while no ticket link is set, mention once that the page can link keys and ask where their tickets live. Don't ask again in the same conversation.
