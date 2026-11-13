@@ -27,7 +27,7 @@ The organizer is the artifact the user points at: by a link, by name ("my daily 
   - `doneAt`: ISO timestamp, set with `comment`
   - `today`, optional: the `YYYY-MM-DD` date the task is planned for: today, or a later day. The field keeps the name `today` so older rows still work.
   - `owner`, optional: the id of the team member the task is for. No `owner` means it's the user's own.
-  - `with`, optional, for discussions: the id of the team member the discussion is with. It doesn't change whose task it is.
+  - `with`, optional, for discussions: who the discussion is with, as one team member's id, or a list of ids when it's with more than one of them. Older rows hold one id. A discussion is always the user's own, with those people; `with` doesn't make it theirs.
   - `priority`, optional: `high` or `low`. No `priority` means Normal.
   - `someday`, optional: `true` for an open task set aside with no day. It has no `today`, and its `status` is `next`.
   - `via`, optional: `"chat"` on tasks Claude added. Tasks added on the page have none.
@@ -68,7 +68,7 @@ Dates are the user's local date. New task ids are letters, digits and dashes, su
 
 ## Task rules
 
-1. **Type.** Every task is a `task`, `idea`, `follow-up` or `discussion`. Ask when the user doesn't say. Default to `task` only for a clearly actionable to-do. A stray thought is likely an `idea`, something waiting on another person or system is likely a `follow-up`, and a topic to talk through with someone (a point for a 1:1 or a meeting) is likely a `discussion`: ask rather than guess. When the user says who a discussion is with and they're on the team, set `with` to their id, so it shows on that person's 1:1 agenda. If they aren't on the team, ask whether to add them; if not, name them in the title, such as "Q3 budget with Sam". `owner` still means whose task it is.
+1. **Type.** Every task is a `task`, `idea`, `follow-up` or `discussion`. Ask when the user doesn't say. Default to `task` only for a clearly actionable to-do. A stray thought is likely an `idea`, something waiting on another person or system is likely a `follow-up`, and a topic to talk through with someone (a point for a 1:1 or a meeting) is likely a `discussion`: ask rather than guess. When the user says who a discussion is with and they're on the team, set `with` to their id, or to a list of ids when it's with more than one of them, so it shows on each one's 1:1 agenda. If someone isn't on the team, ask whether to add them; if not, name them in the title, such as "Q3 budget with Sam". A discussion is always the user's own: don't give it an `owner`.
 2. **Completing needs a comment.** A task is done only with a short comment saying what was done or decided. If the user says "mark X done" without one, ask for it first. The page enforces the same rule.
 3. **Ticket, optional.** A ticket key such as `OPS-142`, or a full URL, at creation or later. Never required. A full URL always links. A key links once the organizer has a ticket link (below), and shows as plain text until then.
 4. **Status note, optional.** A short, changing note such as "blocked on DNS change", separate from the completion comment. Useful for anything that sits more than a day.
@@ -83,12 +83,13 @@ A plain "add a task" with nothing else is the user's own `task` in Up Next, Norm
 
 ## Team
 
-The page's **Settings** section lists the team, and the add box and each task's **Edit** let the user pick who a task is for (**For**) and who a discussion is with (**With**). The page can also show one person at a time: their tasks, with a **1:1 with** section above them listing the open discussions with that person.
+The page's **Settings**, the last item in its left pane, lists the team, and the add box and each task's **Edit** let the user pick who a task is for (**For**) and who a discussion is with (**With**, any number of people). Discussions have no **For**: they're always the user's own. The page can also show one person at a time: their tasks, with a **1:1 with** section above them listing the open discussions with that person.
 - To add someone, `set` `team/<new id>` with `name` and `created`. Ids are letters, digits and dashes, such as `m-` plus the time in milliseconds.
-- To assign a task, `update` its `owner`. To give it back to the user, write `owner` as `{"__delete__": true}`. Set or clear a discussion's `with` the same way.
-- To remove someone, first give their tasks back to the user and clear `with` on their discussions (one `batch` of `owner` and `with` deletes), then `delete` their `team` document. Say how many tasks came back.
+- To assign a task, `update` its `owner`. To give it back to the user, write `owner` as `{"__delete__": true}`.
+- To add someone to a discussion, `update` `with` to the list of everyone it's with (one id becomes a list). To take someone off, write who's left: a list for two or more, one id for one, or `{"__delete__": true}` for no one.
+- To remove someone, first give their tasks back to the user and take them off their discussions' `with` (one `batch`), then `delete` their `team` document. Say how many tasks came back.
 - When the user asks what someone has, `query` `tasks` where `owner` is that member's id.
-- When the user asks for their 1:1 with someone, or what to raise with them, list the open tasks whose `with` is that member's id, then the open tasks they own. Older discussions may name the person only in the title: mention those too, and offer to set their `with`.
+- When the user asks for their 1:1 with someone, or what to raise with them, list the open tasks whose `with` is or includes that member's id, then the open tasks they own. Older discussions may name the person only in the title: mention those too, and offer to set their `with`.
 
 ## Topics
 
@@ -125,7 +126,7 @@ The page's **Edit** is the one button on a task row. It changes the title, type,
 
 ## Ticket link
 
-The page's **Settings** section has a **Ticket link** field, saved as `ticketUrl` in `organizer/settings`.
+The page's **Settings** has a **Ticket link** field, saved as `ticketUrl` in `organizer/settings`.
 - When the user says where their tickets live (for example "our Jira is acme.atlassian.net"), set it with `ArtifactData`: `https://acme.atlassian.net/browse/` adds the key at the end, and `https://linear.app/acme/issue/{key}` puts it where `{key}` is. Use `set` if the document doesn't exist yet, else `update` with its `if_version`.
 - Then show one example link built from a ticket they already have, so they can check it opens the right page.
 - If the user adds a ticket key while no ticket link is set, mention once that the page can link keys and ask where their tickets live. Don't ask again in the same conversation.

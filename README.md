@@ -13,7 +13,7 @@ The page uses the window's full width. A pane down the left lists the lists,
 each with a count: **Today**, **Up Next**, **Waiting**, **Upcoming**,
 **Someday**, **Ideas**, **Jira** and **Done**, and shows one at a time. **All**
 shows every list stacked on one page. The pane stays in view as you scroll;
-on a phone it becomes tabs right above the list. Ideas get their own list, so Up Next holds only
+on a phone it becomes tabs right above the list. **Settings** is the pane's last item. Ideas get their own list, so Up Next holds only
 work to do. **Upcoming** holds tasks planned for later days, and **Someday**
 the ones you've set aside with no day. Unfinished tasks from earlier days show
 as **Carried over** under Today, marked "from Oct 9 · 23 days"; give one a new
@@ -108,20 +108,22 @@ Q4 planning?". Plan-my-day and wrap-up leave topics out unless you ask.
 
 Tasks are yours unless you say otherwise. To hand some out:
 
-- Add people under **Settings › Team** on the page, or tell Claude ("add Sam
-  to my team").
+- Add people under **Settings › Team** on the page (Settings is the last item
+  in the left pane), or tell Claude ("add Sam to my team").
 - Pick who a task is for when you add it, under **For** in a task's **Edit**, or by
   asking ("add a follow-up for Sam to check the logs"). The task then shows
   "for Sam".
-- A discussion can say who it's with: pick them under **With** when you add
-  it or in the discussion's **Edit**, or ask ("add a discussion with Sam
-  about the Q3 budget"). It shows "with Sam" and stays your own task.
+- A discussion is always yours, with one or more people: pick them under
+  **With** when you add it or in the discussion's **Edit**, as many as it
+  involves, or ask ("add a discussion with Sam and Priya about the Q3
+  budget"). It shows "with Sam and Priya", and it's on each one's 1:1 list.
+  Discussions don't offer **For**.
 - The **People** filter above the lists shows **Everyone**, **Mine** or one
   person. Picking one person shows a **1:1 with** section first, listing the
   open discussions with them, then the tasks they have. Ask Claude "what's on
   my 1:1 with Sam?" for the same list. Each device remembers its choice.
-- Removing someone from the team gives their tasks back to you, and their
-  discussions no longer say who they're with.
+- Removing someone from the team gives their tasks back to you and takes
+  them off the discussions they were part of.
 
 "Plan my day" plans from your own tasks, and suggests checking in on tasks
 someone else has had for 3 days or more. "Wrap up my day" lists what's still
