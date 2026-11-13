@@ -7,7 +7,7 @@
 <style>
 /* Layout: the page takes the window's width. The dated header has today's figures, the plan bar and a Tasks | Topics switch.
    Tasks: the lists in a pane down the left (Today with what's carried over, Up Next, Waiting On, Upcoming, Someday, Ideas, People with each team member under it, Jira flags and Done, or All of them stacked),
-   and beside it the day and people filters, a 1:1 agenda when one person is picked, the foldable add box, the list shown, the day log and settings.
+   and beside it the day and people filters, a 1:1 agenda when one person is picked, the add box (folded until clicked), the list shown, the day log and settings.
    On a phone the pane becomes tabs right above the list. Topics: topics down the left, the picked one's notes in the middle and its checklist on the right. */
 :root {
   --bg: #f4f6f9;
@@ -335,6 +335,10 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 .pane-people { display: grid; gap: 1px; }
 .tabs .pane-people button { padding: 5px 10px 6px 24px; font-size: 14px; }
 .tabs #show-people.has-person:not(:hover) { background: none; border-left-color: transparent; }
+/* The team under People folds away: the arrow beside People opens and closes it. It starts folded unless a person is being viewed. */
+.pane-row { display: flex; align-items: stretch; gap: 2px; }
+.tabs .pane-row #show-people { flex: 1 1 auto; min-width: 0; }
+.tabs .pane-caret { flex: none; width: 28px; justify-content: center; padding: 0; border-left: 0; border-radius: 6px; font-size: 13px; }
 .tabs #show-settings { margin-top: 18px; }
 .tabs .n { font-family: var(--font-mono); font-size: 13px; font-weight: 400; margin-left: 5px; color: var(--muted); font-variant-numeric: tabular-nums; }
 @media (max-width: 700px) {
@@ -348,7 +352,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   .tabs button[aria-pressed="true"] { border-bottom-color: var(--accent); background: none; }
   .tabs #show-all, .tabs #show-settings { margin-top: 0; }
   /* On a phone the team is a dropdown at the top of the People list instead, and With's list opens in place. */
-  .pane-people { display: none; }
+  .pane-people, .tabs .pane-caret { display: none; }
   .people-select { display: block; }
   .multi .menu { position: static; width: auto; max-width: none; margin-top: 4px; box-shadow: none; }
   /* With one list shown, the list sits right under the tabs and the tabs' line stands in for its own top border. */
@@ -468,7 +472,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       <button type="button" id="show-upcoming" aria-pressed="false">Upcoming<span class="n" id="tn-upcoming"></span></button>
       <button type="button" id="show-someday" aria-pressed="false">Someday<span class="n" id="tn-someday"></span></button>
       <button type="button" id="show-ideas" aria-pressed="false">Ideas<span class="n" id="tn-ideas"></span></button>
-      <button type="button" id="show-people" aria-pressed="false">People<span class="n" id="tn-people"></span></button>
+      <div class="pane-row"><button type="button" id="show-people" aria-pressed="false">People<span class="n" id="tn-people"></span></button><button type="button" class="pane-caret" id="people-caret" aria-expanded="false" aria-controls="pane-people" aria-label="Show your team" hidden>▸</button></div>
       <div class="pane-people" id="pane-people" role="group" aria-label="Person to show"></div>
       <button type="button" id="show-jira" aria-pressed="false">Jira<span class="n" id="tn-jira"></span></button>
       <button type="button" id="show-done" aria-pressed="false">Done<span class="n" id="tn-done"></span></button>
@@ -496,7 +500,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
             <button type="button" id="view-table" aria-pressed="false">Table</button>
           </div>
         </div>
-        <details class="add-box" id="add-box" open>
+        <details class="add-box" id="add-box">
           <summary id="add-summary">Add a task</summary>
           <form class="add" id="add" autocomplete="off">
             <input type="text" id="add-title" placeholder="e.g. Check the DNS change" aria-label="Task" maxlength="300" required>
@@ -658,7 +662,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 (() => {
   const $ = (id) => document.getElementById(id);
   const state = { tasks: [], days: [], settings: {}, team: [], jira: [], topics: [], teamLoaded: false, confirmed: false, slow: false, error: '', note: '', readOnly: false, closed: false };
-  const ui = { completing: null, removing: null, editing: null, clearing: false, drafts: {}, open: new Set(), logRemoving: null, logEditing: null, itemEditing: null, itemRemoving: null, screen: 'tasks', topicSel: null, topicPicked: false, topicEditing: null, topicRemoving: null, layout: 'list', tab: 'today', filter: 'all', day: null, addWith: null, addDay: null, addType: null, addStatus: null, person: null, withOpen: null, teamRemoving: null };
+  const ui = { completing: null, removing: null, editing: null, clearing: false, drafts: {}, open: new Set(), logRemoving: null, logEditing: null, itemEditing: null, itemRemoving: null, screen: 'tasks', topicSel: null, topicPicked: false, topicEditing: null, topicRemoving: null, layout: 'list', tab: 'today', filter: 'all', day: null, addWith: null, addDay: null, addType: null, addStatus: null, person: null, peopleOpen: false, withOpen: null, teamRemoving: null };
   const chains = new Map();
   const TYPES = ['task', 'idea', 'follow-up', 'discussion'];
   // The list tabs: one list at a time, or All of them stacked.
@@ -1634,8 +1638,14 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     $('pane-people').replaceChildren(...state.team.map((m) => el('button', {
       type: 'button', id: 'pick-' + m.id, 'aria-pressed': String(person === m.id), onclick: () => pickPerson(m.id),
     }, m.name || 'Unnamed', el('span', { class: 'n' }, countOf(m.id) ? String(countOf(m.id)) : ''))));
-    $('pane-people').hidden = !state.team.length;
-    $('show-people').classList.toggle('has-person', Boolean(person));
+    // The team under People folds; folded, People itself stays marked while a person is viewed.
+    const caret = $('people-caret');
+    caret.hidden = !state.team.length;
+    caret.textContent = ui.peopleOpen ? '▾' : '▸';
+    caret.setAttribute('aria-expanded', String(ui.peopleOpen));
+    caret.setAttribute('aria-label', (ui.peopleOpen ? 'Hide' : 'Show') + ' your team');
+    $('pane-people').hidden = !state.team.length || !ui.peopleOpen;
+    $('show-people').classList.toggle('has-person', Boolean(person) && ui.peopleOpen);
     const pick = $('people-select');
     if (document.activeElement !== pick) syncSelect(pick, [['', 'Everyone'], ...state.team.map((m) => [m.id, (m.name || 'Unnamed') + (countOf(m.id) ? ' (' + countOf(m.id) + ')' : '')])], person || '');
     pick.hidden = !state.team.length;
@@ -2077,22 +2087,24 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     render();
   });
 
-  // The layout, the list tab, the person filter and the add box's fold are per-device preferences, so they live in this browser only.
+  // The layout, the list tab, the person filter, the screen and the topic and person picked are per-device preferences, so they live in this browser only.
   try { ui.filter = localStorage.getItem('organizer-filter') || 'all'; } catch (e) { /* storage blocked: show everyone */ }
   try { const tab = localStorage.getItem('organizer-tab'); if (TABS.includes(tab)) ui.tab = tab; } catch (e) { /* storage blocked: start on Today */ }
   try { ui.person = localStorage.getItem('organizer-person') || null; } catch (e) { /* storage blocked: People shows everyone */ }
+  // The team under People starts folded, unless the page opens on a person.
+  ui.peopleOpen = ui.tab === 'people' && Boolean(ui.person);
+  $('people-caret').addEventListener('click', () => { ui.peopleOpen = !ui.peopleOpen; render(); });
   try { if (localStorage.getItem('organizer-layout') === 'table') ui.layout = 'table'; } catch (e) { /* storage blocked: start in list */ }
   try { if (localStorage.getItem('organizer-screen') === 'topics') ui.screen = 'topics'; } catch (e) { /* storage blocked: start on tasks */ }
   try { ui.topicSel = localStorage.getItem('organizer-topic') || null; } catch (e) { /* storage blocked: show the newest topic */ }
+  // The Add a task box starts folded each time the page opens, leaving the room to the list; a click on it opens the form
+  // and puts the cursor in the title. Only a click on the summary moves focus: the page's own open/close fires toggle too.
   const addBox = $('add-box');
   let addByHand = false;
-  try { if (localStorage.getItem('organizer-add') === 'closed') addBox.open = false; } catch (e) { /* storage blocked: start open */ }
-  // Only a click on the summary is remembered and moves focus: the page's own open/close fires toggle too.
   $('add-summary').addEventListener('click', () => { addByHand = true; });
   addBox.addEventListener('toggle', () => {
     if (!addByHand) return;
     addByHand = false;
-    try { localStorage.setItem('organizer-add', addBox.open ? 'open' : 'closed'); } catch (e) { /* not remembered, still folds */ }
     if (addBox.open && !$('add-title').disabled) $('add-title').focus();
   });
   for (const name of TABS) {

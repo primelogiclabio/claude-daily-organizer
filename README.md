@@ -30,9 +30,9 @@ with columns for type, priority, ticket, age and comments. Rows light up under
 the pointer; click one to open its details: every field, the status note in
 the table, and its comments. Opening a row closes the one already open. Each device
 remembers its own tab and layout, so a phone can stay on the Today list while
-a desktop shows All as tables. The **Add a task** box above the list folds
-away when you don't need it, and each device remembers that too. It starts
-from the list you're on: today on Today, no day on Up Next, Waiting On on
+a desktop shows All as tables. The **Add a task** box above the list starts
+folded each time the page opens, leaving the room to the list; click it to
+open the form. It starts from the list you're on: today on Today, no day on Up Next, Waiting On on
 Waiting, tomorrow on Upcoming, Someday on Someday, an idea on Ideas, and a
 discussion with the person you're viewing on People; anything you change
 yourself stays until you add the task. Its **Day** picker can plan a new task
@@ -128,8 +128,8 @@ Tasks are yours unless you say otherwise. To hand some out:
   my 1:1 with Sam?" for the same list. Each device remembers its choice.
 - The **People** item in the left pane lists the open tasks that involve
   your team, for them or discussions with them, grouped by who's involved
-  ("Sam", "Priya", "Priya and Sam"). Each person is listed under it with
-  their count: pick one to see only their tasks, discussions first, and a
+  ("Sam", "Priya", "Priya and Sam"). The arrow beside People unfolds your
+  team, each person with their count: pick one to see only their tasks, discussions first, and a
   new task starts as a discussion with them. On a phone the names are a
   dropdown at the top of the list. Each device remembers the person.
 - Removing someone from the team gives their tasks back to you and takes
