@@ -36,6 +36,7 @@ The organizer is the artifact the user points at: by a link, by name ("my daily 
 - `topics/<id>`, one document per topic (see Topics):
   - `title`
   - `created`: ISO timestamp
+  - `with`, optional: the team members the topic is a joint effort or discussion with, as for a discussion's `with`: one id, or a list of ids for two or more
   - `notes`, optional: the topic's notes, written as bullet points: a list of `{id, text}` entries in the order added, with no dates. Note ids are like item ids, such as `n-` plus the time in milliseconds.
   - `checklist`, optional: items in the order added, as a list of `{id, text}` entries; a ticked item also has `done: true` and `doneAt` (ISO timestamp). Item ids are letters, digits and dashes, such as `c-` plus the time in milliseconds.
 - `jira/<KEY>`, one document per ticket flagged on the Jira Dashboard, copied in by Claude (see Jira flags): `key`, `summary`, `status`, `statusCategory`, `assignee`, `url`, `note`, `flaggedAt`, `updated`
@@ -83,7 +84,7 @@ A plain "add a task" with nothing else is the user's own `task` in Up Next, Norm
 
 ## Team
 
-The page's **Settings**, the last item in its left pane, lists the team, and the add box and each task's **Edit** let the user pick who a task is for (**For**) and who a discussion is with (**With**, any number of people). Discussions have no **For**: they're always the user's own. The page can also show one person at a time: their tasks, with a **1:1 with** section above them listing the open discussions with that person.
+The page's **Settings**, the last item in its left pane, lists the team (the Topics screen has a **Settings** with the same team, so people can be added from either screen), and the add box and each task's **Edit** let the user pick who a task is for (**For**) and who a discussion is with (**With**, any number of people). Discussions have no **For**: they're always the user's own. The page can also show one person at a time: their tasks, with a **1:1 with** section above them listing the open discussions with that person.
 - To add someone, `set` `team/<new id>` with `name` and `created`. Ids are letters, digits and dashes, such as `m-` plus the time in milliseconds.
 - To assign a task, `update` its `owner`. To give it back to the user, write `owner` as `{"__delete__": true}`.
 - To add someone to a discussion, `update` `with` to the list of everyone it's with (one id becomes a list). To take someone off, write who's left: a list for two or more, one id for one, or `{"__delete__": true}` for no one.
@@ -95,6 +96,7 @@ The page's **Settings**, the last item in its left pane, lists the team, and the
 
 A topic is a subject the user keeps notes and a checklist on, apart from the task lists: a project to think through, a meeting series, a list of things to check. It isn't a task: it has no type, status, day or owner, and plan-my-day and wrap-up leave topics out unless the user asks about one. The page's **Topics** screen lists them down the left, newest first, under a **New topic** box; the topic picked shows its notes as bullet points in the middle and its checklist on the right, and its **Edit** renames or removes it. On a phone the screen shows the list, or one topic with a way back.
 
+- **People.** When the user says who a topic involves ("the Q4 topic is with Sam and Priya"), set `with` from the team as for a discussion, and change it the same way. Someone not on the team: ask whether to add them first. The page shows a **With** dropdown under the topic's name.
 - **Creating.** "Start a topic for Q4 planning": `set` `topics/<new id>` with `title` and `created`. Ids are like task ids, such as `p-` plus the time in milliseconds.
 - **Finding one.** Match the topic by its title, and ask if more than one matches or none does. When the user says "add a note to Q4 planning" and there's both a topic and a task by that name, ask which.
 - **Notes.** Notes are bullet points, one short point each, without dates. To add points, `update` `notes` with the topic's existing points plus each new `{id, text}` at the end, in one write; when the user gives a paragraph, split it into points only if they wrote it as points. Change or remove a point the same way as a checklist item (below). An `update` replaces the whole list, as with comments, so never leave out the other points.

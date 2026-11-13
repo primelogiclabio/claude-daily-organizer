@@ -98,6 +98,9 @@ pick shows its **Notes** in the middle pane, which takes all the width the
 window has to spare: bullet points, without dates, each of which you can
 edit or remove. Its **Checklist** sits on the right, with items to tick
 off and how many are done.
+A **With** dropdown under the topic's name says whom it's a joint effort or
+discussion with, from the same team as your tasks; the Topics screen has its
+own **Settings** for adding people, so you can add them from either screen.
 **Edit** on a topic renames or removes it. On a narrower screen the
 checklist goes under the notes; on a phone you see the list, then the topic
 you tap, with **‹ All topics** to go back. Each device remembers the screen

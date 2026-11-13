@@ -234,14 +234,22 @@ input[type="text"], input[type="date"], select { padding: 6px 8px; border: 1px s
 .points .item { position: relative; padding-left: 18px; font-size: 16px; }
 .points .item::before { content: "•"; position: absolute; left: 4px; color: var(--muted); }
 .topics .back { display: none; justify-self: start; padding-left: 0; }
+/* Who a topic is with sits under its name; the Topics screen's Settings holds the same team as the Tasks screen's. */
+.topic-with { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.topic-settings-btn { margin-top: 10px; }
+.topic-pick[aria-pressed="true"] { border-left-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.topic-settings { grid-column: 2 / -1; gap: 10px; padding: 14px 16px 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.topic-settings .team { padding-top: 0; }
 @media (max-width: 1000px) {
   .topics { grid-template-columns: minmax(160px, 210px) minmax(0, 1fr); }
   .topic-nav { grid-row: span 2; }
+  .topic-settings { grid-column: 2; }
 }
 @media (max-width: 700px) {
   .topics { grid-template-columns: minmax(0, 1fr); }
   .topic-nav { grid-row: auto; }
-  .topics.is-picked .topic-nav, .topics:not(.is-picked) .topic-main, .topics:not(.is-picked) .topic-side { display: none; }
+  .topic-settings { grid-column: auto; }
+  .topics.is-picked .topic-nav, .topics:not(.is-picked) .topic-main, .topics:not(.is-picked) .topic-side, .topics:not(.is-picked) .topic-settings { display: none; }
   .topics .back { display: inline-block; }
 }
 
@@ -457,9 +465,15 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       </form>
       <ul class="topic-list" id="topic-list" aria-label="Your topics"></ul>
       <p class="empty" id="empty-topics">No topics yet. Name one above to keep notes and a checklist on it.</p>
+      <button type="button" class="topic-pick topic-settings-btn" id="topic-settings-btn" aria-pressed="false"><span class="tname">Settings</span></button>
     </div>
     <div class="topic-main" id="topic-main"></div>
     <aside class="topic-side" id="topic-side" aria-label="Checklist"></aside>
+    <section class="topic-settings" id="topic-settings" aria-labelledby="h-topic-settings" hidden>
+      <button type="button" class="link-btn back" id="topic-settings-back">‹ All topics</button>
+      <h2 id="h-topic-settings">Settings</h2>
+      <div id="topic-team-home"></div>
+    </section>
   </section>
 
   <div class="task-screen" id="task-screen">
@@ -640,15 +654,15 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
           <p class="hint">Ticket keys such as OPS-142 link here. The key goes at the end, or wherever you write {key}. Tickets saved as full links work without this.</p>
           <div class="row"><button class="btn btn-primary" type="submit">Save</button><span id="set-msg" role="status"></span></div>
         </form>
-        <div class="team">
+        <div id="team-home"><div class="team" id="team-box">
           <h3>Team</h3>
           <ul id="team-list" hidden></ul>
           <form id="team-form" autocomplete="off">
             <input type="text" id="team-name" placeholder="Name, e.g. Sam" aria-label="Team member's name" maxlength="80">
             <button class="btn" type="submit">Add to team</button>
           </form>
-          <p class="hint">Tasks are yours unless you pick someone when you add or assign them. <span id="team-msg" role="status"></span></p>
-        </div>
+          <p class="hint">The same team serves tasks and topics. Tasks are yours unless you pick someone under For; discussions and topics say who they're with. <span id="team-msg" role="status"></span></p>
+        </div></div>
       </section>
     </div>
   </div>
@@ -660,7 +674,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 (() => {
   const $ = (id) => document.getElementById(id);
   const state = { tasks: [], days: [], settings: {}, team: [], jira: [], topics: [], teamLoaded: false, confirmed: false, slow: false, error: '', note: '', readOnly: false, closed: false };
-  const ui = { completing: null, removing: null, editing: null, clearing: false, drafts: {}, open: new Set(), logRemoving: null, logEditing: null, itemEditing: null, itemRemoving: null, screen: 'tasks', topicSel: null, topicPicked: false, topicEditing: null, topicRemoving: null, layout: 'list', tab: 'today', filter: 'all', day: null, addWith: null, addDay: null, addType: null, addStatus: null, person: null, withOpen: null, teamRemoving: null };
+  const ui = { completing: null, removing: null, editing: null, clearing: false, drafts: {}, open: new Set(), logRemoving: null, logEditing: null, itemEditing: null, itemRemoving: null, screen: 'tasks', topicSel: null, topicPicked: false, topicEditing: null, topicRemoving: null, layout: 'list', tab: 'today', filter: 'all', day: null, addWith: null, addDay: null, addType: null, addStatus: null, person: null, withOpen: null, topicSettings: false, teamRemoving: null };
   const chains = new Map();
   const TYPES = ['task', 'idea', 'follow-up', 'discussion'];
   // The list tabs: one list at a time, or All of them stacked.
@@ -1041,6 +1055,9 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       if (withOf(t).includes(m.id)) fields.with = withValue(withOf(t).filter((x) => x !== m.id));
       if (Object.keys(fields).length) patch(t.id, fields);
     }
+    for (const tp of state.topics) {
+      if (withOf(tp).includes(m.id)) patchTopic(tp.id, { with: withValue(withOf(tp).filter((x) => x !== m.id)) });
+    }
     write('team-' + m.id, () => db.collection('team').doc(m.id).delete());
     if (ui.filter === m.id) ui.filter = 'all';
     render();
@@ -1343,11 +1360,21 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   function pickTopic(id) {
     ui.topicSel = id;
     ui.topicPicked = true;
+    ui.topicSettings = false;
     ui.topicEditing = ui.topicRemoving = ui.logEditing = ui.logRemoving = ui.itemEditing = ui.itemRemoving = null;
     try { localStorage.setItem('organizer-topic', id); } catch (e) { /* not remembered, still shows */ }
     render();
     // On a phone the list gives way to the topic, so the cursor goes to its name.
     if (narrow()) { const h = $('topic-name'); if (h) h.focus(); }
+  }
+
+  // The Topics screen's Settings: the team, the same one the Tasks screen's Settings shows.
+  function openTopicSettings() {
+    ui.topicSettings = true;
+    ui.topicPicked = true;
+    ui.topicEditing = ui.topicRemoving = null;
+    render();
+    const f = $('team-name'); if (f && !f.disabled) f.focus();
   }
 
   function backToTopics(id) {
@@ -1409,6 +1436,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     const items = itemsIn(tp.checklist);
     const ticked = items.filter((c) => c.done).length;
     const bits = [];
+    if (withOf(tp).length) bits.push('with ' + namesOf(withOf(tp)));
     if (notes) bits.push(notes + (notes === 1 ? ' note' : ' notes'));
     if (items.length) bits.push(ticked + ' of ' + items.length + ' done');
     return el('li', {}, el('button', {
@@ -1433,6 +1461,12 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
           editable ? el('button', { type: 'button', class: 'link-btn', 'aria-label': 'Edit topic: ' + (tp.title || ''), onclick: () => startTopicEdit(tp) }, 'Edit') : null,
         ),
       ),
+      // Who the topic is with: the same team as tasks, as many as it involves, saved as soon as they're ticked.
+      editing ? null : el('div', { class: 'topic-with' },
+        !editable ? (withOf(tp).length ? el('span', { class: 'owner' }, 'With ' + namesOf(withOf(tp))) : null)
+          : state.team.length || withOf(tp).length ? withSelect('topic-with-' + tp.id, withOf(tp), (ids) => patchTopic(tp.id, { with: withValue(ids) }), withOf(tp))
+          : el('button', { type: 'button', class: 'link-btn', onclick: openTopicSettings }, 'Add people to say who this is with'),
+      ),
       editable && ui.topicRemoving === tp.id ? el('div', { class: 'inline' },
         el('span', {}, 'Remove this topic, with its notes and checklist, for good?'),
         el('button', { type: 'button', class: 'btn btn-danger', id: 'topic-remove-' + tp.id, onclick: () => removeTopic(tp) }, 'Remove'),
@@ -1445,13 +1479,16 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   function renderTopics() {
     const topics = [...state.topics].sort((a, b) => String(b.created || '').localeCompare(String(a.created || '')));
     const tp = shownTopic(topics);
-    $('topic-list').replaceChildren(...topics.map((t) => topicPick(t, Boolean(tp && t.id === tp.id))));
+    const inSettings = ui.topicSettings;
+    $('topic-list').replaceChildren(...topics.map((t) => topicPick(t, Boolean(tp && t.id === tp.id) && !inSettings)));
     $('topic-list').hidden = !topics.length;
     $('empty-topics').hidden = topics.length > 0;
     $('topic-main').replaceChildren(...(tp ? topicMain(tp).filter(Boolean) : []));
     $('topic-side').replaceChildren(...(tp ? [itemsBox(topicItems(tp))] : []));
-    $('topic-main').hidden = $('topic-side').hidden = !tp;
-    $('topics').classList.toggle('is-picked', Boolean(tp && ui.topicPicked));
+    $('topic-main').hidden = $('topic-side').hidden = !tp || inSettings;
+    $('topic-settings').hidden = !inSettings;
+    $('topic-settings-btn').setAttribute('aria-pressed', String(inSettings));
+    $('topics').classList.toggle('is-picked', inSettings || Boolean(tp && ui.topicPicked));
     $('tn-topics').textContent = topics.length ? String(topics.length) : '';
     for (const c of $('topic-add').elements) c.disabled = state.readOnly || !db;
   }
@@ -1835,7 +1872,8 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
            el('button', { type: 'button', class: 'link-btn danger', onclick: () => removeMember(m) }, 'Remove'),
            el('button', { type: 'button', class: 'link-btn', onclick: () => { ui.teamRemoving = null; render(); } }, 'Keep')]
         : el('button', { type: 'button', class: 'link-btn danger', onclick: () => { ui.teamRemoving = m.id; render(); } }, 'Remove');
-      const counts = (open ? open + ' open' : 'no open tasks') + (talks ? ' · ' + talks + ' to discuss' : '');
+      const topics = state.topics.filter((tp) => withOf(tp).includes(m.id)).length;
+      const counts = (open ? open + ' open' : 'no open tasks') + (talks ? ' · ' + talks + ' to discuss' : '') + (topics ? ' · ' + topics + (topics === 1 ? ' topic' : ' topics') : '');
       return el('li', {}, el('span', {}, m.name || 'Unnamed'), el('span', { class: 'muted' }, counts), tools);
     }));
     list.hidden = !has;
@@ -1938,6 +1976,9 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     $('empty-today').textContent = 'Nothing planned for ' + selWord + '. Star a task to add it, or ask Claude to plan ' + (sel === today ? 'your day' : selWord) + '.';
     renderJira(sel, today, near ? selTitle : $('show-today-label').textContent);
     renderTopics();
+    // The team list is one block, shown in the Settings of whichever screen is open.
+    const teamHome = ui.screen === 'topics' ? $('topic-team-home') : $('team-home');
+    if ($('team-box').parentNode !== teamHome) teamHome.append($('team-box'));
 
     const clear = $('clear-done');
     const allDone = state.tasks.filter((t) => t.status === 'done' && t.today !== sel);
@@ -2054,6 +2095,13 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 
   $('add-type').addEventListener('change', (e) => { ui.addType = e.target.value; render(); });
   $('people-select').addEventListener('change', (e) => pickPerson(e.target.value || null));
+  $('topic-settings-btn').addEventListener('click', openTopicSettings);
+  $('topic-settings-back').addEventListener('click', () => {
+    ui.topicSettings = false;
+    ui.topicPicked = false;
+    render();
+    $('topic-settings-btn').focus();
+  });
   $('add-status').addEventListener('change', (e) => { ui.addStatus = e.target.value; });
   $('add-day').addEventListener('change', (e) => { ui.addDay = e.target.value; render(); });
   $('add-note-btn').addEventListener('click', () => {
