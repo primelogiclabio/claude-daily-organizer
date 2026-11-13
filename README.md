@@ -10,7 +10,7 @@ past plans and end-of-day summaries. It installs from the
 [claude-tools](https://github.com/primelogiclabio/claude-tools) marketplace.
 
 Tabs show one list at a time, each with a count: **Today**, **Up Next**,
-**Waiting**, **Upcoming**, **Someday**, **Ideas**, **Topics**, **Jira** and **Done**. **All** shows
+**Waiting**, **Upcoming**, **Someday**, **Ideas**, **Jira** and **Done**. **All** shows
 every list stacked on one page. Ideas get their own tab, so Up Next holds only
 work to do. **Upcoming** holds tasks planned for later days, and **Someday**
 the ones you've set aside with no day. Unfinished tasks from earlier days show
@@ -84,12 +84,16 @@ artifact on claude.ai, in the artifact's own database:
 
 ## Topics
 
-The **Topics** tab keeps subjects that aren't tasks, such as "Q4 planning"
-or "Kubernetes migration". Name one in its **New topic** box and it opens
-to two panes: **Notes**, dated entries you can edit or remove, and a
-**Checklist** of items to tick off, with how many are done. The panes sit
-side by side on a wide screen and stack on a phone. **Edit** on a topic
-renames or removes it.
+**Topics** is a screen of its own, for subjects that aren't tasks, such as
+"Q4 planning" or "Kubernetes migration". The **Tasks | Topics** switch at
+the top of the page swaps between the two. Topics are listed down the left,
+under a **New topic** box. The topic you pick shows its **Notes** in the
+wide middle pane, dated entries you can edit or remove, and its
+**Checklist** on the right, with items to tick off and how many are done.
+**Edit** on a topic renames or removes it. On a narrower screen the
+checklist goes under the notes; on a phone you see the list, then the topic
+you tap, with **‹ All topics** to go back. Each device remembers the screen
+and the topic.
 
 Claude keeps the same notes and checklists: "start a topic for Q4
 planning", "add a note to Q4 planning: …", "add 'book the room' and 'send

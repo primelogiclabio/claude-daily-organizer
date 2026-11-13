@@ -5,7 +5,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: one 760px column like a daybook page: the dated header with today's figures and plan bar, the day and people filters, a 1:1 agenda when one person is picked, the foldable add box, the list tabs over Today (with what's carried over), Up Next, Waiting On, Upcoming, Someday, Ideas, Topics (each with notes and a checklist), Jira flags (with how to connect them until Claude has synced) and Done (or All of them stacked), the day log, then settings and the page's version. */
+/* Layout: one 760px column like a daybook page: the dated header with today's figures and plan bar, the day and people filters, a 1:1 agenda when one person is picked, the foldable add box, the list tabs over Today (with what's carried over), Up Next, Waiting On, Upcoming, Someday, Ideas, Jira flags (with how to connect them until Claude has synced) and Done (or All of them stacked), the day log, then settings and the page's version. The header's Tasks | Topics switch swaps all of that for the Topics screen: topics down the left, the picked one's notes in the middle and its checklist on the right. */
 :root {
   --bg: #f4f6f9;
   --surface: #ffffff;
@@ -200,16 +200,38 @@ input[type="text"], input[type="date"], select { padding: 6px 8px; border: 1px s
 .checklist .add-item { display: flex; gap: 6px; }
 .checklist input[type="text"] { flex: 1 1 auto; width: 100%; min-width: 0; box-sizing: border-box; }
 
-/* Topics: subjects that aren't tasks, each a row that opens to its notes and its checklist, side by side when there's room. */
-.topic-add { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 0; }
-.topic-add input { flex: 1 1 220px; min-width: 0; }
-.wrap.is-tabs #sec-topics .topic-add { padding-top: 12px; }
-.task.topic { grid-template-columns: minmax(0, 1fr); }
-.topic > .details, .topic > .edit, .topic > .inline { grid-column: 1 / -1; }
-.topic .meta .all-checked { color: var(--done); }
-.topic-open { container-type: inline-size; }
-.panes { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px 28px; align-items: start; }
-@container (min-width: 520px) { .panes { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); } }
+/* The Topics screen: topics down the left, the picked topic's notes in the wide middle and its checklist on the right.
+   Narrower, the checklist goes under the notes; on a phone the screen shows the list, or one topic with a way back to it. */
+.head-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
+.screens .n { margin-left: 5px; font-family: var(--font-mono); font-size: 13px; font-weight: 400; font-variant-numeric: tabular-nums; }
+.wrap.is-topics { max-width: 1180px; }
+.topics { grid-template-columns: minmax(170px, 230px) minmax(0, 1fr) minmax(230px, 310px); gap: 20px; align-items: start; }
+.topic-nav, .topic-main, .topic-side { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.topic-main, .topic-side { padding: 14px 16px 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.topic-add { display: flex; flex-wrap: wrap; gap: 6px; }
+.topic-add input { flex: 1 1 120px; min-width: 0; }
+.topic-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.topic-pick { display: grid; gap: 1px; width: 100%; padding: 7px 10px 8px; border: 0; border-left: 3px solid transparent; border-radius: 0 6px 6px 0; background: none; text-align: left; cursor: pointer; }
+.topic-pick:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.topic-pick[aria-current="true"] { border-left-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.topic-pick .tname { font-weight: 500; overflow-wrap: anywhere; }
+.topic-pick .tmeta { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.topic-pick .tmeta.all-checked { color: var(--done); }
+.topic-head { display: grid; gap: 2px; }
+.topic-name { font-family: var(--font-display); font-size: 25px; font-weight: 600; line-height: 1.15; letter-spacing: 0; text-transform: none; color: var(--ink); overflow-wrap: anywhere; }
+.topic-main .edit, .topic-main .inline { grid-column: auto; padding-top: 0; }
+.topic-main .log textarea { min-height: 96px; }
+.topics .back { display: none; justify-self: start; padding-left: 0; }
+@media (max-width: 1000px) {
+  .topics { grid-template-columns: minmax(160px, 210px) minmax(0, 1fr); }
+  .topic-nav { grid-row: span 2; }
+}
+@media (max-width: 700px) {
+  .topics { grid-template-columns: minmax(0, 1fr); }
+  .topic-nav { grid-row: auto; }
+  .topics.is-picked .topic-nav, .topics:not(.is-picked) .topic-main, .topics:not(.is-picked) .topic-side { display: none; }
+  .topics .back { display: inline-block; }
+}
 
 #settings summary { cursor: pointer; }
 #settings summary h2 { display: inline; }
@@ -273,9 +295,8 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 .wrap.is-tabs .panel .section-head { justify-content: flex-end; }
 .wrap.is-tabs .panel .list, .wrap.is-tabs .panel .table-wrap { border-top: 0; }
 .wrap.is-tabs .panel .empty { padding-top: 10px; }
-/* Ten tabs fit one row of the 760px page: keep their padding tight when adding another. */
-.tabs { display: flex; flex-wrap: wrap; gap: 0 2px; border-bottom: 1px solid var(--line); }
-.tabs button { border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; padding: 8px 7px 6px; font-size: 15px; font-weight: 500; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.tabs { display: flex; flex-wrap: wrap; gap: 0 4px; border-bottom: 1px solid var(--line); }
+.tabs button { border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; padding: 8px 10px 6px; font-size: 15px; font-weight: 500; color: var(--muted); cursor: pointer; white-space: nowrap; }
 .tabs button:hover { color: var(--ink); }
 .tabs button[aria-pressed="true"] { color: var(--ink); border-bottom-color: var(--accent); }
 .tabs .n { font-family: var(--font-mono); font-size: 13px; font-weight: 400; margin-left: 5px; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -324,7 +345,13 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 
 <div class="wrap">
   <header class="day">
-    <div class="eyebrow" id="week"></div>
+    <div class="head-row">
+      <div class="eyebrow" id="week"></div>
+      <div class="view-toggle screens" id="screens" role="group" aria-label="Screen">
+        <button type="button" id="screen-tasks" aria-pressed="true">Tasks</button>
+        <button type="button" id="screen-topics" aria-pressed="false">Topics<span class="n" id="tn-topics"></span></button>
+      </div>
+    </div>
     <h1 id="date">Daily Organizer</h1>
     <div class="figures" id="figures" role="group" aria-label="Today in numbers">
       <div class="fig" id="fig-open"><span class="num" id="num-open">0</span><span class="lbl">Open today</span></div>
@@ -339,6 +366,20 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   </header>
 
   <p class="notice" id="notice" role="status">Loading your tasks…</p>
+
+  <section class="topics" id="topics" aria-labelledby="h-topics" hidden>
+    <h2 class="sr" id="h-topics">Topics</h2>
+    <div class="topic-nav">
+      <form class="topic-add" id="topic-add" autocomplete="off">
+        <input type="text" id="topic-title" placeholder="New topic, e.g. Q4 planning" aria-label="New topic" maxlength="300" required>
+        <button class="btn btn-primary" type="submit">Add</button>
+      </form>
+      <ul class="topic-list" id="topic-list" aria-label="Your topics"></ul>
+      <p class="empty" id="empty-topics">No topics yet. Name one above to keep notes and a checklist on it.</p>
+    </div>
+    <div class="topic-main" id="topic-main"></div>
+    <aside class="topic-side" id="topic-side" aria-label="Checklist"></aside>
+  </section>
 
   <div class="filters" id="filters" role="group" aria-label="What to show">
     <div class="filter">
@@ -405,7 +446,6 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       <button type="button" id="show-upcoming" aria-pressed="false">Upcoming<span class="n" id="tn-upcoming"></span></button>
       <button type="button" id="show-someday" aria-pressed="false">Someday<span class="n" id="tn-someday"></span></button>
       <button type="button" id="show-ideas" aria-pressed="false">Ideas<span class="n" id="tn-ideas"></span></button>
-      <button type="button" id="show-topics" aria-pressed="false">Topics<span class="n" id="tn-topics"></span></button>
       <button type="button" id="show-jira" aria-pressed="false">Jira<span class="n" id="tn-jira"></span></button>
       <button type="button" id="show-done" aria-pressed="false">Done<span class="n" id="tn-done"></span></button>
       <button type="button" id="show-all" aria-pressed="false">All</button>
@@ -459,16 +499,6 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       <ul class="list" id="list-ideas"></ul>
       <div class="table-wrap" id="table-ideas" hidden></div>
       <p class="empty" id="empty-ideas">No ideas parked. Add one with the type set to Idea.</p>
-    </section>
-
-    <section id="sec-topics" class="panel" aria-labelledby="h-topics">
-      <div class="section-head"><h2 id="h-topics">Topics<span class="n" id="n-topics"></span></h2></div>
-      <form class="topic-add" id="topic-add" autocomplete="off">
-        <input type="text" id="topic-title" placeholder="New topic, e.g. Q4 planning" aria-label="New topic" maxlength="300" required>
-        <button class="btn btn-primary" type="submit">Add topic</button>
-      </form>
-      <ul class="list" id="list-topics"></ul>
-      <p class="empty" id="empty-topics">No topics yet. Name one above to keep notes and a checklist on it.</p>
     </section>
 
     <section id="sec-jira" class="panel" aria-labelledby="h-jira">
@@ -536,11 +566,11 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 (() => {
   const $ = (id) => document.getElementById(id);
   const state = { tasks: [], days: [], settings: {}, team: [], jira: [], topics: [], teamLoaded: false, confirmed: false, slow: false, error: '', note: '', readOnly: false, closed: false };
-  const ui = { completing: null, removing: null, editing: null, clearing: false, drafts: {}, open: new Set(), logRemoving: null, logEditing: null, itemEditing: null, itemRemoving: null, topicOpen: null, topicEditing: null, topicRemoving: null, layout: 'list', tab: 'today', filter: 'all', day: null, addWith: null, addDay: null, teamRemoving: null };
+  const ui = { completing: null, removing: null, editing: null, clearing: false, drafts: {}, open: new Set(), logRemoving: null, logEditing: null, itemEditing: null, itemRemoving: null, screen: 'tasks', topicSel: null, topicPicked: false, topicEditing: null, topicRemoving: null, layout: 'list', tab: 'today', filter: 'all', day: null, addWith: null, addDay: null, teamRemoving: null };
   const chains = new Map();
   const TYPES = ['task', 'idea', 'follow-up', 'discussion'];
   // The list tabs: one list at a time, or All of them stacked.
-  const LISTS = ['today', 'next', 'waiting', 'upcoming', 'someday', 'ideas', 'topics', 'jira', 'done'];
+  const LISTS = ['today', 'next', 'waiting', 'upcoming', 'someday', 'ideas', 'jira', 'done'];
   const TABS = [...LISTS, 'all'];
   // The template's version, from its meta tag; Claude compares it with organizer/settings.pageVersion to offer updates.
   const PAGE_VERSION = (document.querySelector('meta[name="daily-organizer-version"]') || {}).content || '';
@@ -870,10 +900,10 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   }
 
   // A click on a row, outside its buttons, links, fields and open panels, opens or closes its details. Selecting text doesn't.
-  const rowClick = (toggle) => (e) => {
+  const rowClick = (id) => (e) => {
     if (e.target.closest('a, button, input, select, textarea, label, .details, .edit, .inline')) return;
     if (window.getSelection && String(window.getSelection())) return;
-    toggle();
+    toggleOpen(id);
   };
 
   // Dated entries: a task's comments and a topic's notes. A box says whose they are: `key` (unique on the page,
@@ -1121,22 +1151,32 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     );
   }
 
-  // Topics: subjects that aren't tasks, each with dated notes and a checklist, newest first. One is open at a time,
-  // apart from the open task, and the topic clicked keeps its place on screen as another folds away.
+  // Topics: subjects that aren't tasks, each with dated notes and a checklist, on a screen of their own. The topics are
+  // listed down the left, newest first; the one picked shows its notes in the middle and its checklist on the right.
+  // On a phone the screen shows the list, or the topic picked with a way back to the list.
   const topicRef = (id) => db.collection('topics').doc(id);
   const patchTopic = (id, fields) => write('topic-' + id, () => topicRef(id).update(fields));
   const notesOf = (tp) => (Array.isArray(tp.notes) ? tp.notes : []);
   const topicNotes = (tp) => ({ key: 'topic-' + tp.id, entries: notesOf(tp), save: (notes) => patchTopic(tp.id, { notes }), words: NOTE_WORDS });
   const topicItems = (tp) => ({ key: 'topic-' + tp.id, items: itemsOf(tp), save: (checklist) => patchTopic(tp.id, { checklist }) });
+  // The topic shown is the one picked on this device, else the newest.
+  const shownTopic = (topics) => topics.find((tp) => tp.id === ui.topicSel) || topics[0] || null;
+  const narrow = () => window.matchMedia('(max-width: 700px)').matches;
 
-  function toggleTopic(id) {
-    const anchor = () => $('topic-title-' + id);
-    const before = anchor() ? anchor().getBoundingClientRect().top : null;
-    ui.topicOpen = ui.topicOpen === id ? null : id;
-    ui.logRemoving = ui.logEditing = ui.itemEditing = ui.itemRemoving = null;
+  function pickTopic(id) {
+    ui.topicSel = id;
+    ui.topicPicked = true;
+    ui.topicEditing = ui.topicRemoving = ui.logEditing = ui.logRemoving = ui.itemEditing = ui.itemRemoving = null;
+    try { localStorage.setItem('organizer-topic', id); } catch (e) { /* not remembered, still shows */ }
     render();
-    const a = anchor();
-    if (before !== null && a) window.scrollBy(0, a.getBoundingClientRect().top - before);
+    // On a phone the list gives way to the topic, so the cursor goes to its name.
+    if (narrow()) { const h = $('topic-name'); if (h) h.focus(); }
+  }
+
+  function backToTopics(id) {
+    ui.topicPicked = false;
+    render();
+    const b = $('topic-pick-' + id); if (b) b.focus();
   }
 
   function startTopicEdit(tp) {
@@ -1181,59 +1221,60 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 
   function removeTopic(tp) {
     ui.topicRemoving = null;
-    if (ui.topicOpen === tp.id) ui.topicOpen = null;
+    ui.topicPicked = false;
+    if (ui.topicSel === tp.id) ui.topicSel = null;
     write('topic-' + tp.id, () => topicRef(tp.id).delete());
     render();
   }
 
-  function topicRow(tp) {
-    const editable = !state.readOnly;
-    const open = ui.topicOpen === tp.id;
-    const editing = editable && Boolean(ui.topicEditing && ui.topicEditing.id === tp.id);
-    const notes = notesOf(tp);
+  function topicPick(tp, current) {
+    const notes = notesOf(tp).length;
     const items = itemsOf(tp);
     const ticked = items.filter((c) => c.done).length;
-    const titleBtn = el('button', {
-      type: 'button', class: 'title-btn', id: 'topic-title-' + tp.id, 'aria-expanded': String(open), 'aria-controls': 'topic-details-' + tp.id,
-      onclick: () => toggleTopic(tp.id),
-    }, el('span', { class: 'title' }, tp.title || '(untitled)'));
-    const meta = el('div', { class: 'meta' },
-      notes.length ? el('span', {}, notes.length + (notes.length === 1 ? ' note' : ' notes')) : null,
-      items.length ? el('span', { class: ticked === items.length ? 'all-checked' : null }, ticked + ' of ' + items.length + ' checked') : null,
-      el('span', {}, ago(daysSince(tp.created), 'added')),
-      editable ? el('button', {
-        type: 'button', class: 'link-btn', 'aria-expanded': String(editing), 'aria-controls': 'topic-edit-' + tp.id, 'aria-label': 'Edit topic: ' + (tp.title || ''),
-        onclick: () => startTopicEdit(tp),
-      }, 'Edit') : null,
-    );
-    // While a topic is being edited, its form takes the place of its notes and checklist.
-    const panels = [];
-    if (editing) panels.push(topicEditForm(tp));
-    else if (open) {
-      panels.push(el('div', { class: 'details topic-open', id: 'topic-details-' + tp.id },
-        el('div', { class: 'panes' }, entriesBox(topicNotes(tp)), checklistBox(topicItems(tp))),
-        el('div', { class: 'log-actions' }, el('button', { type: 'button', class: 'btn', onclick: () => toggleTopic(tp.id) }, 'Close')),
-      ));
-    }
-    if (editable && ui.topicRemoving === tp.id) {
-      panels.push(el('div', { class: 'inline' },
+    const bits = [];
+    if (notes) bits.push(notes + (notes === 1 ? ' note' : ' notes'));
+    if (items.length) bits.push(ticked + ' of ' + items.length + ' done');
+    return el('li', {}, el('button', {
+      type: 'button', class: 'topic-pick', id: 'topic-pick-' + tp.id, 'aria-current': current ? 'true' : null,
+      onclick: () => pickTopic(tp.id),
+    },
+      el('span', { class: 'tname' }, tp.title || '(untitled)'),
+      el('span', { class: 'tmeta' + (items.length && ticked === items.length ? ' all-checked' : '') }, bits.join(' · ') || 'Nothing yet'),
+    ));
+  }
+
+  // The middle pane: the topic's name, with Edit to rename or remove it, then its notes.
+  function topicMain(tp) {
+    const editable = !state.readOnly;
+    const editing = editable && Boolean(ui.topicEditing && ui.topicEditing.id === tp.id);
+    return [
+      el('button', { type: 'button', class: 'link-btn back', id: 'topic-back', onclick: () => backToTopics(tp.id) }, '‹ All topics'),
+      editing ? topicEditForm(tp) : el('div', { class: 'topic-head' },
+        el('h2', { class: 'topic-name', id: 'topic-name', tabindex: '-1' }, tp.title || '(untitled)'),
+        el('div', { class: 'meta' },
+          el('span', {}, ago(daysSince(tp.created), 'added')),
+          editable ? el('button', { type: 'button', class: 'link-btn', 'aria-label': 'Edit topic: ' + (tp.title || ''), onclick: () => startTopicEdit(tp) }, 'Edit') : null,
+        ),
+      ),
+      editable && ui.topicRemoving === tp.id ? el('div', { class: 'inline' },
         el('span', {}, 'Remove this topic, with its notes and checklist, for good?'),
         el('button', { type: 'button', class: 'btn btn-danger', id: 'topic-remove-' + tp.id, onclick: () => removeTopic(tp) }, 'Remove'),
         el('button', { type: 'button', class: 'btn', onclick: () => { ui.topicRemoving = null; render(); } }, 'Keep'),
-      ));
-    }
-    return el('li', { class: 'task topic' + (open ? ' is-open' : ''), onclick: rowClick(() => toggleTopic(tp.id)) },
-      el('div', { class: 'body' }, el('div', { class: 'title-line' }, titleBtn), meta),
-      panels,
-    );
+      ) : null,
+      entriesBox(topicNotes(tp)),
+    ];
   }
 
   function renderTopics() {
     const topics = [...state.topics].sort((a, b) => String(b.created || '').localeCompare(String(a.created || '')));
-    $('list-topics').replaceChildren(...topics.map(topicRow));
-    $('list-topics').hidden = !topics.length;
+    const tp = shownTopic(topics);
+    $('topic-list').replaceChildren(...topics.map((t) => topicPick(t, Boolean(tp && t.id === tp.id))));
+    $('topic-list').hidden = !topics.length;
     $('empty-topics').hidden = topics.length > 0;
-    $('n-topics').textContent = topics.length ? String(topics.length) : '';
+    $('topic-main').replaceChildren(...(tp ? topicMain(tp).filter(Boolean) : []));
+    $('topic-side').replaceChildren(...(tp ? [checklistBox(topicItems(tp))] : []));
+    $('topic-main').hidden = $('topic-side').hidden = !tp;
+    $('topics').classList.toggle('is-picked', Boolean(tp && ui.topicPicked));
     $('tn-topics').textContent = topics.length ? String(topics.length) : '';
     for (const c of $('topic-add').elements) c.disabled = state.readOnly || !db;
   }
@@ -1337,7 +1378,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       p.done && t.comment ? el('div', { class: 'comment' }, t.comment) : null,
       meta,
     );
-    return el('li', { class: 'task' + (p.done ? ' is-done' : '') + (p.open ? ' is-open' : ''), onclick: rowClick(() => toggleOpen(t.id)) }, p.check, body, el('div', { class: 'actions' }, p.star), p.panels);
+    return el('li', { class: 'task' + (p.done ? ' is-done' : '') + (p.open ? ' is-open' : ''), onclick: rowClick(t.id) }, p.check, body, el('div', { class: 'actions' }, p.star), p.panels);
   }
 
   // Table columns: [heading, shown only to screen readers].
@@ -1356,7 +1397,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 
   function tableRows(t, today, withOwner) {
     const p = parts(t, today, true);
-    const tr = el('tr', { class: ['row', p.done ? 'is-done' : '', p.open ? 'is-open' : '', p.panels.length ? 'has-detail' : ''].join(' ').trim().replace(/\s+/g, ' '), onclick: rowClick(() => toggleOpen(t.id)) },
+    const tr = el('tr', { class: ['row', p.done ? 'is-done' : '', p.open ? 'is-open' : '', p.panels.length ? 'has-detail' : ''].join(' ').trim().replace(/\s+/g, ' '), onclick: rowClick(t.id) },
       el('td', { class: 'c-check' }, p.check),
       el('td', { class: 'c-task' }, p.titleBtn, withChip(t), planChip(t, today), carryChip(t), viaChip(t)),
       withOwner ? el('td', { class: 'c-owner' }, t.owner ? el('span', { class: 'owner' }, memberName(t.owner)) : el('span', { class: 'me' }, 'Me')) : null,
@@ -1618,8 +1659,9 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       $('num-' + id).textContent = String(n);
       $('fig-' + id).classList.toggle('is-zero', n === 0);
     }
-    $('figures').hidden = state.closed;
-    $('progress').hidden = state.closed || !plannedToday.length;
+    const onTopics = ui.screen === 'topics';
+    $('figures').hidden = state.closed || onTopics;
+    $('progress').hidden = state.closed || onTopics || !plannedToday.length;
     if (plannedToday.length) {
       const text = planDone + ' of ' + plannedToday.length + ' done';
       const bar = $('progress-bar');
@@ -1663,8 +1705,14 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     }
 
     for (const c of $('add').elements) c.disabled = state.readOnly || !db;
-    for (const id of ['filters', 'add-box', 'lists', 'sec-days', 'sec-settings']) $(id).hidden = state.closed;
-    $('sec-with').hidden = state.closed || !person;
+    // The Topics screen takes the place of everything about tasks below the date.
+    for (const id of ['filters', 'add-box', 'lists', 'sec-days', 'sec-settings']) $(id).hidden = state.closed || onTopics;
+    $('sec-with').hidden = state.closed || !person || onTopics;
+    $('topics').hidden = state.closed || !onTopics;
+    $('screens').hidden = state.closed;
+    $('screen-tasks').setAttribute('aria-pressed', String(!onTopics));
+    $('screen-topics').setAttribute('aria-pressed', String(onTopics));
+    document.querySelector('.wrap').classList.toggle('is-topics', onTopics);
     for (const name of LISTS) $('sec-' + name).hidden = ui.tab !== 'all' && ui.tab !== name;
     $('sec-carry').hidden = !carried.length || (ui.tab !== 'all' && ui.tab !== 'today');
     for (const name of TABS) $('show-' + name).setAttribute('aria-pressed', String(ui.tab === name));
@@ -1733,7 +1781,8 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     }
   });
 
-  // A new topic opens at once, ready for its notes and checklist; the cursor stays here for the next topic.
+  // A new topic is picked at once, ready for its notes and checklist. The cursor stays in the box for the next topic,
+  // except on a phone, where the box gives way to the new topic.
   $('topic-add').addEventListener('submit', (e) => {
     e.preventDefault();
     if (!db || state.readOnly) return;
@@ -1743,10 +1792,16 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     const ref = db.collection('topics').doc();
     write('topic-' + ref.id, () => ref.set({ title, created: new Date().toISOString() }));
     input.value = '';
-    ui.topicOpen = ref.id;
-    ui.topicEditing = ui.topicRemoving = null;
-    render();
+    pickTopic(ref.id);
   });
+
+  for (const [id, value] of [['screen-tasks', 'tasks'], ['screen-topics', 'topics']]) {
+    $(id).addEventListener('click', () => {
+      ui.screen = value;
+      try { localStorage.setItem('organizer-screen', value); } catch (e) { /* not remembered, still switches */ }
+      render();
+    });
+  }
 
   $('add-type').addEventListener('change', render);
   $('add-day').addEventListener('change', (e) => { ui.addDay = e.target.value; render(); });
@@ -1782,6 +1837,8 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   try { ui.filter = localStorage.getItem('organizer-filter') || 'all'; } catch (e) { /* storage blocked: show everyone */ }
   try { const tab = localStorage.getItem('organizer-tab'); if (TABS.includes(tab)) ui.tab = tab; } catch (e) { /* storage blocked: start on Today */ }
   try { if (localStorage.getItem('organizer-layout') === 'table') ui.layout = 'table'; } catch (e) { /* storage blocked: start in list */ }
+  try { if (localStorage.getItem('organizer-screen') === 'topics') ui.screen = 'topics'; } catch (e) { /* storage blocked: start on tasks */ }
+  try { ui.topicSel = localStorage.getItem('organizer-topic') || null; } catch (e) { /* storage blocked: show the newest topic */ }
   const addBox = $('add-box');
   let addByHand = false;
   try { if (localStorage.getItem('organizer-add') === 'closed') addBox.open = false; } catch (e) { /* storage blocked: start open */ }
@@ -1890,7 +1947,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       state.jira = snap.docs.map((d) => ({ ...d.data(), key: d.data().key || d.id }));
       render();
     }, () => {});
-    // Topics are optional too: if they can't load, the Topics tab just shows none.
+    // Topics are optional too: if they can't load, the Topics screen just shows none.
     db.collection('topics').onSnapshot((snap) => {
       state.topics = snap.docs.map((d) => ({ ...d.data(), id: d.id }));
       render();
