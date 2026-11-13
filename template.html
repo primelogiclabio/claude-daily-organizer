@@ -335,10 +335,8 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 .pane-people { display: grid; gap: 1px; }
 .tabs .pane-people button { padding: 5px 10px 6px 24px; font-size: 14px; }
 .tabs #show-people.has-person:not(:hover) { background: none; border-left-color: transparent; }
-/* The team under People folds away: the arrow beside People opens and closes it. It starts folded unless a person is being viewed. */
-.pane-row { display: flex; align-items: stretch; gap: 2px; }
-.tabs .pane-row #show-people { flex: 1 1 auto; min-width: 0; }
-.tabs .pane-caret { flex: none; width: 28px; justify-content: center; padding: 0; border-left: 0; border-radius: 6px; font-size: 13px; }
+/* The team under People folds away: People itself opens and closes it, and its arrow shows which. It starts folded unless a person is being viewed. */
+.pcaret { margin-left: 6px; font-size: 12px; color: var(--muted); }
 .tabs #show-settings { margin-top: 18px; }
 .tabs .n { font-family: var(--font-mono); font-size: 13px; font-weight: 400; margin-left: 5px; color: var(--muted); font-variant-numeric: tabular-nums; }
 @media (max-width: 700px) {
@@ -352,7 +350,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   .tabs button[aria-pressed="true"] { border-bottom-color: var(--accent); background: none; }
   .tabs #show-all, .tabs #show-settings { margin-top: 0; }
   /* On a phone the team is a dropdown at the top of the People list instead, and With's list opens in place. */
-  .pane-people, .tabs .pane-caret { display: none; }
+  .pane-people, .pcaret { display: none; }
   .people-select { display: block; }
   .multi .menu { position: static; width: auto; max-width: none; margin-top: 4px; box-shadow: none; }
   /* With one list shown, the list sits right under the tabs and the tabs' line stands in for its own top border. */
@@ -472,7 +470,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       <button type="button" id="show-upcoming" aria-pressed="false">Upcoming<span class="n" id="tn-upcoming"></span></button>
       <button type="button" id="show-someday" aria-pressed="false">Someday<span class="n" id="tn-someday"></span></button>
       <button type="button" id="show-ideas" aria-pressed="false">Ideas<span class="n" id="tn-ideas"></span></button>
-      <div class="pane-row"><button type="button" id="show-people" aria-pressed="false">People<span class="n" id="tn-people"></span></button><button type="button" class="pane-caret" id="people-caret" aria-expanded="false" aria-controls="pane-people" aria-label="Show your team" hidden>▸</button></div>
+      <button type="button" id="show-people" aria-pressed="false" aria-expanded="false" aria-controls="pane-people"><span>People<span class="pcaret" id="people-caret" aria-hidden="true"></span></span><span class="n" id="tn-people"></span></button>
       <div class="pane-people" id="pane-people" role="group" aria-label="Person to show"></div>
       <button type="button" id="show-jira" aria-pressed="false">Jira<span class="n" id="tn-jira"></span></button>
       <button type="button" id="show-done" aria-pressed="false">Done<span class="n" id="tn-done"></span></button>
@@ -1022,6 +1020,13 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     if (document.activeElement !== day) syncSelect(day, [['', 'No day'], ...dayChoices(today), ['someday', 'Someday']], ui.addDay ?? d.day);
     status.hidden = day.value === 'someday';
     $('add-submit').textContent = 'Add ' + (TYPES.includes(type.value) ? type.value : 'task');
+  }
+
+  // People unfolds the team and shows everyone; from one person it goes back to everyone; on everyone it folds or unfolds the team.
+  function peopleClick() {
+    if (ui.tab === 'people' && !viewedPerson()) { ui.peopleOpen = !ui.peopleOpen; render(); return; }
+    ui.peopleOpen = true;
+    pickPerson(null);
   }
 
   function pickPerson(id) {
@@ -1639,11 +1644,9 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       type: 'button', id: 'pick-' + m.id, 'aria-pressed': String(person === m.id), onclick: () => pickPerson(m.id),
     }, m.name || 'Unnamed', el('span', { class: 'n' }, countOf(m.id) ? String(countOf(m.id)) : ''))));
     // The team under People folds; folded, People itself stays marked while a person is viewed.
-    const caret = $('people-caret');
-    caret.hidden = !state.team.length;
-    caret.textContent = ui.peopleOpen ? '▾' : '▸';
-    caret.setAttribute('aria-expanded', String(ui.peopleOpen));
-    caret.setAttribute('aria-label', (ui.peopleOpen ? 'Hide' : 'Show') + ' your team');
+    $('people-caret').textContent = state.team.length ? (ui.peopleOpen ? '▾' : '▸') : '';
+    if (state.team.length) $('show-people').setAttribute('aria-expanded', String(ui.peopleOpen));
+    else $('show-people').removeAttribute('aria-expanded');
     $('pane-people').hidden = !state.team.length || !ui.peopleOpen;
     $('show-people').classList.toggle('has-person', Boolean(person) && ui.peopleOpen);
     const pick = $('people-select');
@@ -2093,7 +2096,6 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   try { ui.person = localStorage.getItem('organizer-person') || null; } catch (e) { /* storage blocked: People shows everyone */ }
   // The team under People starts folded, unless the page opens on a person.
   ui.peopleOpen = ui.tab === 'people' && Boolean(ui.person);
-  $('people-caret').addEventListener('click', () => { ui.peopleOpen = !ui.peopleOpen; render(); });
   try { if (localStorage.getItem('organizer-layout') === 'table') ui.layout = 'table'; } catch (e) { /* storage blocked: start in list */ }
   try { if (localStorage.getItem('organizer-screen') === 'topics') ui.screen = 'topics'; } catch (e) { /* storage blocked: start on tasks */ }
   try { ui.topicSel = localStorage.getItem('organizer-topic') || null; } catch (e) { /* storage blocked: show the newest topic */ }
@@ -2109,7 +2111,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   });
   for (const name of TABS) {
     $('show-' + name).addEventListener('click', () => {
-      if (name === 'people') { pickPerson(null); return; }
+      if (name === 'people') { peopleClick(); return; }
       ui.tab = name;
       clearAddPicks();
       // Settings isn't remembered: the page opens on the last list.
