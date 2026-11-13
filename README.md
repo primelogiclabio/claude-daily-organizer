@@ -30,9 +30,12 @@ the pointer; click one to open its details: every field, the status note in
 the table, and its comments. Opening a row closes the one already open. Each device
 remembers its own tab and layout, so a phone can stay on the Today list while
 a desktop shows All as tables. The **Add a task** box above the list folds
-away when you don't need it, and each device remembers that too. Its **Day**
-picker starts on today, and can plan a new task for one of the next six days,
-**Someday** or no day; **+ Note** adds a status note as you add it. Tasks Claude added from a chat
+away when you don't need it, and each device remembers that too. It starts
+from the list you're on: today on Today, no day on Up Next, Waiting On on
+Waiting, tomorrow on Upcoming, Someday on Someday, an idea on Ideas, and a
+discussion with the person you're viewing on People; anything you change
+yourself stays until you add the task. Its **Day** picker can plan a new task
+for one of the next six days, **Someday** or no day; **+ Note** adds a status note as you add it. Tasks Claude added from a chat
 say "via chat". The bottom of the page shows its version.
 
 It used to be called **workday-tracker**. See [Renamed](#renamed-from-workday-tracker)
@@ -122,6 +125,12 @@ Tasks are yours unless you say otherwise. To hand some out:
   person. Picking one person shows a **1:1 with** section first, listing the
   open discussions with them, then the tasks they have. Ask Claude "what's on
   my 1:1 with Sam?" for the same list. Each device remembers its choice.
+- The **People** item in the left pane lists the open tasks that involve
+  your team, for them or discussions with them, grouped by who's involved
+  ("Sam", "Priya", "Priya and Sam"). Each person is listed under it with
+  their count: pick one to see only their tasks, discussions first, and a
+  new task starts as a discussion with them. On a phone the names are chips
+  at the top of the list. Each device remembers the person.
 - Removing someone from the team gives their tasks back to you and takes
   them off the discussions they were part of.
 
