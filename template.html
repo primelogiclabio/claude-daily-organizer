@@ -335,7 +335,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 .pane-people { display: grid; gap: 1px; }
 .tabs .pane-people button { padding: 5px 10px 6px 24px; font-size: 14px; }
 .tabs #show-people.has-person:not(:hover) { background: none; border-left-color: transparent; }
-/* The team under People folds away: People itself opens and closes it, and its arrow shows which. It starts folded unless a person is being viewed. */
+/* The team shows under People only while People is the list shown; its arrow shows which. */
 .pcaret { margin-left: 6px; font-size: 12px; color: var(--muted); }
 .tabs #show-settings { margin-top: 18px; }
 .tabs .n { font-family: var(--font-mono); font-size: 13px; font-weight: 400; margin-left: 5px; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -660,7 +660,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 (() => {
   const $ = (id) => document.getElementById(id);
   const state = { tasks: [], days: [], settings: {}, team: [], jira: [], topics: [], teamLoaded: false, confirmed: false, slow: false, error: '', note: '', readOnly: false, closed: false };
-  const ui = { completing: null, removing: null, editing: null, clearing: false, drafts: {}, open: new Set(), logRemoving: null, logEditing: null, itemEditing: null, itemRemoving: null, screen: 'tasks', topicSel: null, topicPicked: false, topicEditing: null, topicRemoving: null, layout: 'list', tab: 'today', filter: 'all', day: null, addWith: null, addDay: null, addType: null, addStatus: null, person: null, peopleOpen: false, withOpen: null, teamRemoving: null };
+  const ui = { completing: null, removing: null, editing: null, clearing: false, drafts: {}, open: new Set(), logRemoving: null, logEditing: null, itemEditing: null, itemRemoving: null, screen: 'tasks', topicSel: null, topicPicked: false, topicEditing: null, topicRemoving: null, layout: 'list', tab: 'today', filter: 'all', day: null, addWith: null, addDay: null, addType: null, addStatus: null, person: null, withOpen: null, teamRemoving: null };
   const chains = new Map();
   const TYPES = ['task', 'idea', 'follow-up', 'discussion'];
   // The list tabs: one list at a time, or All of them stacked.
@@ -1020,13 +1020,6 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     if (document.activeElement !== day) syncSelect(day, [['', 'No day'], ...dayChoices(today), ['someday', 'Someday']], ui.addDay ?? d.day);
     status.hidden = day.value === 'someday';
     $('add-submit').textContent = 'Add ' + (TYPES.includes(type.value) ? type.value : 'task');
-  }
-
-  // People unfolds the team and shows everyone; from one person it goes back to everyone; on everyone it folds or unfolds the team.
-  function peopleClick() {
-    if (ui.tab === 'people' && !viewedPerson()) { ui.peopleOpen = !ui.peopleOpen; render(); return; }
-    ui.peopleOpen = true;
-    pickPerson(null);
   }
 
   function pickPerson(id) {
@@ -1643,12 +1636,12 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     $('pane-people').replaceChildren(...state.team.map((m) => el('button', {
       type: 'button', id: 'pick-' + m.id, 'aria-pressed': String(person === m.id), onclick: () => pickPerson(m.id),
     }, m.name || 'Unnamed', el('span', { class: 'n' }, countOf(m.id) ? String(countOf(m.id)) : ''))));
-    // The team under People folds; folded, People itself stays marked while a person is viewed.
-    $('people-caret').textContent = state.team.length ? (ui.peopleOpen ? '▾' : '▸') : '';
-    if (state.team.length) $('show-people').setAttribute('aria-expanded', String(ui.peopleOpen));
+    // The team shows under People while People is the list shown, and folds away on every other list.
+    $('people-caret').textContent = state.team.length ? (onTab ? '▾' : '▸') : '';
+    if (state.team.length) $('show-people').setAttribute('aria-expanded', String(onTab));
     else $('show-people').removeAttribute('aria-expanded');
-    $('pane-people').hidden = !state.team.length || !ui.peopleOpen;
-    $('show-people').classList.toggle('has-person', Boolean(person) && ui.peopleOpen);
+    $('pane-people').hidden = !state.team.length || !onTab;
+    $('show-people').classList.toggle('has-person', Boolean(person));
     const pick = $('people-select');
     if (document.activeElement !== pick) syncSelect(pick, [['', 'Everyone'], ...state.team.map((m) => [m.id, (m.name || 'Unnamed') + (countOf(m.id) ? ' (' + countOf(m.id) + ')' : '')])], person || '');
     pick.hidden = !state.team.length;
@@ -2094,8 +2087,6 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   try { ui.filter = localStorage.getItem('organizer-filter') || 'all'; } catch (e) { /* storage blocked: show everyone */ }
   try { const tab = localStorage.getItem('organizer-tab'); if (TABS.includes(tab)) ui.tab = tab; } catch (e) { /* storage blocked: start on Today */ }
   try { ui.person = localStorage.getItem('organizer-person') || null; } catch (e) { /* storage blocked: People shows everyone */ }
-  // The team under People starts folded, unless the page opens on a person.
-  ui.peopleOpen = ui.tab === 'people' && Boolean(ui.person);
   try { if (localStorage.getItem('organizer-layout') === 'table') ui.layout = 'table'; } catch (e) { /* storage blocked: start in list */ }
   try { if (localStorage.getItem('organizer-screen') === 'topics') ui.screen = 'topics'; } catch (e) { /* storage blocked: start on tasks */ }
   try { ui.topicSel = localStorage.getItem('organizer-topic') || null; } catch (e) { /* storage blocked: show the newest topic */ }
@@ -2111,7 +2102,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   });
   for (const name of TABS) {
     $('show-' + name).addEventListener('click', () => {
-      if (name === 'people') { peopleClick(); return; }
+      if (name === 'people') { pickPerson(null); return; }
       ui.tab = name;
       clearAddPicks();
       // Settings isn't remembered: the page opens on the last list.

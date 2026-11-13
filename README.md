@@ -128,8 +128,9 @@ Tasks are yours unless you say otherwise. To hand some out:
   my 1:1 with Sam?" for the same list. Each device remembers its choice.
 - The **People** item in the left pane lists the open tasks that involve
   your team, for them or discussions with them, grouped by who's involved
-  ("Sam", "Priya", "Priya and Sam"). Clicking People unfolds your team
-  under it, each person with their count, and clicking it again folds it: pick one to see only their tasks, discussions first, and a
+  ("Sam", "Priya", "Priya and Sam"). While People is shown, your team is
+  listed under it, each person with their count, and it folds away on every
+  other list: pick one to see only their tasks, discussions first, and a
   new task starts as a discussion with them. On a phone the names are a
   dropdown at the top of the list. Each device remembers the person.
 - Removing someone from the team gives their tasks back to you and takes
