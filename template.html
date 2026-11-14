@@ -1,5 +1,5 @@
 <title>Daily Organizer</title>
-<meta name="daily-organizer-version" content="0.16.0">
+<meta name="daily-organizer-version" content="0.17.0">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -179,8 +179,15 @@ input[type="text"], input[type="date"], select { padding: 6px 8px; border: 1px s
 .btn-danger { border-color: var(--danger); color: var(--danger); }
 .btn:disabled { opacity: .5; cursor: default; }
 
-/* A row's details: the task's fields as a grid of facts, the status note in the table, then the comments. */
+/* A row's details: the task's fields as a grid of facts, the status note in the table, then how many comments and checklist
+   items it has, with Open for the task view. */
 .details { grid-column: 2 / -1; display: grid; gap: 12px; padding: 8px 0 2px; }
+.view-line { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
+.view-line .counts { font-size: 15px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.view-line .btns { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+/* A row's checklist count, beside its comments link: items done of all, green once every item is. */
+.check-n { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.check-n.all-done { color: var(--done); }
 .facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 14px; margin: 0; }
 .facts div { min-width: 0; }
 .facts dt, .log h3, .checklist h3 { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
@@ -215,6 +222,35 @@ input[type="text"], input[type="date"], select { padding: 6px 8px; border: 1px s
 .checklist .item-tools .link-btn.danger { color: var(--danger); }
 .checklist .add-item { display: flex; gap: 6px; }
 .checklist input[type="text"] { flex: 1 1 auto; width: 100%; min-width: 0; box-sizing: border-box; }
+
+/* The task view: one task in a dialog over the page, its name and chips across the top, then its facts, its comments in the main
+   column and its checklist in a pane beside them; the part under the name scrolls. On a phone it fills the screen, the checklist
+   under the comments. The display rule is only for an open dialog, or a closed one would show. */
+dialog.view { box-sizing: border-box; width: min(1040px, calc(100vw - 32px)); max-width: none; max-height: calc(100dvh - 32px); padding: 0; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--ink); box-shadow: 0 18px 48px rgb(0 0 0 / .3); overflow: hidden; }
+dialog.view[open] { display: grid; grid-template-rows: auto minmax(0, 1fr); }
+dialog.view:not(:modal) { position: fixed; inset: 16px; z-index: 60; margin: auto; }
+dialog.view::backdrop { background: rgb(12 16 24 / .5); }
+html:has(dialog.view[open]) { overflow: hidden; }
+.view-head { display: grid; gap: 6px; padding: 14px 14px 12px 20px; border-bottom: 1px solid var(--line); background: var(--surface); }
+.view-title-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: start; }
+.view-title { margin: 0; padding-top: 2px; font-family: var(--font-display); font-size: 25px; font-weight: 600; line-height: 1.15; letter-spacing: 0; text-transform: none; color: var(--ink); overflow-wrap: anywhere; }
+.view.is-done .view-title { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line); }
+.view-close { font-size: 24px; line-height: 1; padding: 2px 9px 4px; }
+.view-chips { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
+.view-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 320px); gap: 16px 20px; align-content: start; align-items: start; padding: 16px 20px 20px; overflow-y: auto; overscroll-behavior: contain; }
+.view-about { grid-column: 1 / -1; display: grid; gap: 10px; min-width: 0; }
+.view-body > .log, .view-side { min-width: 0; padding: 14px 16px 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.view-body > .log textarea { min-height: 88px; }
+/* Too narrow for the comments beside the pane: the checklist goes under them. */
+@media (max-width: 860px) {
+  .view-body { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 700px) {
+  dialog.view { width: 100vw; height: 100dvh; max-height: none; margin: 0; border: 0; border-radius: 0; }
+  .view-head { padding: max(10px, env(safe-area-inset-top, 0px)) max(8px, env(safe-area-inset-right, 0px)) 10px max(14px, env(safe-area-inset-left, 0px)); }
+  .view-title { font-size: 21px; }
+  .view-body { grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 12px max(14px, env(safe-area-inset-right, 0px)) max(20px, env(safe-area-inset-bottom, 0px)) max(14px, env(safe-area-inset-left, 0px)); }
+}
 
 /* The Topics screen: topics down the left; the picked topic's name, people and whose parts are shown across the top, then a row
    for each part shown (Main, the topic's own, and each person's on it): its checklist in the middle and its notes on the right,
@@ -329,7 +365,7 @@ body.is-dragging-note, body.is-dragging-note * { cursor: grabbing !important; us
 
 /* position: relative keeps the screen-reader-only headings inside the table's own scroll area, not the page's. */
 .table-wrap { position: relative; overflow-x: auto; border-top: 1px solid var(--line); container-type: inline-size; }
-/* A row's Edit form, comments and other panels stay in view, as wide as the table's visible part, when the table is wider than the page. */
+/* A row's Edit form, details and other panels stay in view, as wide as the table's visible part, when the table is wider than the page. */
 .tasks tr.detail td > * { position: sticky; left: 8px; max-width: calc(100cqw - 16px); box-sizing: border-box; }
 #sec-today .table-wrap { border-top-color: var(--today); }
 #sec-with .table-wrap { border-top-color: var(--discussion); }
@@ -348,6 +384,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 .tasks .c-age { font-family: var(--font-mono); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .tasks .c-age.stale { color: var(--today); }
 .tasks .c-log .link-btn { padding: 0 4px; margin-left: -4px; }
+.tasks .c-log .link-btn + .check-n { margin-left: 4px; }
 .tasks .c-actions .link-btn { padding: 0 4px; }
 .tasks .c-owner { white-space: nowrap; font-size: 14px; }
 .tasks .c-owner .me { color: var(--muted); }
@@ -736,11 +773,13 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   <p class="page-foot" id="page-foot"></p>
 </div>
 
+<dialog id="task-view" class="view" aria-labelledby="view-title"></dialog>
+
 <script>
 (() => {
   const $ = (id) => document.getElementById(id);
   const state = { tasks: [], days: [], settings: {}, team: [], jira: [], topics: [], teamLoaded: false, confirmed: false, slow: false, error: '', note: '', readOnly: false, closed: false };
-  const ui = { completing: null, removing: null, editing: null, clearing: false, drafts: {}, open: new Set(), logRemoving: null, logEditing: null, itemEditing: null, itemRemoving: null, itemOpen: null, screen: 'tasks', topicSel: null, topicShow: {}, topicPicked: false, topicEditing: null, topicRemoving: null, layout: 'list', tab: 'today', filter: 'all', day: null, addWith: null, addDay: null, addType: null, addStatus: null, person: null, withOpen: null, topicSettings: false, teamRemoving: null };
+  const ui = { completing: null, removing: null, editing: null, clearing: false, drafts: {}, open: new Set(), view: null, logRemoving: null, logEditing: null, itemEditing: null, itemRemoving: null, itemOpen: null, screen: 'tasks', topicSel: null, topicShow: {}, topicPicked: false, topicEditing: null, topicRemoving: null, layout: 'list', tab: 'today', filter: 'all', day: null, addWith: null, addDay: null, addType: null, addStatus: null, person: null, withOpen: null, topicSettings: false, teamRemoving: null };
   const chains = new Map();
   const TYPES = ['task', 'idea', 'follow-up', 'discussion'];
   // The list tabs: one list at a time, or All of them stacked.
@@ -1054,6 +1093,20 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     return d;
   }
 
+  // The task view closes with its × button, Escape (which the dialog handles itself, unless an edit box inside took it) or a
+  // click on the dimmed page around it. A click counts only if it started there too, so selecting text out past its edge doesn't.
+  {
+    const dlg = $('task-view');
+    const outside = (e) => {
+      const r = dlg.getBoundingClientRect();
+      return e.target === dlg && (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom);
+    };
+    let downOutside = false;
+    dlg.addEventListener('pointerdown', (e) => { downOutside = outside(e); });
+    dlg.addEventListener('click', (e) => { if (downOutside && outside(e)) closeView(); downOutside = false; });
+    dlg.addEventListener('close', () => { if (ui.view) closeView(); });
+  }
+
   // A click outside an open With dropdown, or Escape, closes it.
   document.addEventListener('click', (e) => {
     if (e.target.closest && e.target.closest('details.multi')) return;
@@ -1140,19 +1193,38 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   }
 
   // Opens or closes a row's details; opening one closes any other. The row clicked stays where it was on screen,
-  // though a row above it folds away. From the comments link it also puts the cursor in the new-comment box.
-  function toggleOpen(id, toComment) {
+  // though a row above it folds away.
+  const rowAnchor = (id) => document.querySelector('.title-btn[aria-controls="details-' + CSS.escape(id) + '"]');
+  function toggleOpen(id) {
     const opening = !ui.open.has(id);
-    const anchor = () => document.querySelector('.title-btn[aria-controls="details-' + CSS.escape(id) + '"]');
-    const before = anchor() ? anchor().getBoundingClientRect().top : null;
+    const before = rowAnchor(id) ? rowAnchor(id).getBoundingClientRect().top : null;
     if (opening) { ui.open.clear(); ui.open.add(id); }
     else ui.open.delete(id);
-    ui.logRemoving = ui.logEditing = null;
     render();
-    const a = anchor();
+    const a = rowAnchor(id);
     if (before !== null && a) window.scrollBy(0, a.getBoundingClientRect().top - before);
-    const f = $('log-' + id);
-    if (opening && toComment && f) f.focus();
+  }
+
+  // The task view: one task's comments, with its checklist in a pane beside them, in a dialog over the page. `ui.view` is the
+  // task shown; render() redraws it with the rest of the page, so a change from Claude shows at once and a draft keeps its place.
+  // It opens with the cursor in `focusId` when given (the new-comment or new-item box), else on its Close button.
+  function openView(id, focusId) {
+    ui.view = id;
+    ui.logRemoving = ui.logEditing = ui.itemEditing = ui.itemRemoving = null;
+    render();
+    const f = (focusId && $(focusId)) || $('view-close');
+    if (f) f.focus();
+  }
+
+  // Closing it puts the focus back on the task's row, which the page has redrawn since the view opened.
+  function closeView() {
+    const id = ui.view;
+    if (!id) return;
+    ui.view = null;
+    ui.logRemoving = ui.logEditing = ui.itemEditing = ui.itemRemoving = null;
+    render();
+    const a = rowAnchor(id);
+    if (a) a.focus();
   }
 
   // A click on a row, outside its buttons, links, fields and open panels, opens or closes its details. Selecting text doesn't.
@@ -1166,6 +1238,9 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   // part of its element ids), `entries` (oldest first), `save` (writes the whole list) and `words` (what to call one).
   const COMMENT_WORDS = { title: 'Comments', one: 'comment', add: 'Add comment', placeholder: 'Progress, findings, next steps…', none: 'No comments.' };
   const taskLog = (t) => ({ key: t.id, entries: logOf(t), save: (log) => patch(t.id, { log }), words: COMMENT_WORDS });
+  // A task's checklist: steps to tick off, in a topic checklist's format, in the task view's side pane.
+  const checklistOf = (t) => itemsIn(t.checklist);
+  const taskChecklist = (t) => ({ key: 'task-' + t.id, kind: 'check', items: checklistOf(t), save: (checklist) => patch(t.id, { checklist }) });
 
   function addEntry(box) {
     const key = 'log-' + box.key;
@@ -1217,7 +1292,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
             el('textarea', {
               id: ek, maxlength: 2000, 'aria-label': 'Edit ' + w.one,
               oninput: (e) => { ui.drafts[ek] = e.target.value; const b = $(ek + '-save'); if (b) b.disabled = !e.target.value.trim(); },
-              onkeydown: (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveEntryEdit(box, entry); } if (e.key === 'Escape') cancel(); },
+              onkeydown: (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveEntryEdit(box, entry); } if (e.key === 'Escape') { e.preventDefault(); cancel(); } },
             }, ui.drafts[ek] ?? ''),
             el('div', { class: 'log-actions' },
               el('button', { type: 'button', class: 'btn', onclick: cancel }, 'Cancel'),
@@ -1302,7 +1377,11 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       return next;
     });
     render();
+    focusItem(box, ik);
   }
+
+  // After an item's edit closes, the cursor goes to its checkbox rather than out of the list (a note has none).
+  const focusItem = (box, ik) => { const f = $('chk-' + box.key + '-' + ik); if (f) f.focus(); };
 
   // A checklist: each item ticks off, with Edit and Remove beside it.
   function itemsBox(box) {
@@ -1319,8 +1398,9 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
         const rk = box.key + ':' + ik;
         const text = String(c.text || '');
         if (editable && ui.itemEditing && ui.itemEditing.key === box.key && ui.itemEditing.id === ik) {
-          const cancel = () => { ui.itemEditing = null; delete ui.drafts[ek]; delete ui.drafts[ek + '-ticket']; render(); };
-          const keys = (e) => { if (e.key === 'Enter') { e.preventDefault(); saveItemEdit(box, ik); } if (e.key === 'Escape') cancel(); };
+          const cancel = () => { ui.itemEditing = null; delete ui.drafts[ek]; delete ui.drafts[ek + '-ticket']; render(); focusItem(box, ik); };
+          // Escape cancels the edit only, not the task view around it.
+          const keys = (e) => { if (e.key === 'Enter') { e.preventDefault(); saveItemEdit(box, ik); } if (e.key === 'Escape') { e.preventDefault(); cancel(); } };
           return el('li', { class: 'is-editing' },
             el('div', { class: 'item-edit' },
               el('input', {
@@ -1500,32 +1580,95 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     return d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) + ', ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
   }
 
-  // A row's details: every field at a glance, then the comments. The table has no Note column, so there they carry the status note too.
-  function details(t, withNote) {
+  // Every field of a task at a glance, for its row's details and the task view.
+  function factsOf(t) {
     const done = t.status === 'done';
     const typeName = TYPES.includes(t.type) ? t.type : 'task';
     const today = dayKey();
-    const fact =(label, value) => (value === null || value === undefined || value === '' ? null : el('div', {}, el('dt', {}, label), el('dd', {}, value)));
+    const fact = (label, value) => (value === null || value === undefined || value === '' ? null : el('div', {}, el('dt', {}, label), el('dd', {}, value)));
     const day = t.someday ? 'Someday' : t.today ? cap(shortDay(t.today, today)) + (!done && t.today < today ? ' (carried over)' : '') : 'No day';
     const list = done ? 'Done' : t.someday ? 'Someday' : typeName === 'idea' ? 'Ideas' : t.status === 'waiting' ? 'Waiting On' : 'Up Next';
+    return el('dl', { class: 'facts' },
+      fact('Type', cap(typeName)),
+      fact('List', list),
+      done ? null : fact('Priority', t.priority === 'high' ? 'High' : t.priority === 'low' ? 'Low' : 'Normal'),
+      fact('Day', day),
+      fact('For', t.owner ? memberName(t.owner) : 'Me'),
+      withOf(t).length ? fact('With', namesOf(withOf(t))) : null,
+      t.ticket ? fact('Ticket', ticketNode(String(t.ticket))) : null,
+      fact('Added', when(t.created)),
+      done ? fact('Done', when(t.doneAt)) : null,
+      t.via === 'chat' ? fact('Added by', 'Claude, from a chat') : null,
+      t.flag ? fact('Jira flag', String(t.flag)) : null,
+    );
+  }
+
+  // How many comments and checklist items a task has: "3 comments · 1 of 3 items done".
+  function countsOf(t) {
+    const log = logOf(t);
+    const items = checklistOf(t);
+    const parts = [];
+    if (log.length) parts.push(log.length + (log.length === 1 ? ' comment' : ' comments'));
+    if (items.length) parts.push(items.filter((c) => c.done).length + ' of ' + items.length + (items.length === 1 ? ' item' : ' items') + ' done');
+    return parts.join(' · ');
+  }
+
+  // A row's details: every field at a glance, then how many comments and checklist items the task has, with Open for the task
+  // view, where they are. The table has no Note column, so there the details carry the status note too.
+  function details(t, withNote) {
+    const done = t.status === 'done';
     return el('div', { class: 'details', id: 'details-' + t.id },
-      el('dl', { class: 'facts' },
-        fact('Type', cap(typeName)),
-        fact('List', list),
-        done ? null : fact('Priority', t.priority === 'high' ? 'High' : t.priority === 'low' ? 'Low' : 'Normal'),
-        fact('Day', day),
-        fact('For', t.owner ? memberName(t.owner) : 'Me'),
-        withOf(t).length ? fact('With', namesOf(withOf(t))) : null,
-        t.ticket ? fact('Ticket', ticketNode(String(t.ticket))) : null,
-        fact('Added', when(t.created)),
-        done ? fact('Done', when(t.doneAt)) : null,
-        t.via === 'chat' ? fact('Added by', 'Claude, from a chat') : null,
-        t.flag ? fact('Jira flag', String(t.flag)) : null,
-      ),
+      factsOf(t),
       withNote && !done && t.note ? el('div', { class: 'note' }, t.note) : null,
       withNote && done && t.comment ? el('div', { class: 'comment' }, t.comment) : null,
-      entriesBox(taskLog(t), () => toggleOpen(t.id)),
+      el('div', { class: 'view-line' },
+        el('span', { class: 'counts' }, countsOf(t) || 'No comments or checklist yet.'),
+        el('span', { class: 'btns' },
+          el('button', { type: 'button', class: 'btn', onclick: () => toggleOpen(t.id) }, 'Close'),
+          el('button', { type: 'button', class: 'btn btn-primary', 'aria-haspopup': 'dialog', 'aria-label': 'Open comments and checklist', onclick: () => openView(t.id) }, 'Open'),
+        ),
+      ),
     );
+  }
+
+  // The task view's contents, drawn into its dialog on every render while it's open. It closes when its task is gone,
+  // say finished and cleared, or removed by Claude.
+  function renderTaskView() {
+    const dlg = $('task-view');
+    const t = ui.view && !state.closed && ui.screen !== 'topics' ? state.tasks.find((x) => x.id === ui.view) : null;
+    if (!t) {
+      ui.view = null;
+      if (dlg.open) dlg.close();
+      dlg.replaceChildren();
+      return;
+    }
+    const done = t.status === 'done';
+    const typeName = TYPES.includes(t.type) ? t.type : 'task';
+    dlg.classList.toggle('is-done', done);
+    dlg.replaceChildren(
+      el('div', { class: 'view-head' },
+        el('div', { class: 'view-title-row' },
+          el('h2', { class: 'view-title', id: 'view-title' }, t.title || '(untitled)'),
+          el('button', { type: 'button', class: 'icon-btn view-close', id: 'view-close', 'aria-label': 'Close', title: 'Close (Esc)', onclick: closeView }, '×'),
+        ),
+        el('div', { class: 'view-chips' },
+          el('span', { class: 'tag tag-' + typeName }, typeName), prioChip(t),
+          t.ticket ? ticketNode(String(t.ticket)) : null,
+          t.owner ? el('span', { class: 'owner' }, 'for ' + memberName(t.owner)) : null,
+          withChip(t), viaChip(t),
+        ),
+      ),
+      el('div', { class: 'view-body' },
+        el('div', { class: 'view-about' },
+          factsOf(t),
+          !done && t.note ? el('div', { class: 'note' }, t.note) : null,
+          done && t.comment ? el('div', { class: 'comment' }, t.comment) : null,
+        ),
+        entriesBox(taskLog(t)),
+        el('aside', { class: 'view-side', 'aria-label': 'Checklist' }, itemsBox(taskChecklist(t))),
+      ),
+    );
+    if (!dlg.open) { try { dlg.showModal(); } catch (e) { dlg.show(); } }
   }
 
   // Topics: subjects that aren't tasks, each with notes (bullet points) and a checklist, on a screen of their own. The topics are
@@ -1997,16 +2140,24 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       },
     });
 
-    // The title opens and closes the row's details, as a click anywhere else on the row does; the comments link opens them at the new-comment box.
+    // The title opens and closes the row's details, as a click anywhere else on the row does. The comments link opens the
+    // task view at the new-comment box, and the checklist count opens it at the new-item box.
     const titleBtn = el('button', {
       type: 'button', class: 'title-btn', 'aria-expanded': String(open), 'aria-controls': 'details-' + t.id,
       onclick: () => toggleOpen(t.id),
     }, el('span', { class: 'title' }, t.title || '(untitled)'));
     const logBtn = (short) => (log.length || editable ? el('button', {
-      type: 'button', class: 'link-btn', 'aria-expanded': String(open), 'aria-controls': 'details-' + t.id,
+      type: 'button', class: 'link-btn', 'aria-haspopup': 'dialog',
       title: log.length ? 'Show comments' : 'Add a comment',
-      onclick: () => toggleOpen(t.id, true),
+      onclick: () => openView(t.id, 'log-' + t.id),
     }, log.length ? (short ? String(log.length) : log.length + (log.length === 1 ? ' comment' : ' comments')) : (short ? 'Add' : 'Add comment')) : null);
+    const items = checklistOf(t);
+    const ticked = items.filter((c) => c.done).length;
+    const checkBtn = items.length ? el('button', {
+      type: 'button', class: 'link-btn check-n' + (ticked === items.length ? ' all-done' : ''), 'aria-haspopup': 'dialog',
+      'aria-label': 'Checklist, ' + ticked + ' of ' + items.length + ' done', title: 'Checklist: ' + ticked + ' of ' + items.length + ' done',
+      onclick: () => openView(t.id, 'item-task-' + t.id),
+    }, '☑ ' + ticked + '/' + items.length) : null;
 
     // Edit is a row's one tool: every change, removing the task included, starts there.
     const editing = Boolean(ui.editing && ui.editing.id === t.id);
@@ -2044,7 +2195,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
         el('button', { type: 'button', class: 'btn', onclick: () => { ui.removing = null; render(); } }, 'Keep'),
       ));
     }
-    return { done, open, added, chase, check, titleBtn, logBtn, tools, star, tag, ticket, panels };
+    return { done, open, added, chase, check, titleBtn, logBtn, checkBtn, tools, star, tag, ticket, panels };
   }
 
   // Tasks Claude added from a chat carry `via: "chat"`.
@@ -2059,6 +2210,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       p.chase ? el('span', { class: 'stale' }, chaseText(t, p.added)) : null,
       p.done && t.doneAt ? el('span', {}, ago(daysSince(t.doneAt), 'done')) : null,
       p.logBtn(false),
+      p.checkBtn,
       p.tools,
     );
     const body = el('div', { class: 'body' },
@@ -2100,7 +2252,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       el('td', { class: 'c-prio' }, prioChip(t)),
       el('td', { class: 'c-ticket' }, p.ticket),
       el('td', { class: 'c-age' + (p.chase ? ' stale' : ''), title: p.chase ? chaseText(t, p.added) : null }, ageCell(t, p)),
-      el('td', { class: 'c-log' }, p.logBtn(true)),
+      el('td', { class: 'c-log' }, p.logBtn(true), p.checkBtn),
       el('td', { class: 'c-star' }, p.star),
       el('td', { class: 'c-actions' }, p.tools),
     );
@@ -2499,6 +2651,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     for (const c of $('settings-form').elements) c.disabled = state.readOnly || !db;
     const ticketInput = $('set-ticket');
     if (!ui.settingsTyped && document.activeElement !== ticketInput) ticketInput.value = state.settings.ticketUrl || '';
+    renderTaskView();
 
     if (active) {
       const f = $(active);
