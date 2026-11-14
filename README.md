@@ -97,9 +97,14 @@ under a **New topic** box, at the left edge of the window. The topic you
 pick shows its **Checklist** in the middle, with items to tick off and how
 many are done, and its **Notes** on the right, which take all the width the
 window has to spare: bullet points without dates, each a short point or a
-paragraph. Click a note to show its **Edit** and **Remove** right under it.
+paragraph. Click a note to show its **Edit** and **Remove** right under it,
+with **↑**, **↓** and **Move to** to move it. Or drag a note by its grip
+(⋮⋮, over its bullet) to another place in the list, or into another
+person's notes or Main's.
 Write new notes in the box under them: Enter adds the note, Shift+Enter
 starts a new line.
+A checklist item can carry a ticket too, shown as a chip after its text;
+set it in the item's **Edit**.
 Under the topic's name, its **overview** says what it's about, and its
 **Tickets** link to the Jira tickets, Salesforce cases or other pages it
 relates to. A Jira key links through your Ticket link setting; a link can
