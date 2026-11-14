@@ -28,7 +28,11 @@ A bar above the lists holds the **Day** and **People** filters and a
 **List | Table** switch, which shows each section as a list or as a table
 with columns for type, priority, ticket, age and comments. Rows light up under
 the pointer; click one to open its details: every field, the status note in
-the table, and its comments. Opening a row closes the one already open. Each device
+the table, and how many comments and checklist items it has, with **Open**.
+Opening a row closes the one already open. **Open**, a row's comments link or
+its checklist count (such as ☑ 1/3) opens the task in a larger view over the
+page: its comments in the main column and its checklist in a pane beside them,
+or under them on a phone. Escape, × or a click outside closes it. Each device
 remembers its own tab and layout, so a phone can stay on the Today list while
 a desktop shows All as tables. The **Add a task** box above the list starts
 folded each time the page opens, leaving the room to the list; click it to
@@ -53,7 +57,7 @@ artifact on claude.ai, in the artifact's own database:
   title, type, list, priority, day (any date, or Someday), ticket, status
   note, who it's for or with, and the day it was added; on a done task, also
   the completion comment and the day it was done. **Remove task** is there
-  too. Each comment has its own **Edit**.
+  too. Each comment and checklist item has its own **Edit**.
 - Claude reads and changes the same records when you ask, without rewriting
   the page, so asking for "add a follow-up to chase the DNS change" is quick
   and can't drop other tasks.
@@ -87,6 +91,10 @@ artifact on claude.ai, in the artifact's own database:
   such as what you tried and what's next. The status note says where a task
   stands now; the comments keep the history. Say "add a comment to the DNS
   task: …", or open the task on the page and add one there.
+- A task can have a **checklist**: the steps left to do, ticked off as you go,
+  each with an optional ticket. Say "add 'check the TTL' to the DNS task's
+  checklist", or open the task on the page and add items in its checklist
+  pane. A task can be finished with items still open.
 
 ## Topics
 
@@ -243,7 +251,7 @@ an artifact link, has no database.
 | Where | Works? |
 | --- | --- |
 | Claude Code CLI, desktop Code tab, VS Code | ✔ full: starts the organizer, changes tasks, plans and wraps up your day |
-| The organizer page, wherever you open it (web, desktop, mobile) | ✔ add, edit, star, finish and remove tasks, add status notes and comments, keep topics with notes and checklists |
+| The organizer page, wherever you open it (web, desktop, mobile) | ✔ add, edit, star, finish and remove tasks, add status notes, comments and checklist items, keep topics with notes and checklists |
 | claude.ai Chat | ✔ reads and changes your organizer's tasks: add, update, finish, plan and wrap up from a chat (type `/daily-organizer` or ask by name). Starting a new organizer or updating its page from a chat isn't tested yet |
 | Cowork, mobile chat | not tested yet. Where Claude has the artifact tools it works as in Chat; where it doesn't, it says it can't reach the organizer, and the page still works |
 | Claude Code cloud sessions (claude.ai/code) | ✔ only if it's on your claude.ai account and the session has the Artifact tools |
