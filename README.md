@@ -94,22 +94,28 @@ artifact on claude.ai, in the artifact's own database:
 "Q4 planning" or "Kubernetes migration". The **Tasks | Topics** switch at
 the top of the page swaps between the two. Topics are listed down the left,
 under a **New topic** box, at the left edge of the window. The topic you
-pick shows its **Notes** in the middle pane, which takes all the width the
-window has to spare: bullet points, without dates, each of which you can
-edit or remove. Its **Checklist** sits on the right, with items to tick
-off and how many are done.
+pick shows its **Checklist** in the middle, with items to tick off and how
+many are done, and its **Notes** on the right, which take all the width the
+window has to spare: bullet points without dates, each a short point or a
+paragraph. Click a note to show its **Edit** and **Remove** right under it.
+Write new notes in the box under them: Enter adds the note, Shift+Enter
+starts a new line.
 A **With** dropdown under the topic's name says whom it's a joint effort or
 discussion with, from the same team as your tasks; the Topics screen has its
 own **Settings** for adding people, so you can add them from either screen.
+Under it, **Main** and a button for each person pick whose notes and
+checklist you see: the topic's own, or each person's part, for what they're
+working on or questions to follow up with them.
 **Edit** on a topic renames or removes it. On a narrower screen the
-checklist goes under the notes; on a phone you see the list, then the topic
+notes go under the checklist; on a phone you see the list, then the topic
 you tap, with **‹ All topics** to go back. Each device remembers the screen
 and the topic.
 
 Claude keeps the same notes and checklists: "start a topic for Q4
 planning", "add a note to Q4 planning: …", "add 'book the room' and 'send
-the agenda' to its checklist", "tick off book the room", "what's left on
-Q4 planning?". Plan-my-day and wrap-up leave topics out unless you ask.
+the agenda' to its checklist", "tick off book the room", "add to Sam's notes
+on Q4 planning: …", "what's left on Q4 planning?". Plan-my-day and wrap-up
+leave topics out unless you ask.
 
 ## Team
 
