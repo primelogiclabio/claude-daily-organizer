@@ -103,11 +103,13 @@ starts a new line.
 A **With** dropdown under the topic's name says whom it's a joint effort or
 discussion with, from the same team as your tasks; the Topics screen has its
 own **Settings** for adding people, so you can add them from either screen.
-Under it, **Main** and a button for each person pick whose notes and
-checklist you see: the topic's own, or each person's part, for what they're
-working on or questions to follow up with them.
-**Edit** on a topic renames or removes it. On a narrower screen the
-notes go under the checklist; on a phone you see the list, then the topic
+Each person on the topic has a part of their own, for what they're working
+on or questions to follow up with them, shown as a row under the topic's
+own (**Main**), with its checklist beside its notes. **All**, under the
+topic's people, shows every part; click **Main** or a name to see only that
+one, and more names to add them.
+**Edit** on a topic renames or removes it. On a narrower screen each
+part's notes go under its checklist; on a phone you see the list, then the topic
 you tap, with **‹ All topics** to go back. Each device remembers the screen
 and the topic.
 
