@@ -1,5 +1,5 @@
 <title>Daily Organizer</title>
-<meta name="daily-organizer-version" content="0.15.1">
+<meta name="daily-organizer-version" content="0.16.0">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -247,6 +247,21 @@ input[type="text"], input[type="date"], select { padding: 6px 8px; border: 1px s
 .topic-head { display: grid; gap: 2px; }
 .topic-name { font-family: var(--font-display); font-size: 25px; font-weight: 600; line-height: 1.15; letter-spacing: 0; text-transform: none; color: var(--ink); overflow-wrap: anywhere; }
 .topic-top .edit, .topic-top .inline { grid-column: auto; padding-top: 0; }
+.edit textarea { width: 100%; min-width: 0; min-height: 3.4em; field-sizing: content; max-height: 50vh; resize: vertical; padding: 6px 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); box-sizing: border-box; }
+/* What a topic is about, and the tickets it relates to (Jira, Salesforce, any link), under its name. A click on the overview
+   opens Edit at it; a topic without one, or without tickets, has a link to add them. */
+.topic-about { margin: 0; max-width: 80ch; font-size: 16px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink); }
+.topic-about.can-edit { padding: 2px 6px; margin: 0 -6px; border-radius: 5px; cursor: pointer; }
+@media (hover: hover) {
+  .topic-about.can-edit:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+}
+.topic-tickets { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; min-width: 0; }
+.topic-tickets .label { margin-right: 2px; font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.topic-tickets .ticket { max-width: min(36ch, 100%); padding: 1px 9px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); text-decoration: none; }
+.topic-tickets a.ticket:hover { border-color: var(--accent); text-decoration: underline; }
+.topic-tickets span.ticket { color: var(--ink); }
+.topic-adds { display: flex; flex-wrap: wrap; gap: 2px 10px; }
+.topic-adds .link-btn { padding: 0 4px; margin-left: -4px; }
 /* A topic's notes are bullet points, a little larger than the checklist's items, and may run to a paragraph. A click on a note
    opens it, with Edit and Remove right under its text (not at the far edge of a wide pane); one note is open at a time.
    Notes are written in a box that grows with its text, with Add under it. */
@@ -1530,18 +1545,63 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     const b = $('topic-pick-' + id); if (b) b.focus();
   }
 
-  function startTopicEdit(tp) {
-    if (ui.topicEditing && ui.topicEditing.id === tp.id) { ui.topicEditing = null; render(); return; }
-    ui.topicEditing = { id: tp.id, orig: tp.title || '', title: tp.title || '' };
-    ui.topicRemoving = null;
-    render();
-    const f = $('topic-edit-title-' + tp.id); if (f) f.focus();
+  // What a topic is about (`overview`, plain text, may run to a paragraph) and the tickets it relates to (`tickets`, a list
+  // of strings: a Jira key, a link, a label then a link, or plain text such as a Salesforce case number).
+  const overviewOf = (tp) => (typeof tp.overview === 'string' ? tp.overview.trim() : '');
+  const ticketsOf = (tp) => (Array.isArray(tp.tickets) ? tp.tickets : typeof tp.tickets === 'string' ? [tp.tickets] : [])
+    .filter((t) => typeof t === 'string' && t.trim()).map((t) => t.trim());
+  const JIRA_KEY = /^[A-Z][A-Z0-9]+-\d+$/;
+  // A link's label: its Jira key, the kind of Salesforce record it opens, or its site and path.
+  function refLabel(url) {
+    try {
+      const u = new URL(url);
+      const key = u.pathname.match(/[A-Z][A-Z0-9]+-\d+/);
+      if (key) return key[0];
+      if (/(^|\.)(force|salesforce)\.com$/i.test(u.hostname)) {
+        const m = u.pathname.match(/\/lightning\/r\/([A-Za-z0-9_]+)\//);
+        return 'Salesforce' + (m ? ' ' + m[1].replace(/__c$/, '').replace(/_/g, ' ') : '');
+      }
+      return u.hostname.replace(/^www\./, '') + u.pathname.replace(/\/$/, '');
+    } catch (e) { return url; }
+  }
+  // One of a topic's tickets as a chip. Only a Jira key goes through the Ticket link setting, so a Salesforce case number
+  // never turns into a Jira link; a link opens as it is, under its label when the line gives one.
+  function topicTicketNode(ref) {
+    const m = ref.match(/^(.*?)\s*(https?:\/\/\S+)$/i);
+    if (m) {
+      const label = m[1].trim();
+      return el('a', { class: 'ticket', href: m[2], target: '_blank', rel: 'noopener noreferrer', title: (label ? label + ' · ' : '') + m[2] }, label || refLabel(m[2]));
+    }
+    const href = JIRA_KEY.test(ref) ? ticketHref(ref) : null;
+    return href
+      ? el('a', { class: 'ticket', href, target: '_blank', rel: 'noopener noreferrer', title: href }, ref)
+      : el('span', { class: 'ticket', title: ref }, ref);
   }
 
+  // Edit on a topic: its title, overview and tickets. `field` puts the cursor in the overview or the tickets instead of the title.
+  function startTopicEdit(tp, field) {
+    if (!field && ui.topicEditing && ui.topicEditing.id === tp.id) { ui.topicEditing = null; render(); return; }
+    const orig = { title: tp.title || '', overview: overviewOf(tp), tickets: ticketsOf(tp).join('\n') };
+    ui.topicEditing = { id: tp.id, orig, ...orig };
+    ui.topicRemoving = null;
+    render();
+    const f = $('topic-edit-' + (field || 'title') + '-' + tp.id);
+    if (f) { f.focus(); if (field) f.setSelectionRange(f.value.length, f.value.length); }
+  }
+
+  // Saves only the fields changed since Edit opened, so a change Claude made meanwhile to another one stays. An emptied
+  // overview or ticket list is removed.
   function saveTopicEdit(tp) {
-    const title = ui.topicEditing.title.trim();
+    const ed = ui.topicEditing;
+    const title = ed.title.trim();
     if (!title) return;
-    if (title !== ui.topicEditing.orig) patchTopic(tp.id, { title });
+    const fields = {};
+    if (title !== ed.orig.title) fields.title = title;
+    const overview = ed.overview.trim();
+    if (overview !== ed.orig.overview) fields.overview = overview || null;
+    const tickets = ed.tickets.split('\n').map((t) => t.trim()).filter(Boolean);
+    if (tickets.join('\n') !== ed.orig.tickets) fields.tickets = tickets.length ? tickets : null;
+    if (Object.keys(fields).length) patchTopic(tp.id, fields);
     ui.topicEditing = null;
     render();
   }
@@ -1550,6 +1610,11 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     const ed = ui.topicEditing;
     const id = (name) => 'topic-edit-' + name + '-' + tp.id;
     const cancel = () => { ui.topicEditing = null; render(); };
+    // In the overview and tickets boxes, Enter starts a new line; Ctrl or Cmd+Enter saves.
+    const areaKeys = (e) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveTopicEdit(tp); }
+      if (e.key === 'Escape') cancel();
+    };
     return el('div', { class: 'edit', id: 'topic-edit-' + tp.id, role: 'group', 'aria-label': 'Edit ' + (tp.title || 'topic') },
       el('div', { class: 'field wide' },
         el('label', { for: id('title') }, 'Title'),
@@ -1558,6 +1623,20 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
           oninput: (e) => { ed.title = e.target.value; const b = $(id('save')); if (b) b.disabled = !ed.title.trim(); },
           onkeydown: (e) => { if (e.key === 'Enter') { e.preventDefault(); saveTopicEdit(tp); } if (e.key === 'Escape') cancel(); },
         }),
+      ),
+      el('div', { class: 'field wide' },
+        el('label', { for: id('overview') }, 'Overview'),
+        el('textarea', {
+          id: id('overview'), rows: 3, maxlength: 4000, placeholder: 'What this topic is about',
+          oninput: (e) => { ed.overview = e.target.value; }, onkeydown: areaKeys,
+        }, ed.overview),
+      ),
+      el('div', { class: 'field wide' },
+        el('label', { for: id('tickets') }, 'Tickets, one per line: a Jira key, a link, or a label then a link'),
+        el('textarea', {
+          id: id('tickets'), class: 'mono', rows: 2, maxlength: 4000, placeholder: 'OPS-142\nCase 00012345 https://…',
+          oninput: (e) => { ed.tickets = e.target.value; }, onkeydown: areaKeys,
+        }, ed.tickets),
       ),
       el('div', { class: 'edit-actions' },
         el('button', { type: 'button', class: 'link-btn danger', onclick: () => {
@@ -1589,7 +1668,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     if (notes) bits.push(notes + (notes === 1 ? ' note' : ' notes'));
     if (items.length) bits.push(ticked + ' of ' + items.length + ' done');
     return el('li', {}, el('button', {
-      type: 'button', class: 'topic-pick', id: 'topic-pick-' + tp.id, 'aria-current': current ? 'true' : null,
+      type: 'button', class: 'topic-pick', id: 'topic-pick-' + tp.id, 'aria-current': current ? 'true' : null, title: overviewOf(tp) || null,
       onclick: () => pickTopic(tp.id),
     },
       el('span', { class: 'tname' }, tp.title || '(untitled)'),
@@ -1641,7 +1720,29 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     );
   }
 
-  // Across the top: the topic's name, with Edit to rename or remove it, who it's with, and whose notes and checklist are shown.
+  // Under the name: the overview, the tickets, and links to add whichever the topic doesn't have yet.
+  function topicAbout(tp, editable) {
+    const overview = overviewOf(tp);
+    const tickets = ticketsOf(tp);
+    const open = (field) => startTopicEdit(tp, field);
+    return [
+      !overview ? null : editable ? el('div', {
+        class: 'topic-about can-edit', id: 'topic-about', role: 'button', tabindex: '0', title: 'Edit the overview',
+        onclick: () => { if (window.getSelection && String(window.getSelection())) return; open('overview'); },
+        onkeydown: (e) => { if (e.key === 'Enter' && e.target === e.currentTarget) { e.preventDefault(); open('overview'); } },
+      }, overview) : el('p', { class: 'topic-about' }, overview),
+      tickets.length ? el('div', { class: 'topic-tickets' },
+        el('span', { class: 'label' }, tickets.length === 1 ? 'Ticket' : 'Tickets'),
+        tickets.map(topicTicketNode),
+      ) : null,
+      editable && (!overview || !tickets.length) ? el('div', { class: 'topic-adds' },
+        overview ? null : el('button', { type: 'button', class: 'link-btn', onclick: () => open('overview') }, 'Add an overview'),
+        tickets.length ? null : el('button', { type: 'button', class: 'link-btn', onclick: () => open('tickets') }, 'Add a ticket'),
+      ) : null,
+    ];
+  }
+
+  // Across the top: the topic's name, with Edit to change or remove it, what it's about and its tickets, who it's with, and whose notes and checklist are shown.
   function topicTop(tp) {
     const editable = !state.readOnly;
     const editing = editable && Boolean(ui.topicEditing && ui.topicEditing.id === tp.id);
@@ -1654,6 +1755,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
           editable ? el('button', { type: 'button', class: 'link-btn', 'aria-label': 'Edit topic: ' + (tp.title || ''), onclick: () => startTopicEdit(tp) }, 'Edit') : null,
         ),
       ),
+      ...(editing ? [] : topicAbout(tp, editable)),
       // Who the topic is with: the same team as tasks, as many as it involves, saved as soon as they're ticked.
       editing ? null : el('div', { class: 'topic-with' },
         !editable ? (withOf(tp).length ? el('span', { class: 'owner' }, 'With ' + namesOf(withOf(tp))) : null)
