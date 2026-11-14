@@ -1,5 +1,5 @@
 <title>Daily Organizer</title>
-<meta name="daily-organizer-version" content="0.15.0">
+<meta name="daily-organizer-version" content="0.15.1">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -9,7 +9,7 @@
    Tasks: the lists in a pane down the left (Today with what's carried over, Up Next, Waiting On, Upcoming, Someday, Ideas, People with each team member under it, Jira flags and Done, or All of them stacked),
    and beside it the day and people filters, a 1:1 agenda when one person is picked, the add box (folded until clicked), the list shown, the day log and settings.
    On a phone the pane becomes tabs right above the list. Topics: topics down the left; the picked one's name and people across the top,
-   its checklist in the middle and its notes on the right, for the topic as a whole or for one person on it. */
+   then a row for each part shown, the topic's own (Main) and each person's on it: its checklist in the middle and its notes on the right. */
 :root {
   --bg: #f4f6f9;
   --surface: #ffffff;
@@ -211,20 +211,25 @@ input[type="text"], input[type="date"], select { padding: 6px 8px; border: 1px s
 .checklist .add-item { display: flex; gap: 6px; }
 .checklist input[type="text"] { flex: 1 1 auto; width: 100%; min-width: 0; box-sizing: border-box; }
 
-/* The Topics screen: topics down the left; the picked topic's name, people and whose lists are shown across the top, then its
-   checklist in the middle and its notes on the right, which take the spare width. The topics span both rows, and the second row
-   is the flexible one, so a long list of topics doesn't push the checklist and notes away from the name.
-   Narrower, the checklist goes above the notes; on a phone the screen shows the list, or one topic with a way back to it. */
+/* The Topics screen: topics down the left; the picked topic's name, people and whose parts are shown across the top, then a row
+   for each part shown (Main, the topic's own, and each person's on it): its checklist in the middle and its notes on the right,
+   which take the spare width, so each person's checklist sits level with their notes. The topics span both rows, and the second
+   row is the flexible one, so a long list of topics doesn't push the parts away from the name.
+   Narrower, each part's checklist goes above its notes; on a phone the screen shows the list, or one topic with a way back to it. */
 .head-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
 .screens .n { margin-left: 5px; font-family: var(--font-mono); font-size: 13px; font-weight: 400; font-variant-numeric: tabular-nums; }
-.topics { grid-template-columns: minmax(180px, 240px) minmax(230px, 300px) minmax(0, 1fr); grid-template-rows: auto 1fr; gap: 16px 20px; align-items: start; }
+.topics { grid-template-columns: minmax(180px, 240px) minmax(0, 1fr); grid-template-rows: auto 1fr; gap: 16px 20px; align-items: start; }
 .topic-nav { grid-column: 1; grid-row: 1 / span 2; }
-.topic-top { grid-column: 2 / -1; grid-row: 1; }
-.topic-side { grid-column: 2; grid-row: 2; }
-.topic-main { grid-column: 3; grid-row: 2; }
-.topic-nav, .topic-top, .topic-main, .topic-side { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.topic-top { grid-column: 2; grid-row: 1; }
+.topic-parts { grid-column: 2; grid-row: 2; }
+.topic-nav, .topic-top, .topic-parts, .topic-part, .topic-main, .topic-side { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.topic-parts { gap: 18px; }
+.topic-part { gap: 8px; }
+.topic-part + .topic-part { padding-top: 16px; border-top: 1px solid var(--line); }
+.part-name { margin: 0; font-size: 17px; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+.part-cols { display: grid; grid-template-columns: minmax(230px, 300px) minmax(0, 1fr); gap: 20px; align-items: start; }
 .topic-main, .topic-side { padding: 14px 16px 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
-/* Whose notes and checklist are shown: the topic's own (Main), or one person's on it, each with how many notes and items it has. */
+/* Whose parts are shown: All of them, or the ones picked (Main, the topic's own, and each person's), each with how many notes and items it has. */
 .parts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .parts button { padding: 4px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-size: 14px; color: var(--muted); cursor: pointer; }
 .parts button:hover { color: var(--ink); border-color: var(--accent); }
@@ -266,17 +271,13 @@ input[type="text"], input[type="date"], select { padding: 6px 8px; border: 1px s
 .topic-settings { grid-column: 2 / -1; grid-row: 1 / span 2; gap: 10px; padding: 14px 16px 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
 .topic-settings .team { padding-top: 0; }
 @media (max-width: 1100px) {
-  .topics { grid-template-columns: minmax(160px, 210px) minmax(0, 1fr); grid-template-rows: auto auto 1fr; }
-  .topic-nav { grid-row: 1 / span 3; }
-  .topic-top, .topic-side, .topic-main, .topic-settings { grid-column: 2; }
-  .topic-side { grid-row: 2; }
-  .topic-main { grid-row: 3; }
-  .topic-settings { grid-row: 1 / span 3; }
+  .topics { grid-template-columns: minmax(160px, 210px) minmax(0, 1fr); }
+  .part-cols { grid-template-columns: minmax(0, 1fr); gap: 12px; }
 }
 @media (max-width: 700px) {
   .topics { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
-  .topic-nav, .topic-top, .topic-side, .topic-main, .topic-settings { grid-column: auto; grid-row: auto; }
-  .topics.is-picked .topic-nav, .topics:not(.is-picked) .topic-top, .topics:not(.is-picked) .topic-main, .topics:not(.is-picked) .topic-side, .topics:not(.is-picked) .topic-settings { display: none; }
+  .topic-nav, .topic-top, .topic-parts, .topic-settings { grid-column: auto; grid-row: auto; }
+  .topics.is-picked .topic-nav, .topics:not(.is-picked) .topic-top, .topics:not(.is-picked) .topic-parts, .topics:not(.is-picked) .topic-settings { display: none; }
   .topics .back { display: inline-block; }
 }
 
@@ -495,8 +496,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       <button type="button" class="topic-pick topic-settings-btn" id="topic-settings-btn" aria-pressed="false"><span class="tname">Settings</span></button>
     </div>
     <div class="topic-top" id="topic-top"></div>
-    <aside class="topic-side" id="topic-side" aria-label="Checklist"></aside>
-    <div class="topic-main" id="topic-main" role="region" aria-label="Notes"></div>
+    <div class="topic-parts" id="topic-parts"></div>
     <section class="topic-settings" id="topic-settings" aria-labelledby="h-topic-settings" hidden>
       <button type="button" class="link-btn back" id="topic-settings-back">‹ All topics</button>
       <h2 id="h-topic-settings">Settings</h2>
@@ -702,7 +702,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 (() => {
   const $ = (id) => document.getElementById(id);
   const state = { tasks: [], days: [], settings: {}, team: [], jira: [], topics: [], teamLoaded: false, confirmed: false, slow: false, error: '', note: '', readOnly: false, closed: false };
-  const ui = { completing: null, removing: null, editing: null, clearing: false, drafts: {}, open: new Set(), logRemoving: null, logEditing: null, itemEditing: null, itemRemoving: null, itemOpen: null, screen: 'tasks', topicSel: null, topicPart: null, topicPicked: false, topicEditing: null, topicRemoving: null, layout: 'list', tab: 'today', filter: 'all', day: null, addWith: null, addDay: null, addType: null, addStatus: null, person: null, withOpen: null, topicSettings: false, teamRemoving: null };
+  const ui = { completing: null, removing: null, editing: null, clearing: false, drafts: {}, open: new Set(), logRemoving: null, logEditing: null, itemEditing: null, itemRemoving: null, itemOpen: null, screen: 'tasks', topicSel: null, topicShow: {}, topicPicked: false, topicEditing: null, topicRemoving: null, layout: 'list', tab: 'today', filter: 'all', day: null, addWith: null, addDay: null, addType: null, addStatus: null, person: null, withOpen: null, topicSettings: false, teamRemoving: null };
   const chains = new Map();
   const TYPES = ['task', 'idea', 'follow-up', 'discussion'];
   // The list tabs: one list at a time, or All of them stacked.
@@ -1211,14 +1211,13 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 
   // Short items in the order added, `{id, text}`: a checklist, whose items tick off (`done: true` and `doneAt`), or a
   // topic's notes, which are bullet points. A box says whose it is: `key` (unique on the page), `items`, `save` (writes
-  // the whole list), `kind`, 'check' or 'points', and `who`, the person's name when the list is one person's part of a topic.
-  // Items are found by `id`; one without an id by its place in the list.
+  // the whole list), `kind`, 'check' or 'points', and `quiet` when an empty list shouldn't say so (one of several parts of a
+  // topic shown at once). Items are found by `id`; one without an id by its place in the list.
   const itemsIn = (v) => (Array.isArray(v) ? v.filter((c) => c && typeof c === 'object') : []);
   const ITEM_WORDS = {
     check: { title: 'Checklist', one: 'item', label: 'New checklist item', placeholder: 'Add an item', none: 'No items yet.' },
     points: { title: 'Notes', one: 'note', label: 'New note', placeholder: 'Add a note (Shift+Enter for a new line)', none: 'No notes yet.' },
   };
-  const boxTitle = (box, w) => (box.who ? box.who + "'s " + w.title.toLowerCase() : w.title);
   const itemKey = (c, i) => (c.id ? String(c.id) : '#' + i);
   const newItemId = (prefix) => prefix + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
@@ -1265,7 +1264,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     const key = 'item-' + box.key;
     const ek = 'itemedit-' + box.key;
     return el('div', { class: 'checklist', id: 'items-' + box.key },
-      el('h3', {}, boxTitle(box, w), items.length ? el('span', { class: 'n' }, ticked + ' of ' + items.length + ' done') : null),
+      el('h3', {}, w.title, items.length ? el('span', { class: 'n' }, ticked + ' of ' + items.length + ' done') : null),
       items.length ? el('ul', {}, items.map((c, i) => {
         const ik = itemKey(c, i);
         const rk = box.key + ':' + ik;
@@ -1297,7 +1296,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
           el('span', { class: 'item' }, text),
           tools ? el('span', { class: 'item-tools' }, tools) : null,
         );
-      })) : el('p', { class: 'empty' }, w.none),
+      })) : box.quiet ? null : el('p', { class: 'empty' }, w.none),
       editable ? el('div', { class: 'add-item' },
         el('input', {
           type: 'text', id: key, value: ui.drafts[key] ?? '', maxlength: 300, 'aria-label': w.label, placeholder: w.placeholder,
@@ -1343,7 +1342,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     const key = 'item-' + box.key;
     const ek = 'itemedit-' + box.key;
     return el('div', { class: 'checklist points', id: 'items-' + box.key },
-      el('h3', {}, boxTitle(box, w)),
+      el('h3', {}, w.title),
       box.items.length ? el('ul', {}, box.items.map((c, i) => {
         const ik = itemKey(c, i);
         const rk = box.key + ':' + ik;
@@ -1382,7 +1381,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
           }, text),
           tools ? el('div', { class: 'note-tools', id: nid + '-tools' }, tools) : null,
         );
-      })) : el('p', { class: 'empty' }, w.none),
+      })) : box.quiet ? null : el('p', { class: 'empty' }, w.none),
       editable ? el('div', { class: 'add-note' },
         noteArea(key, w.label, () => addItem(box), null, w.placeholder),
         el('button', { type: 'button', class: 'btn', onclick: () => addItem(box) }, 'Add note'),
@@ -1474,8 +1473,17 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     for (const mid of Object.keys(peopleOf(tp))) if (!ids.includes(mid) && partCount(partOf(tp, mid))) ids.push(mid);
     return ids;
   }
-  // The part shown: the person picked on this topic, while they're still one of its parts, else Main (null).
-  const partShown = (tp) => (ui.topicPart && topicParts(tp).includes(ui.topicPart) ? ui.topicPart : null);
+  // A topic's parts as the switcher lists them: 'main', then each person's id.
+  const partKeys = (tp) => ['main', ...topicParts(tp)];
+  // The parts shown: all of them, unless the switcher has picked some on this topic since the page opened. The pick keeps the
+  // switcher's order; parts gone from the topic drop out of it, and a pick left empty shows them all.
+  function shownParts(tp) {
+    const all = partKeys(tp);
+    const pick = ui.topicShow[tp.id];
+    const shown = pick ? all.filter((k) => pick.includes(k)) : [];
+    return shown.length ? shown : all;
+  }
+  const showingAll = (tp) => shownParts(tp).length === partKeys(tp).length;
   // Writes one list of one person's part. It starts from the topic as it is now, so a change made since the page drew it
   // stays, and drops a part left with nothing in it.
   function savePart(id, mid, field, list) {
@@ -1487,17 +1495,16 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     patchTopic(id, { people: Object.keys(people).length ? people : null });
   }
   const topicNotes = (tp, mid) => (mid
-    ? { key: 'tnotes-' + tp.id + '-' + mid, kind: 'points', who: memberName(mid), items: itemsIn(partOf(tp, mid).notes), save: (notes) => savePart(tp.id, mid, 'notes', notes) }
+    ? { key: 'tnotes-' + tp.id + '-' + mid, kind: 'points', items: itemsIn(partOf(tp, mid).notes), save: (notes) => savePart(tp.id, mid, 'notes', notes) }
     : { key: 'tnotes-' + tp.id, kind: 'points', items: itemsIn(tp.notes), save: (notes) => patchTopic(tp.id, { notes }) });
   const topicItems = (tp, mid) => (mid
-    ? { key: 'topic-' + tp.id + '-' + mid, kind: 'check', who: memberName(mid), items: itemsIn(partOf(tp, mid).checklist), save: (checklist) => savePart(tp.id, mid, 'checklist', checklist) }
+    ? { key: 'topic-' + tp.id + '-' + mid, kind: 'check', items: itemsIn(partOf(tp, mid).checklist), save: (checklist) => savePart(tp.id, mid, 'checklist', checklist) }
     : { key: 'topic-' + tp.id, kind: 'check', items: itemsIn(tp.checklist), save: (checklist) => patchTopic(tp.id, { checklist }) });
   // The topic shown is the one picked on this device, else the newest.
   const shownTopic = (topics) => topics.find((tp) => tp.id === ui.topicSel) || topics[0] || null;
   const narrow = () => window.matchMedia('(max-width: 700px)').matches;
 
   function pickTopic(id) {
-    if (ui.topicSel !== id) ui.topicPart = null;
     ui.topicSel = id;
     ui.topicPicked = true;
     ui.topicSettings = false;
@@ -1592,25 +1599,50 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 
   // Whose notes and checklist are shown: Main, the topic's own, then a button for each person's part, with how many notes and
   // items each has. Shown once the topic is with someone, or someone has a part on it.
-  function partSwitch(tp, part) {
+  // All shows every part. From All, a click on a part shows only that one; more clicks add parts or take them away. Taking
+  // away the last one, or picking every part, goes back to All.
+  function partSwitch(tp) {
     const ids = topicParts(tp);
     if (!ids.length) return null;
-    const pick = (mid) => {
-      ui.topicPart = mid;
+    const all = showingAll(tp);
+    const shown = shownParts(tp);
+    const pick = (key) => {
+      let next = key === null ? null : all ? [key] : shown.includes(key) ? shown.filter((k) => k !== key) : [...shown, key];
+      if (next && (!next.length || partKeys(tp).every((k) => next.includes(k)))) next = null;
+      if (next) ui.topicShow[tp.id] = next; else delete ui.topicShow[tp.id];
       ui.itemOpen = ui.itemEditing = ui.itemRemoving = null;
       render();
     };
-    const chip = (mid, label, n) => el('button', {
-      type: 'button', id: 'part-' + (mid || 'main'), 'aria-pressed': String(part === mid), onclick: () => pick(mid),
-    }, label, n ? el('span', { class: 'n' }, String(n)) : null);
-    return el('div', { class: 'parts', role: 'group', 'aria-label': 'Whose notes and checklist to show' },
-      chip(null, 'Main', partCount(tp)),
+    const chip = (key, label, n) => {
+      const on = key === null ? all : !all && shown.includes(key);
+      const title = key === null ? 'Show every part' : all ? 'Show only ' + label : on ? 'Hide ' + label : 'Show ' + label + ' too';
+      return el('button', { type: 'button', id: 'part-' + (key || 'all'), 'aria-pressed': String(on), title, onclick: () => pick(key) },
+        label, n ? el('span', { class: 'n' }, String(n)) : null);
+    };
+    return el('div', { class: 'parts', role: 'group', 'aria-label': 'Whose notes and checklists to show' },
+      chip(null, 'All', 0),
+      chip('main', 'Main', partCount(tp)),
       ids.map((mid) => chip(mid, memberName(mid), partCount(partOf(tp, mid)))),
     );
   }
 
+  // One part of a topic as a row: its checklist and its notes side by side, under whose part it is once the topic has people.
+  function topicPart(tp, key, named, quiet) {
+    const mid = key === 'main' ? null : key;
+    const items = { ...topicItems(tp, mid), quiet };
+    const notes = { ...topicNotes(tp, mid), quiet };
+    const hid = 'tpart-h-' + key;
+    return el('section', { class: 'topic-part', id: 'tpart-' + key, 'aria-labelledby': named ? hid : null, 'aria-label': named ? null : 'Checklist and notes' },
+      named ? el('h3', { class: 'part-name', id: hid }, mid ? memberName(mid) : 'Main') : null,
+      el('div', { class: 'part-cols' },
+        el('div', { class: 'topic-side' }, itemsBox(items)),
+        el('div', { class: 'topic-main' }, notesBox(notes)),
+      ),
+    );
+  }
+
   // Across the top: the topic's name, with Edit to rename or remove it, who it's with, and whose notes and checklist are shown.
-  function topicTop(tp, part) {
+  function topicTop(tp) {
     const editable = !state.readOnly;
     const editing = editable && Boolean(ui.topicEditing && ui.topicEditing.id === tp.id);
     return [
@@ -1633,7 +1665,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
         el('button', { type: 'button', class: 'btn btn-danger', id: 'topic-remove-' + tp.id, onclick: () => removeTopic(tp) }, 'Remove'),
         el('button', { type: 'button', class: 'btn', onclick: () => { ui.topicRemoving = null; render(); } }, 'Keep'),
       ) : null,
-      editing ? null : partSwitch(tp, part),
+      editing ? null : partSwitch(tp),
     ];
   }
 
@@ -1644,11 +1676,11 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     $('topic-list').replaceChildren(...topics.map((t) => topicPick(t, Boolean(tp && t.id === tp.id) && !inSettings)));
     $('topic-list').hidden = !topics.length;
     $('empty-topics').hidden = topics.length > 0;
-    const part = tp ? partShown(tp) : null;
-    $('topic-top').replaceChildren(...(tp ? topicTop(tp, part).filter(Boolean) : []));
-    $('topic-side').replaceChildren(...(tp ? [itemsBox(topicItems(tp, part))] : []));
-    $('topic-main').replaceChildren(...(tp ? [notesBox(topicNotes(tp, part))] : []));
-    $('topic-top').hidden = $('topic-main').hidden = $('topic-side').hidden = !tp || inSettings;
+    const keys = tp ? shownParts(tp) : [];
+    const named = Boolean(tp && topicParts(tp).length);
+    $('topic-top').replaceChildren(...(tp ? topicTop(tp).filter(Boolean) : []));
+    $('topic-parts').replaceChildren(...keys.map((k) => topicPart(tp, k, named, keys.length > 1)));
+    $('topic-top').hidden = $('topic-parts').hidden = !tp || inSettings;
     $('topic-settings').hidden = !inSettings;
     $('topic-settings-btn').setAttribute('aria-pressed', String(inSettings));
     $('topics').classList.toggle('is-picked', inSettings || Boolean(tp && ui.topicPicked));
