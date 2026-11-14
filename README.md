@@ -97,10 +97,21 @@ under a **New topic** box, at the left edge of the window. The topic you
 pick shows its **Checklist** in the middle, with items to tick off and how
 many are done, and its **Notes** on the right, which take all the width the
 window has to spare: bullet points without dates, each a short point or a
-paragraph. Click a note to show its **Edit** and **Remove** right under it.
+paragraph. Click a note to show its **Edit** and **Remove** right under it,
+with **↑**, **↓** and **Move to** to move it. Or drag a note by its grip
+(⋮⋮, over its bullet) to another place in the list, or into another
+person's notes or Main's.
 Write new notes in the box under them: Enter adds the note, Shift+Enter
 starts a new line.
-A **With** dropdown under the topic's name says whom it's a joint effort or
+A checklist item can carry a ticket too, shown as a chip after its text;
+set it in the item's **Edit**.
+Under the topic's name, its **overview** says what it's about, and its
+**Tickets** link to the Jira tickets, Salesforce cases or other pages it
+relates to. A Jira key links through your Ticket link setting; a link can
+carry a label, such as "Case 00012345 https://…"; plain text such as a
+case number shows as it is. Click the overview, or **Add an overview** or
+**Add a ticket**, to change them in the topic's **Edit**.
+A **With** dropdown under them says whom it's a joint effort or
 discussion with, from the same team as your tasks; the Topics screen has its
 own **Settings** for adding people, so you can add them from either screen.
 Each person on the topic has a part of their own, for what they're working
@@ -108,13 +119,15 @@ on or questions to follow up with them, shown as a row under the topic's
 own (**Main**), with its checklist beside its notes. **All**, under the
 topic's people, shows every part; click **Main** or a name to see only that
 one, and more names to add them.
-**Edit** on a topic renames or removes it. On a narrower screen each
+**Edit** on a topic changes its title, overview and tickets (one per
+line), or removes it. On a narrower screen each
 part's notes go under its checklist; on a phone you see the list, then the topic
 you tap, with **‹ All topics** to go back. Each device remembers the screen
 and the topic.
 
 Claude keeps the same notes and checklists: "start a topic for Q4
-planning", "add a note to Q4 planning: …", "add 'book the room' and 'send
+planning", "the Q4 topic is about …", "link OPS-142 and Salesforce case
+00012345 to Q4 planning", "add a note to Q4 planning: …", "add 'book the room' and 'send
 the agenda' to its checklist", "tick off book the room", "add to Sam's notes
 on Q4 planning: …", "what's left on Q4 planning?". Plan-my-day and wrap-up
 leave topics out unless you ask.

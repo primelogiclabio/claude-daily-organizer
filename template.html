@@ -1,5 +1,5 @@
 <title>Daily Organizer</title>
-<meta name="daily-organizer-version" content="0.15.1">
+<meta name="daily-organizer-version" content="0.16.0">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -203,6 +203,11 @@ input[type="text"], input[type="date"], select { padding: 6px 8px; border: 1px s
 .checklist li.is-editing { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
 .checklist li input[type="checkbox"] { width: 17px; height: 17px; margin: 3px 0 0; accent-color: var(--done); cursor: pointer; }
 .checklist .item { font-size: 15px; overflow-wrap: anywhere; }
+/* A checklist item's ticket: a small chip after its text, kept clear of the line-through on a ticked item. */
+.checklist .item .ticket { display: inline-block; vertical-align: baseline; max-width: min(24ch, 100%); margin-left: 6px; padding: 0 7px; border: 1px solid var(--line); border-radius: 999px; font-size: 12px; text-decoration: none; }
+.checklist .item span.ticket { color: var(--ink); }
+.checklist .item-edit { display: grid; gap: 4px; min-width: 0; }
+.checklist .item-edit .mono { font-family: var(--font-mono); font-size: 13px; }
 .checklist .is-checked .item { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line); }
 .checklist .item-tools { display: flex; flex-wrap: wrap; gap: 0 2px; }
 .checklist .item-tools .link-btn { padding: 0 4px; font-size: 13px; color: var(--muted); }
@@ -247,10 +252,43 @@ input[type="text"], input[type="date"], select { padding: 6px 8px; border: 1px s
 .topic-head { display: grid; gap: 2px; }
 .topic-name { font-family: var(--font-display); font-size: 25px; font-weight: 600; line-height: 1.15; letter-spacing: 0; text-transform: none; color: var(--ink); overflow-wrap: anywhere; }
 .topic-top .edit, .topic-top .inline { grid-column: auto; padding-top: 0; }
+.edit textarea { width: 100%; min-width: 0; min-height: 3.4em; field-sizing: content; max-height: 50vh; resize: vertical; padding: 6px 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); box-sizing: border-box; }
+/* What a topic is about, and the tickets it relates to (Jira, Salesforce, any link), under its name. A click on the overview
+   opens Edit at it; a topic without one, or without tickets, has a link to add them. */
+.topic-about { margin: 0; max-width: 80ch; font-size: 16px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink); }
+.topic-about.can-edit { padding: 2px 6px; margin: 0 -6px; border-radius: 5px; cursor: pointer; }
+@media (hover: hover) {
+  .topic-about.can-edit:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+}
+.topic-tickets { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; min-width: 0; }
+.topic-tickets .label { margin-right: 2px; font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.topic-tickets .ticket { max-width: min(36ch, 100%); padding: 1px 9px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); text-decoration: none; }
+.topic-tickets a.ticket:hover { border-color: var(--accent); text-decoration: underline; }
+.topic-tickets span.ticket { color: var(--ink); }
+.topic-adds { display: flex; flex-wrap: wrap; gap: 2px 10px; }
+.topic-adds .link-btn { padding: 0 4px; margin-left: -4px; }
 /* A topic's notes are bullet points, a little larger than the checklist's items, and may run to a paragraph. A click on a note
    opens it, with Edit and Remove right under its text (not at the far edge of a wide pane); one note is open at a time.
    Notes are written in a box that grows with its text, with Add under it. */
-.points li, .points li.is-editing { grid-template-columns: minmax(0, 1fr); align-items: start; gap: 4px; padding: 4px 6px; margin: 0 -6px; border-radius: 5px; }
+.points li, .points li.is-editing { position: relative; grid-template-columns: minmax(0, 1fr); align-items: start; gap: 4px; padding: 4px 6px; margin: 0 -6px; border-radius: 5px; }
+/* A note's grip, over its bullet, drags it: within its list, or onto another part's notes on the same topic. It shows while
+   the pointer is over the note, and always on touch screens. While a note is dragged, it dims, a copy of its text follows
+   the pointer and a line shows where it will land. */
+.points .grip { position: absolute; left: 0; top: 3px; width: 22px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 4px; color: var(--muted); font-size: 14px; letter-spacing: -3px; cursor: grab; touch-action: none; user-select: none; opacity: 0; }
+@media (hover: hover) {
+  .points li.has-grip:hover .grip { opacity: 1; }
+  .points li.has-grip:hover .item::before { visibility: hidden; }
+  .points .grip:hover { color: var(--ink); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+}
+@media (hover: none) {
+  .points li.has-grip .grip { opacity: 1; }
+  .points li.has-grip .item::before { visibility: hidden; }
+}
+.points li.is-dragging { opacity: .4; }
+body.is-dragging-note, body.is-dragging-note * { cursor: grabbing !important; user-select: none; }
+.drop-line { position: fixed; z-index: 50; height: 3px; margin-top: -2px; border-radius: 2px; background: var(--accent); pointer-events: none; }
+.drag-ghost { position: fixed; left: 0; top: 0; z-index: 51; max-width: 280px; padding: 6px 10px; border: 1px solid var(--accent); border-radius: 6px; background: var(--surface); color: var(--ink); box-shadow: 0 6px 18px rgb(0 0 0 / .18); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+.points .note-tools select { padding: 2px 6px; font-size: 13px; }
 .points li.can-open { cursor: pointer; }
 .points li.is-open { background: color-mix(in srgb, var(--accent) 5%, transparent); }
 @media (hover: hover) {
@@ -1245,13 +1283,24 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     return rest;
   });
 
+  // Saves an item's text, and on a checklist item its ticket too: an emptied ticket box removes the ticket.
   function saveItemEdit(box, ik) {
     const key = 'itemedit-' + box.key;
     const text = (ui.drafts[key] || '').trim();
     if (!text) return;
+    const tk = ui.drafts[key + '-ticket'];
     ui.itemEditing = null;
     delete ui.drafts[key];
-    changeItem(box, ik, (c) => (c.text === text ? c : { ...c, text }));
+    delete ui.drafts[key + '-ticket'];
+    changeItem(box, ik, (c) => {
+      let next = c.text === text ? c : { ...c, text };
+      if (typeof tk === 'string') {
+        const t = tk.trim();
+        if (t && t !== c.ticket) next = { ...next, ticket: t };
+        else if (!t && 'ticket' in next) { const { ticket, ...rest } = next; next = rest; }
+      }
+      return next;
+    });
     render();
   }
 
@@ -1270,13 +1319,22 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
         const rk = box.key + ':' + ik;
         const text = String(c.text || '');
         if (editable && ui.itemEditing && ui.itemEditing.key === box.key && ui.itemEditing.id === ik) {
-          const cancel = () => { ui.itemEditing = null; delete ui.drafts[ek]; render(); };
+          const cancel = () => { ui.itemEditing = null; delete ui.drafts[ek]; delete ui.drafts[ek + '-ticket']; render(); };
+          const keys = (e) => { if (e.key === 'Enter') { e.preventDefault(); saveItemEdit(box, ik); } if (e.key === 'Escape') cancel(); };
           return el('li', { class: 'is-editing' },
-            el('input', {
-              type: 'text', id: ek, value: ui.drafts[ek] ?? '', maxlength: 300, 'aria-label': 'Edit ' + w.one,
-              oninput: (e) => { ui.drafts[ek] = e.target.value; const b = $(ek + '-save'); if (b) b.disabled = !e.target.value.trim(); },
-              onkeydown: (e) => { if (e.key === 'Enter') { e.preventDefault(); saveItemEdit(box, ik); } if (e.key === 'Escape') cancel(); },
-            }),
+            el('div', { class: 'item-edit' },
+              el('input', {
+                type: 'text', id: ek, value: ui.drafts[ek] ?? '', maxlength: 300, 'aria-label': 'Edit ' + w.one,
+                oninput: (e) => { ui.drafts[ek] = e.target.value; const b = $(ek + '-save'); if (b) b.disabled = !e.target.value.trim(); },
+                onkeydown: keys,
+              }),
+              el('input', {
+                type: 'text', id: ek + '-ticket', class: 'mono', value: ui.drafts[ek + '-ticket'] ?? '', maxlength: 1000,
+                'aria-label': 'Ticket', placeholder: 'Ticket (optional)',
+                oninput: (e) => { ui.drafts[ek + '-ticket'] = e.target.value; },
+                onkeydown: keys,
+              }),
+            ),
             el('span', { class: 'item-tools' },
               el('button', { type: 'button', class: 'link-btn', onclick: cancel }, 'Cancel'),
               el('button', { type: 'button', class: 'link-btn', id: ek + '-save', disabled: !(ui.drafts[ek] || '').trim(), onclick: () => saveItemEdit(box, ik) }, 'Save'),
@@ -1287,13 +1345,14 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
           ? [el('button', { type: 'button', class: 'link-btn danger', onclick: () => { ui.itemRemoving = null; changeItem(box, ik, () => null); } }, 'Remove'),
              el('button', { type: 'button', class: 'link-btn', onclick: () => { ui.itemRemoving = null; render(); } }, 'Keep')]
           : [el('button', { type: 'button', class: 'link-btn', 'aria-label': 'Edit ' + w.one + ': ' + text, onclick: () => {
-              ui.itemEditing = { key: box.key, id: ik }; ui.itemRemoving = null; ui.drafts[ek] = text; render();
+              ui.itemEditing = { key: box.key, id: ik }; ui.itemRemoving = null; ui.drafts[ek] = text;
+              ui.drafts[ek + '-ticket'] = typeof c.ticket === 'string' ? c.ticket : ''; render();
               const f = $(ek); if (f) f.focus();
             } }, 'Edit'),
              el('button', { type: 'button', class: 'link-btn', 'aria-label': 'Remove ' + w.one + ': ' + text, onclick: () => { ui.itemRemoving = rk; render(); } }, 'Remove')];
         return el('li', { class: c.done ? 'is-checked' : null },
           el('input', { type: 'checkbox', id: 'chk-' + box.key + '-' + ik, checked: Boolean(c.done), disabled: !editable, 'aria-label': text, onchange: () => tickItem(box, ik) }),
-          el('span', { class: 'item' }, text),
+          el('span', { class: 'item' }, text, typeof c.ticket === 'string' && c.ticket.trim() ? topicTicketNode(c.ticket.trim()) : null),
           tools ? el('span', { class: 'item-tools' }, tools) : null,
         );
       })) : box.quiet ? null : el('p', { class: 'empty' }, w.none),
@@ -1341,7 +1400,10 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     const w = ITEM_WORDS.points;
     const key = 'item-' + box.key;
     const ek = 'itemedit-' + box.key;
-    return el('div', { class: 'checklist points', id: 'items-' + box.key },
+    const tp = box.topic ? state.topics.find((x) => x.id === box.topic) : null;
+    const others = tp ? partKeys(tp).filter((k) => k !== box.part && partKeys(tp).length > 1) : [];
+    const last = box.items.length - 1;
+    return el('div', { class: 'checklist points', id: 'items-' + box.key, 'data-topic': box.topic || null, 'data-part': box.part || null },
       el('h3', {}, w.title),
       box.items.length ? el('ul', {}, box.items.map((c, i) => {
         const ik = itemKey(c, i);
@@ -1368,10 +1430,19 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
               ui.itemEditing = { key: box.key, id: ik }; ui.itemRemoving = null; ui.drafts[ek] = text; render();
               const f = $(ek); if (f) { f.focus(); f.setSelectionRange(f.value.length, f.value.length); }
             } }, 'Edit'),
-             el('button', { type: 'button', class: 'link-btn', onclick: () => { ui.itemRemoving = rk; render(); const b = $(nid + '-remove'); if (b) b.focus(); } }, 'Remove')];
-        // A click anywhere on the note opens or closes it, except on its buttons; selecting text doesn't.
-        return el('li', { class: 'can-open' + (open ? ' is-open' : ''), onclick: (e) => {
-            if (e.target.closest('button, a, textarea, input, .note-tools')) return;
+             el('button', { type: 'button', class: 'link-btn', onclick: () => { ui.itemRemoving = rk; render(); const b = $(nid + '-remove'); if (b) b.focus(); } }, 'Remove'),
+             // Without dragging: one place up or down, or to the end of another part's notes.
+             box.topic ? el('button', { type: 'button', class: 'link-btn', id: nid + '-up', title: 'Move up', 'aria-label': 'Move up', disabled: i === 0,
+               onclick: () => nudgeNote(box, ik, box.part, itemKey(box.items[i - 1], i - 1), nid + '-up') }, '↑') : null,
+             box.topic ? el('button', { type: 'button', class: 'link-btn', id: nid + '-down', title: 'Move down', 'aria-label': 'Move down', disabled: i === last,
+               onclick: () => nudgeNote(box, ik, box.part, i + 2 <= last ? itemKey(box.items[i + 2], i + 2) : null, nid + '-down') }, '↓') : null,
+             others.length ? el('select', { 'aria-label': 'Move to', onchange: (e) => { if (e.target.value) nudgeNote(box, ik, e.target.value, null, null); } },
+               el('option', { value: '' }, 'Move to…'),
+               others.map((k) => el('option', { value: k }, k === 'main' ? 'Main' : memberName(k))),
+             ) : null];
+        // A click anywhere on the note opens or closes it, except on its buttons and grip; selecting text doesn't.
+        return el('li', { class: 'can-open' + (box.topic ? ' has-grip' : '') + (open ? ' is-open' : ''), 'data-key': ik, onclick: (e) => {
+            if (e.target.closest('button, a, textarea, input, select, .note-tools, .grip')) return;
             if (window.getSelection && String(window.getSelection())) return;
             toggleNote(rk, nid);
           } },
@@ -1379,6 +1450,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
             class: 'item', id: nid, role: 'button', tabindex: '0', 'aria-expanded': String(open), 'aria-controls': nid + '-tools',
             onkeydown: (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); toggleNote(rk, nid); } },
           }, text),
+          box.topic ? el('span', { class: 'grip', 'aria-hidden': 'true', title: 'Drag to move', onpointerdown: (e) => startNoteDrag(e, box, ik, text) }, '⋮⋮') : null,
           tools ? el('div', { class: 'note-tools', id: nid + '-tools' }, tools) : null,
         );
       })) : box.quiet ? null : el('p', { class: 'empty' }, w.none),
@@ -1494,9 +1566,136 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     if (partCount(part)) people[mid] = part; else delete people[mid];
     patchTopic(id, { people: Object.keys(people).length ? people : null });
   }
+  const notesKey = (topicId, part) => 'tnotes-' + topicId + (part === 'main' ? '' : '-' + part);
   const topicNotes = (tp, mid) => (mid
-    ? { key: 'tnotes-' + tp.id + '-' + mid, kind: 'points', items: itemsIn(partOf(tp, mid).notes), save: (notes) => savePart(tp.id, mid, 'notes', notes) }
-    : { key: 'tnotes-' + tp.id, kind: 'points', items: itemsIn(tp.notes), save: (notes) => patchTopic(tp.id, { notes }) });
+    ? { key: notesKey(tp.id, mid), kind: 'points', topic: tp.id, part: mid, items: itemsIn(partOf(tp, mid).notes), save: (notes) => savePart(tp.id, mid, 'notes', notes) }
+    : { key: notesKey(tp.id, 'main'), kind: 'points', topic: tp.id, part: 'main', items: itemsIn(tp.notes), save: (notes) => patchTopic(tp.id, { notes }) });
+  const notesOfPart = (tp, part) => itemsIn(part === 'main' ? tp.notes : partOf(tp, part).notes);
+
+  // Moves one of a topic's notes: within its list (before the note `beforeIk`, or to the end), or into another part's notes.
+  // It starts from the topic as it is now and writes every list that changed in one update, so a move is never half done.
+  // A note without an id gets one when it moves; a person's part left empty drops out. Returns the note's new key, or null
+  // when nothing moved.
+  function moveTopicNote(topicId, fromPart, ik, toPart, beforeIk) {
+    const tp = state.topics.find((x) => x.id === topicId);
+    if (!tp) return null;
+    const from = notesOfPart(tp, fromPart);
+    const at = from.findIndex((c, i) => itemKey(c, i) === ik);
+    if (at < 0) return null;
+    const same = fromPart === toPart;
+    const target = same ? from : notesOfPart(tp, toPart);
+    const before = beforeIk == null ? null : target.find((c, i) => itemKey(c, i) === beforeIk) || null;
+    if (before === from[at]) return null;
+    const rest = from.filter((_, i) => i !== at);
+    const into = same ? rest : target;
+    let pos = before ? into.indexOf(before) : into.length;
+    if (pos < 0) pos = into.length;
+    if (same && pos === at) return null;
+    const note = from[at].id ? from[at] : { ...from[at], id: newItemId('n-') };
+    const list = [...into.slice(0, pos), note, ...into.slice(pos)];
+    const fields = {};
+    const people = { ...peopleOf(tp) };
+    let peopleChanged = false;
+    const setList = (part, notes) => {
+      if (part === 'main') { fields.notes = notes; return; }
+      const p = { ...partOf(tp, part), notes };
+      if (partCount(p)) people[part] = p; else delete people[part];
+      peopleChanged = true;
+    };
+    if (same) setList(fromPart, list);
+    else { setList(fromPart, rest); setList(toPart, list); }
+    if (peopleChanged) fields.people = Object.keys(people).length ? people : null;
+    patchTopic(topicId, fields);
+    return note.id;
+  }
+
+  // ↑, ↓ and Move to on an open note: the same move, keeping the note open where it lands.
+  function nudgeNote(box, ik, toPart, beforeIk, focusId) {
+    const id = moveTopicNote(box.topic, box.part, ik, toPart, beforeIk);
+    if (!id) return;
+    ui.itemOpen = notesKey(box.topic, toPart) + ':' + id;
+    ui.itemRemoving = ui.itemEditing = null;
+    render();
+    const f = focusId && $(focusId); if (f && !f.disabled) f.focus();
+  }
+
+  // Dragging a note by its grip. Pointer events, so a mouse, a finger or a pen all work; it counts as a drag once the
+  // pointer has moved a few pixels. The drop goes where the line shows: before the note under the pointer's upper half,
+  // after it from its lower half, or at the end of a notes box with nothing under the pointer. Only this topic's notes take
+  // a drop; anywhere else, or Escape, cancels. The page scrolls when the pointer nears the window's top or bottom.
+  function startNoteDrag(e, box, ik, text) {
+    if (e.button) return;
+    e.preventDefault();
+    const grip = e.currentTarget;
+    const li = grip.closest('li');
+    const x0 = e.clientX, y0 = e.clientY;
+    let dragging = false, target = null, px = x0, py = y0, raf = 0;
+    const line = el('div', { class: 'drop-line', 'aria-hidden': 'true' });
+    const ghost = el('div', { class: 'drag-ghost', 'aria-hidden': 'true' }, text.length > 90 ? text.slice(0, 90) + '…' : text);
+    try { grip.setPointerCapture(e.pointerId); } catch (err) { /* moves still reach the grip while the pointer is over it */ }
+    const boxSel = '.points[data-topic="' + CSS.escape(box.topic) + '"]';
+    const place = () => {
+      ghost.style.transform = 'translate(' + (px + 14) + 'px, ' + (py + 10) + 'px)';
+      const under = document.elementFromPoint(px, py);
+      const boxEl = under && under.closest(boxSel);
+      if (!boxEl) { target = null; line.remove(); return; }
+      const items = [...boxEl.querySelectorAll(':scope > ul > li[data-key]')];
+      const next = items.find((it) => { const r = it.getBoundingClientRect(); return py < r.top + r.height / 2; });
+      const last = items[items.length - 1];
+      const y = next ? next.getBoundingClientRect().top : last ? last.getBoundingClientRect().bottom : boxEl.querySelector('h3').getBoundingClientRect().bottom + 6;
+      const r = boxEl.getBoundingClientRect();
+      Object.assign(line.style, { top: y + 'px', left: (r.left + 12) + 'px', width: Math.max(0, r.width - 24) + 'px' });
+      if (!line.isConnected) document.body.append(line);
+      target = { part: boxEl.dataset.part, before: next ? next.dataset.key : null };
+    };
+    const edgeScroll = () => {
+      raf = 0;
+      if (!dragging) return;
+      const step = py < 60 ? -14 : py > window.innerHeight - 60 ? 14 : 0;
+      if (!step) return;
+      window.scrollBy(0, step);
+      place();
+      raf = requestAnimationFrame(edgeScroll);
+    };
+    const end = (drop) => {
+      grip.removeEventListener('pointermove', move);
+      grip.removeEventListener('pointerup', up);
+      grip.removeEventListener('pointercancel', cancel);
+      window.removeEventListener('keydown', key, true);
+      if (raf) cancelAnimationFrame(raf);
+      if (!dragging) return;
+      line.remove(); ghost.remove();
+      li.classList.remove('is-dragging');
+      document.body.classList.remove('is-dragging-note');
+      ui.drag = null;
+      ui.dragPending = false;
+      if (drop && target) {
+        const id = moveTopicNote(box.topic, box.part, ik, target.part, target.before);
+        if (id && ui.itemOpen === box.key + ':' + ik) ui.itemOpen = notesKey(box.topic, target.part) + ':' + id;
+      }
+      render();
+    };
+    const move = (ev) => {
+      px = ev.clientX; py = ev.clientY;
+      if (!dragging) {
+        if (Math.hypot(px - x0, py - y0) < 5) return;
+        dragging = true;
+        ui.drag = { topic: box.topic, part: box.part, key: ik };
+        li.classList.add('is-dragging');
+        document.body.classList.add('is-dragging-note');
+        document.body.append(ghost);
+      }
+      place();
+      if (!raf) raf = requestAnimationFrame(edgeScroll);
+    };
+    const up = () => end(true);
+    const cancel = () => end(false);
+    const key = (ev) => { if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); end(false); } };
+    grip.addEventListener('pointermove', move);
+    grip.addEventListener('pointerup', up);
+    grip.addEventListener('pointercancel', cancel);
+    window.addEventListener('keydown', key, true);
+  }
   const topicItems = (tp, mid) => (mid
     ? { key: 'topic-' + tp.id + '-' + mid, kind: 'check', items: itemsIn(partOf(tp, mid).checklist), save: (checklist) => savePart(tp.id, mid, 'checklist', checklist) }
     : { key: 'topic-' + tp.id, kind: 'check', items: itemsIn(tp.checklist), save: (checklist) => patchTopic(tp.id, { checklist }) });
@@ -1530,18 +1729,63 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     const b = $('topic-pick-' + id); if (b) b.focus();
   }
 
-  function startTopicEdit(tp) {
-    if (ui.topicEditing && ui.topicEditing.id === tp.id) { ui.topicEditing = null; render(); return; }
-    ui.topicEditing = { id: tp.id, orig: tp.title || '', title: tp.title || '' };
-    ui.topicRemoving = null;
-    render();
-    const f = $('topic-edit-title-' + tp.id); if (f) f.focus();
+  // What a topic is about (`overview`, plain text, may run to a paragraph) and the tickets it relates to (`tickets`, a list
+  // of strings: a Jira key, a link, a label then a link, or plain text such as a Salesforce case number).
+  const overviewOf = (tp) => (typeof tp.overview === 'string' ? tp.overview.trim() : '');
+  const ticketsOf = (tp) => (Array.isArray(tp.tickets) ? tp.tickets : typeof tp.tickets === 'string' ? [tp.tickets] : [])
+    .filter((t) => typeof t === 'string' && t.trim()).map((t) => t.trim());
+  const JIRA_KEY = /^[A-Z][A-Z0-9]+-\d+$/;
+  // A link's label: its Jira key, the kind of Salesforce record it opens, or its site and path.
+  function refLabel(url) {
+    try {
+      const u = new URL(url);
+      const key = u.pathname.match(/[A-Z][A-Z0-9]+-\d+/);
+      if (key) return key[0];
+      if (/(^|\.)(force|salesforce)\.com$/i.test(u.hostname)) {
+        const m = u.pathname.match(/\/lightning\/r\/([A-Za-z0-9_]+)\//);
+        return 'Salesforce' + (m ? ' ' + m[1].replace(/__c$/, '').replace(/_/g, ' ') : '');
+      }
+      return u.hostname.replace(/^www\./, '') + u.pathname.replace(/\/$/, '');
+    } catch (e) { return url; }
+  }
+  // One of a topic's tickets as a chip. Only a Jira key goes through the Ticket link setting, so a Salesforce case number
+  // never turns into a Jira link; a link opens as it is, under its label when the line gives one.
+  function topicTicketNode(ref) {
+    const m = ref.match(/^(.*?)\s*(https?:\/\/\S+)$/i);
+    if (m) {
+      const label = m[1].trim();
+      return el('a', { class: 'ticket', href: m[2], target: '_blank', rel: 'noopener noreferrer', title: (label ? label + ' · ' : '') + m[2] }, label || refLabel(m[2]));
+    }
+    const href = JIRA_KEY.test(ref) ? ticketHref(ref) : null;
+    return href
+      ? el('a', { class: 'ticket', href, target: '_blank', rel: 'noopener noreferrer', title: href }, ref)
+      : el('span', { class: 'ticket', title: ref }, ref);
   }
 
+  // Edit on a topic: its title, overview and tickets. `field` puts the cursor in the overview or the tickets instead of the title.
+  function startTopicEdit(tp, field) {
+    if (!field && ui.topicEditing && ui.topicEditing.id === tp.id) { ui.topicEditing = null; render(); return; }
+    const orig = { title: tp.title || '', overview: overviewOf(tp), tickets: ticketsOf(tp).join('\n') };
+    ui.topicEditing = { id: tp.id, orig, ...orig };
+    ui.topicRemoving = null;
+    render();
+    const f = $('topic-edit-' + (field || 'title') + '-' + tp.id);
+    if (f) { f.focus(); if (field) f.setSelectionRange(f.value.length, f.value.length); }
+  }
+
+  // Saves only the fields changed since Edit opened, so a change Claude made meanwhile to another one stays. An emptied
+  // overview or ticket list is removed.
   function saveTopicEdit(tp) {
-    const title = ui.topicEditing.title.trim();
+    const ed = ui.topicEditing;
+    const title = ed.title.trim();
     if (!title) return;
-    if (title !== ui.topicEditing.orig) patchTopic(tp.id, { title });
+    const fields = {};
+    if (title !== ed.orig.title) fields.title = title;
+    const overview = ed.overview.trim();
+    if (overview !== ed.orig.overview) fields.overview = overview || null;
+    const tickets = ed.tickets.split('\n').map((t) => t.trim()).filter(Boolean);
+    if (tickets.join('\n') !== ed.orig.tickets) fields.tickets = tickets.length ? tickets : null;
+    if (Object.keys(fields).length) patchTopic(tp.id, fields);
     ui.topicEditing = null;
     render();
   }
@@ -1550,6 +1794,11 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     const ed = ui.topicEditing;
     const id = (name) => 'topic-edit-' + name + '-' + tp.id;
     const cancel = () => { ui.topicEditing = null; render(); };
+    // In the overview and tickets boxes, Enter starts a new line; Ctrl or Cmd+Enter saves.
+    const areaKeys = (e) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveTopicEdit(tp); }
+      if (e.key === 'Escape') cancel();
+    };
     return el('div', { class: 'edit', id: 'topic-edit-' + tp.id, role: 'group', 'aria-label': 'Edit ' + (tp.title || 'topic') },
       el('div', { class: 'field wide' },
         el('label', { for: id('title') }, 'Title'),
@@ -1558,6 +1807,20 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
           oninput: (e) => { ed.title = e.target.value; const b = $(id('save')); if (b) b.disabled = !ed.title.trim(); },
           onkeydown: (e) => { if (e.key === 'Enter') { e.preventDefault(); saveTopicEdit(tp); } if (e.key === 'Escape') cancel(); },
         }),
+      ),
+      el('div', { class: 'field wide' },
+        el('label', { for: id('overview') }, 'Overview'),
+        el('textarea', {
+          id: id('overview'), rows: 3, maxlength: 4000, placeholder: 'What this topic is about',
+          oninput: (e) => { ed.overview = e.target.value; }, onkeydown: areaKeys,
+        }, ed.overview),
+      ),
+      el('div', { class: 'field wide' },
+        el('label', { for: id('tickets') }, 'Tickets, one per line: a Jira key, a link, or a label then a link'),
+        el('textarea', {
+          id: id('tickets'), class: 'mono', rows: 2, maxlength: 4000, placeholder: 'OPS-142\nCase 00012345 https://…',
+          oninput: (e) => { ed.tickets = e.target.value; }, onkeydown: areaKeys,
+        }, ed.tickets),
       ),
       el('div', { class: 'edit-actions' },
         el('button', { type: 'button', class: 'link-btn danger', onclick: () => {
@@ -1589,7 +1852,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     if (notes) bits.push(notes + (notes === 1 ? ' note' : ' notes'));
     if (items.length) bits.push(ticked + ' of ' + items.length + ' done');
     return el('li', {}, el('button', {
-      type: 'button', class: 'topic-pick', id: 'topic-pick-' + tp.id, 'aria-current': current ? 'true' : null,
+      type: 'button', class: 'topic-pick', id: 'topic-pick-' + tp.id, 'aria-current': current ? 'true' : null, title: overviewOf(tp) || null,
       onclick: () => pickTopic(tp.id),
     },
       el('span', { class: 'tname' }, tp.title || '(untitled)'),
@@ -1641,7 +1904,29 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     );
   }
 
-  // Across the top: the topic's name, with Edit to rename or remove it, who it's with, and whose notes and checklist are shown.
+  // Under the name: the overview, the tickets, and links to add whichever the topic doesn't have yet.
+  function topicAbout(tp, editable) {
+    const overview = overviewOf(tp);
+    const tickets = ticketsOf(tp);
+    const open = (field) => startTopicEdit(tp, field);
+    return [
+      !overview ? null : editable ? el('div', {
+        class: 'topic-about can-edit', id: 'topic-about', role: 'button', tabindex: '0', title: 'Edit the overview',
+        onclick: () => { if (window.getSelection && String(window.getSelection())) return; open('overview'); },
+        onkeydown: (e) => { if (e.key === 'Enter' && e.target === e.currentTarget) { e.preventDefault(); open('overview'); } },
+      }, overview) : el('p', { class: 'topic-about' }, overview),
+      tickets.length ? el('div', { class: 'topic-tickets' },
+        el('span', { class: 'label' }, tickets.length === 1 ? 'Ticket' : 'Tickets'),
+        tickets.map(topicTicketNode),
+      ) : null,
+      editable && (!overview || !tickets.length) ? el('div', { class: 'topic-adds' },
+        overview ? null : el('button', { type: 'button', class: 'link-btn', onclick: () => open('overview') }, 'Add an overview'),
+        tickets.length ? null : el('button', { type: 'button', class: 'link-btn', onclick: () => open('tickets') }, 'Add a ticket'),
+      ) : null,
+    ];
+  }
+
+  // Across the top: the topic's name, with Edit to change or remove it, what it's about and its tickets, who it's with, and whose notes and checklist are shown.
   function topicTop(tp) {
     const editable = !state.readOnly;
     const editing = editable && Boolean(ui.topicEditing && ui.topicEditing.id === tp.id);
@@ -1654,6 +1939,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
           editable ? el('button', { type: 'button', class: 'link-btn', 'aria-label': 'Edit topic: ' + (tp.title || ''), onclick: () => startTopicEdit(tp) }, 'Edit') : null,
         ),
       ),
+      ...(editing ? [] : topicAbout(tp, editable)),
       // Who the topic is with: the same team as tasks, as many as it involves, saved as soon as they're ticked.
       editing ? null : el('div', { class: 'topic-with' },
         !editable ? (withOf(tp).length ? el('span', { class: 'owner' }, 'With ' + namesOf(withOf(tp))) : null)
@@ -2076,6 +2362,8 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   }
 
   function render() {
+    // While a note is dragged, the page waits to redraw until it's dropped, so the note under the pointer stays put.
+    if (ui.drag) { ui.dragPending = true; return; }
     const now = new Date();
     const today = dayKey(now);
     if (!ui.day || ui.day < today) ui.day = today;
