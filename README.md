@@ -67,16 +67,25 @@ artifact on claude.ai, in the artifact's own database:
 
 ## The rules it keeps
 
-- Every task has a **type**: `task`, `idea`, `follow-up` or `discussion` (a
-  topic to talk through with someone, such as a point for a 1:1). Claude asks
-  when it isn't clear. A discussion can say who it's with (see [Team](#team)).
+- Every task has a **type**: `task`, `idea`, `follow-up`, `discussion` (a
+  topic to talk through with someone, such as a point for a 1:1), `github` (a
+  GitHub issue or PR to work on, High priority unless you pick another) or
+  `jira` (a Jira ticket to work on). Claude asks when it isn't clear. A
+  discussion can say who it's with (see [Team](#team)).
+- Add your own types under **Settings › Types**, such as Bug or Review, each
+  with the priority its new tasks start at and a tag colour, or ask Claude
+  ("add a Bug type, high priority, red"). **Edit** renames one or changes its
+  priority or colour; removing one turns its tasks back into plain tasks until
+  you add it again.
 - A task is marked done only with a short **completion comment** saying what
   was done or decided. The page asks for it too.
 - A task can have a **ticket**: a key such as `OPS-142`, or a full link. Full
   links are always clickable. To make keys clickable too, set **Ticket link**
   under **Settings** on the page, or tell Claude where your tickets live.
   `https://yourcompany.atlassian.net/browse/` adds the key at the end;
-  `https://linear.app/yourteam/issue/{key}` puts it where `{key}` is.
+  `https://linear.app/yourteam/issue/{key}` puts it where `{key}` is. A
+  GitHub link shows as `owner/repo#12`, and a ticket written as
+  `owner/repo#12` links to that issue or PR on github.com.
 - A task can have a **priority**: High, Normal (the default) or Low. Pick it
   when you add a task, change it with **Edit** on the task, or say so
   ("add an urgent task…", "that one's low priority"). High tasks show a red
