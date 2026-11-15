@@ -11,11 +11,14 @@ past plans and end-of-day summaries. It installs from the
 
 The page uses the window's full width. A pane down the left lists the lists,
 each with a count: **Today**, **Up Next**, **Waiting**, **Upcoming**,
-**Someday**, **Ideas**, **Jira** and **Done**, and shows one at a time. **All**
-shows every list stacked on one page. The pane stays in view as you scroll;
-on a phone it becomes tabs right above the list. **Settings** is the pane's last item. Ideas get their own list, so Up Next holds only
-work to do. **Upcoming** holds tasks planned for later days, and **Someday**
-the ones you've set aside with no day. Unfinished tasks from earlier days show
+**Ideas**, **People**, **Jira integration** and **Done**, and shows one at a
+time. **All** shows every list stacked on one page. The pane stays in
+view as you scroll; on a phone it becomes tabs right above the list.
+**Settings** sits at the bottom of the pane. Ideas get their own list, so Up
+Next holds only work to do, and any other type can have a tab of its own too.
+All and Jira integration can be hidden under **Settings › Lists**.
+**Upcoming** holds tasks planned for later days; tasks you've set aside with no
+day sit at the end of Up Next, marked someday. Unfinished tasks from earlier days show
 as **Carried over** under Today, marked "from Oct 9 · 23 days"; give one a new
 day with **Edit**.
 
@@ -70,13 +73,18 @@ artifact on claude.ai, in the artifact's own database:
 - Every task has a **type**: `task`, `idea`, `follow-up`, `discussion` (a
   topic to talk through with someone, such as a point for a 1:1), `github` (a
   GitHub issue or PR to work on, High priority unless you pick another) or
-  `jira` (a Jira ticket to work on). Claude asks when it isn't clear. A
+  `jira` (a Jira ticket to work on). GitHub and Jira start off: turn them on
+  under **Settings › Types**. Claude asks when it isn't clear. A
   discussion can say who it's with (see [Team](#team)).
-- Add your own types under **Settings › Types**, such as Bug or Review, each
-  with the priority its new tasks start at and a tag colour, or ask Claude
-  ("add a Bug type, high priority, red"). **Edit** renames one or changes its
-  priority or colour; removing one turns its tasks back into plain tasks until
-  you add it again.
+- **Settings › Types** lists every type. Untick **Use** on the ones you don't
+  need (Task always stays): they leave the add box, and their tasks keep them.
+  Each type has the priority its new tasks start at, which you can change,
+  and can have its **Own tab**, which holds its open tasks with no day, the way
+  Ideas does; without one, they're in Up Next or Waiting.
+- Add your own types there too, such as Bug or Review, each with a tag colour,
+  or ask Claude ("add a Bug type, high priority, red", "give GitHub its own
+  tab", "turn off follow-ups"). **Edit** renames one or changes its colour;
+  removing one turns its tasks back into plain tasks until you add it again.
 - A task is marked done only with a short **completion comment** saying what
   was done or decided. The page asks for it too.
 - A task can have a **ticket**: a key such as `OPS-142`, or a full link. Full
@@ -207,15 +215,17 @@ organizer. Say "sync my Jira flags" (Claude also does it when it plans your
 day once you've synced before). Claude copies the flags in and offers each
 new one as a discussion task, with its ticket link and your flag note.
 
-The page lists the flags under a **Jira** tab, each with **Add as task**, or
+The page lists the flags under a **Jira integration** tab, each with **Add as task**, or
 which list it's already on. The tab shows the flags as of the last sync, not
 live, because one artifact page can't read another's data. Its **Sync now**
 copies "sync my Jira flags" for you to paste to Claude in Claude Code.
 
-The tab is always there. Until a sync connects it, or if Claude finds no Jira
-Dashboard, it lists the steps to set one up: add the Atlassian connector on
-claude.ai, install the Jira Dashboard skill, ask Claude to start a dashboard
-and flag some tickets, then sync.
+The tab shows once a sync has connected a Jira Dashboard (you can hide it
+under **Settings › Lists**). Until then, or if Claude finds no Jira Dashboard,
+**Settings › Lists** lists the steps to set one up: add the Atlassian connector
+on claude.ai, install the Jira Dashboard skill, ask Claude to start a dashboard
+and flag some tickets, then sync. The Jira task type is separate: it's for
+Jira tickets you work on, and can have its own tab like any other type.
 
 ## Updating your organizer
 
