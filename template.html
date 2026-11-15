@@ -1,5 +1,5 @@
 <title>Daily Organizer</title>
-<meta name="daily-organizer-version" content="0.20.0">
+<meta name="daily-organizer-version" content="0.20.1">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -283,6 +283,8 @@ html:has(dialog.view[open]) { overflow: hidden; }
 .topic-part + .topic-part { padding-top: 16px; border-top: 1px solid var(--line); }
 .part-name { margin: 0; font-size: 17px; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
 .part-cols { display: grid; grid-template-columns: minmax(230px, 300px) minmax(0, 1fr); gap: 20px; align-items: start; }
+/* A topic whose checklist is hidden on this device: its notes take the whole width. */
+.part-cols.no-check { grid-template-columns: minmax(0, 1fr); }
 .topic-main, .topic-side { padding: 14px 16px 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
 /* Whose parts are shown: All of them, or the ones picked (Main, the topic's own, and each person's), each with how many notes and items it has. */
 .parts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
@@ -842,7 +844,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 (() => {
   const $ = (id) => document.getElementById(id);
   const state = { tasks: [], days: [], settings: {}, team: [], types: [], jira: [], topics: [], teamLoaded: false, typesLoaded: false, settingsLoaded: false, jiraLoaded: false, confirmed: false, slow: false, error: '', note: '', readOnly: false, closed: false };
-  const ui = { completing: null, removing: null, editing: null, clearing: false, drafts: {}, open: new Set(), view: null, logRemoving: null, logEditing: null, itemEditing: null, itemRemoving: null, itemOpen: null, screen: 'tasks', topicSel: null, topicShow: {}, topicPicked: false, topicEditing: null, topicRemoving: null, layout: 'list', tab: 'today', filter: 'all', day: null, addWith: null, addDay: null, addType: null, addStatus: null, addPriority: null, person: null, withOpen: null, topicSettings: false, teamRemoving: null, typeEditing: null, typeRemoving: null };
+  const ui = { completing: null, removing: null, editing: null, clearing: false, drafts: {}, open: new Set(), view: null, logRemoving: null, logEditing: null, itemEditing: null, itemRemoving: null, itemOpen: null, screen: 'tasks', topicSel: null, topicShow: {}, topicPicked: false, topicEditing: null, topicRemoving: null, layout: 'list', tab: 'today', filter: 'all', day: null, addWith: null, addDay: null, addType: null, addStatus: null, addPriority: null, person: null, withOpen: null, topicSettings: false, teamRemoving: null, typeEditing: null, typeRemoving: null, noChecklist: new Set() };
   const chains = new Map();
   // The built-in types: id, label, the priority a new task of the type starts at, whether it has a tab of its own and
   // whether it starts off (GitHub and Jira wait to be turned on). The user's own are rows in types/<id>; a row with a
@@ -1688,7 +1690,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       })) : box.quiet ? null : el('p', { class: 'empty' }, w.none),
       editable ? el('div', { class: 'add-note' },
         noteArea(key, w.label, () => addItem(box), null, w.placeholder),
-        el('button', { type: 'button', class: 'btn', onclick: () => addItem(box) }, 'Add note'),
+        el('button', { type: 'button', class: 'btn btn-primary', onclick: () => addItem(box) }, 'Add note'),
       ) : null,
     );
   }
@@ -2234,8 +2236,8 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     const hid = 'tpart-h-' + key;
     return el('section', { class: 'topic-part', id: 'tpart-' + key, 'aria-labelledby': named ? hid : null, 'aria-label': named ? null : 'Checklist and notes' },
       named ? el('h3', { class: 'part-name', id: hid }, mid ? memberName(mid) : 'Main') : null,
-      el('div', { class: 'part-cols' },
-        el('div', { class: 'topic-side' }, itemsBox(items)),
+      el('div', { class: 'part-cols' + (ui.noChecklist.has(tp.id) ? ' no-check' : '') },
+        ui.noChecklist.has(tp.id) ? null : el('div', { class: 'topic-side' }, itemsBox(items)),
         el('div', { class: 'topic-main' }, notesBox(notes)),
       ),
     );
@@ -2270,6 +2272,29 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   }
 
   // Across the top: the topic's name, with Edit to change or remove it, what it's about and its tickets, who it's with, and whose notes and checklist are shown.
+  // Hide checklist / Show checklist: a view choice per topic, kept on this device, so a topic that's mostly notes can give
+  // them the whole width. Hidden, the button counts the items ticked across every part.
+  function toggleChecklist(tp) {
+    if (ui.noChecklist.has(tp.id)) ui.noChecklist.delete(tp.id); else ui.noChecklist.add(tp.id);
+    try { localStorage.setItem('organizer-topic-nochecklist', JSON.stringify([...ui.noChecklist])); } catch (e) { /* kept for this visit */ }
+    render();
+  }
+  function checklistToggle(tp) {
+    const hidden = ui.noChecklist.has(tp.id);
+    let done = 0;
+    let all = 0;
+    for (const k of partKeys(tp)) {
+      const items = topicItems(tp, k === 'main' ? null : k).items;
+      all += items.length;
+      done += items.filter((c) => c.done).length;
+    }
+    return el('button', {
+      type: 'button', class: 'link-btn', id: 'topic-checklist-toggle', 'aria-pressed': String(!hidden),
+      title: hidden ? 'Show the checklist beside the notes' : 'Hide the checklist on this device, so the notes take the width',
+      onclick: () => toggleChecklist(tp),
+    }, hidden ? 'Show checklist' + (all ? ' · ' + done + '/' + all : '') : 'Hide checklist');
+  }
+
   function topicTop(tp) {
     const editable = !state.readOnly;
     const editing = editable && Boolean(ui.topicEditing && ui.topicEditing.id === tp.id);
@@ -2280,6 +2305,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
         el('div', { class: 'meta' },
           el('span', {}, ago(daysSince(tp.created), 'added')),
           editable ? el('button', { type: 'button', class: 'link-btn', 'aria-label': 'Edit topic: ' + (tp.title || ''), onclick: () => startTopicEdit(tp) }, 'Edit') : null,
+          checklistToggle(tp),
         ),
       ),
       ...(editing ? [] : topicAbout(tp, editable)),
@@ -3193,6 +3219,10 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   try { if (localStorage.getItem('organizer-layout') === 'table') ui.layout = 'table'; } catch (e) { /* storage blocked: start in list */ }
   try { if (localStorage.getItem('organizer-screen') === 'topics') ui.screen = 'topics'; } catch (e) { /* storage blocked: start on tasks */ }
   try { ui.topicSel = localStorage.getItem('organizer-topic') || null; } catch (e) { /* storage blocked: show the newest topic */ }
+  try {
+    const hid = JSON.parse(localStorage.getItem('organizer-topic-nochecklist') || '[]');
+    if (Array.isArray(hid)) ui.noChecklist = new Set(hid.filter((x) => typeof x === 'string'));
+  } catch (e) { /* storage blocked: every checklist shows */ }
   // The Add a task box starts folded each time the page opens, leaving the room to the list; a click on it opens the form
   // and puts the cursor in the title. Only a click on the summary moves focus: the page's own open/close fires toggle too.
   const addBox = $('add-box');
