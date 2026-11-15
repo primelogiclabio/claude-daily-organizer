@@ -1,5 +1,5 @@
 <title>Daily Organizer</title>
-<meta name="daily-organizer-version" content="0.19.1">
+<meta name="daily-organizer-version" content="0.20.0">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -201,8 +201,9 @@ input[type="text"], input[type="date"], select { padding: 6px 8px; border: 1px s
 /* A row's checklist count, beside its comments link: items done of all, green once every item is. */
 .check-n { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .check-n.all-done { color: var(--done); }
-.facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 14px; margin: 0; }
-.facts div { min-width: 0; }
+/* A task's fields sit side by side at their own widths, wrapping as the row narrows, so short values don't leave wide gaps. */
+.facts { display: flex; flex-wrap: wrap; gap: 6px 28px; margin: 0; }
+.facts div { min-width: 0; max-width: 100%; }
 .facts dt, .log h3, .checklist h3 { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
 .facts dd { margin: 0; overflow-wrap: anywhere; }
 .log { display: grid; gap: 8px; }
@@ -314,6 +315,16 @@ html:has(dialog.view[open]) { overflow: hidden; }
 .topic-tickets .ticket { max-width: min(36ch, 100%); padding: 1px 9px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); text-decoration: none; }
 .topic-tickets a.ticket:hover { border-color: var(--accent); text-decoration: underline; }
 .topic-tickets span.ticket { color: var(--ink); }
+/* Links: pages a task or topic points to, each a chip that opens it; a claude.ai artifact is marked ▣, other links ↗. */
+.link { display: inline-block; max-width: min(28ch, 100%); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; padding: 0 8px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-size: 13px; line-height: 1.6; color: var(--accent); text-decoration: none; }
+a.link:hover, button.link:hover { border-color: var(--accent); text-decoration: underline; }
+a.link:not(.art)::before { content: '↗ '; }
+.link.art { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.link.art::before { content: '▣ '; }
+span.link { color: var(--ink); }
+button.link { font-family: inherit; cursor: pointer; }
+.link-list { display: inline-flex; flex-wrap: wrap; gap: 4px 6px; max-width: 100%; }
+.facts div:has(.link-list) { flex-basis: 100%; }
 .topic-adds { display: flex; flex-wrap: wrap; gap: 2px 10px; }
 .topic-adds .link-btn { padding: 0 4px; margin-left: -4px; }
 /* A topic's notes are bullet points, a little larger than the checklist's items, and may run to a paragraph. A click on a note
@@ -1006,7 +1017,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     const orig = {
       title: t.title || '', type: typeOf(t), status: t.status === 'waiting' ? 'waiting' : 'next',
       priority: PRIORITY[t.priority] ? t.priority : '', day: t.someday ? 'someday' : t.today || '',
-      ticket: t.ticket ? String(t.ticket) : '', note: t.note || '', owner: t.owner || '', with: withOf(t),
+      ticket: t.ticket ? String(t.ticket) : '', links: linksOf(t).join('\n'), note: t.note || '', owner: t.owner || '', with: withOf(t),
       created: dateOf(t.created), comment: t.comment || '', doneAt: dateOf(t.doneAt),
     };
     ui.editing = { id: t.id, orig, draft: { ...orig, with: [...orig.with], pick: false } };
@@ -1026,6 +1037,8 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     if (text('title') !== orig.title) fields.title = text('title');
     if (draft.type !== orig.type) fields.type = draft.type;
     if (text('ticket') !== orig.ticket) fields.ticket = text('ticket') || null;
+    const links = draft.links.split('\n').map((l) => l.trim()).filter(Boolean);
+    if (links.join('\n') !== orig.links) fields.links = links.length ? links : null;
     if (draft.owner !== orig.owner) fields.owner = draft.owner || null;
     if ([...draft.with].sort().join() !== [...orig.with].sort().join()) fields.with = withValue(draft.with);
     if (isKey(draft.created) && draft.created !== orig.created) fields.created = onDate(t.created, draft.created);
@@ -1105,6 +1118,12 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       (hasTeam || orig.with.length) && (draft.type === 'discussion' || orig.with.length)
         ? el('div', { class: 'field wide' }, withSelect(id('with'), draft.with, (ids) => { draft.with = ids; render(); }, orig.with)) : null,
       field('ticket', 'Ticket', false, text('ticket', { class: 'mono', maxlength: 500, placeholder: 'OPS-142 or a link' })),
+      // Links, one per line; Enter starts a new one and Ctrl or Cmd+Enter saves.
+      field('links', 'Links, one per line: a name, then the link', true, el('textarea', {
+        id: id('links'), class: 'mono', rows: 2, maxlength: 4000, placeholder: 'Daily Organizer https://claude.ai/artifact/…',
+        oninput: (e) => { draft.links = e.target.value; ready(); },
+        onkeydown: (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveEdit(t); } keys(e); },
+      }, draft.links)),
       field('created', 'Added', false, date('created', { max: today })),
       done ? field('doneAt', 'Done on', false, date('doneAt', { max: today })) : null,
       done ? field('comment', 'What got done or decided', true, text('comment', { maxlength: 500, required: true }))
@@ -1728,6 +1747,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       fact('For', t.owner ? memberName(t.owner) : 'Me'),
       withOf(t).length ? fact('With', namesOf(withOf(t))) : null,
       t.ticket ? fact('Ticket', ticketNode(String(t.ticket))) : null,
+      linksOf(t).length ? fact('Links', el('span', { class: 'link-list' }, linksOf(t).map(linkNode))) : null,
       fact('Added', when(t.created)),
       done ? fact('Done', when(t.doneAt)) : null,
       t.via === 'chat' ? fact('Added by', 'Claude, from a chat') : null,
@@ -2010,11 +2030,34 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   const ticketsOf = (tp) => (Array.isArray(tp.tickets) ? tp.tickets : typeof tp.tickets === 'string' ? [tp.tickets] : [])
     .filter((t) => typeof t === 'string' && t.trim()).map((t) => t.trim());
   const JIRA_KEY = /^[A-Z][A-Z0-9]+-\d+$/;
-  // A link's label: a GitHub issue, PR or repo as owner/repo#12, its Jira key, the kind of Salesforce record it opens, or
+  // A task's or topic's `links`: pages it points to, one string each, a name then a link or a bare link.
+  const linksOf = (x) => (Array.isArray(x.links) ? x.links : typeof x.links === 'string' ? [x.links] : [])
+    .filter((l) => typeof l === 'string' && l.trim()).map((l) => l.trim());
+  // A claude.ai artifact's link: claude.ai/artifact/<id>, claude.ai/public/artifacts/<id> or claude.site/artifacts/<id>.
+  const artifactId = (u) => {
+    if (!/^(www\.)?claude\.(ai|site)$/i.test(u.hostname)) return null;
+    const m = u.pathname.match(/^\/(?:artifact|public\/artifacts|artifacts)\/([^/?#]+)/);
+    return m ? m[1] : null;
+  };
+  const isArtifact = (url) => { try { return Boolean(artifactId(new URL(url))); } catch (e) { return false; } };
+  // One link as a chip that opens it in a new tab, under its name, or the link's own label when it has none.
+  function linkNode(line) {
+    const m = line.match(/^(.*?)\s*(https?:\/\/\S+)$/i);
+    if (!m) return el('span', { class: 'link', title: line }, line);
+    const label = m[1].trim();
+    const art = isArtifact(m[2]);
+    return el('a', {
+      class: 'link' + (art ? ' art' : ''), href: m[2], target: '_blank', rel: 'noopener noreferrer',
+      title: (art ? 'Claude artifact: ' : '') + (label ? label + ' · ' : '') + m[2],
+    }, label || refLabel(m[2]));
+  }
+  // A link's label: a claude.ai artifact as "Artifact" and the start of its id, a GitHub issue, PR or repo as owner/repo#12, its Jira key, the kind of Salesforce record it opens, or
   // its site and path.
   function refLabel(url) {
     try {
       const u = new URL(url);
+      const art = artifactId(u);
+      if (art) return 'Artifact ' + art.slice(0, 6) + (art.length > 6 ? '…' : '');
       if (/^(www\.)?github\./i.test(u.hostname)) {
         const p = u.pathname.split('/').filter(Boolean);
         const repo = p.length >= 2 ? p[0] + '/' + p[1] : '';
@@ -2050,7 +2093,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   // Edit on a topic: its title, overview and tickets. `field` puts the cursor in the overview or the tickets instead of the title.
   function startTopicEdit(tp, field) {
     if (!field && ui.topicEditing && ui.topicEditing.id === tp.id) { ui.topicEditing = null; render(); return; }
-    const orig = { title: tp.title || '', overview: overviewOf(tp), tickets: ticketsOf(tp).join('\n') };
+    const orig = { title: tp.title || '', overview: overviewOf(tp), tickets: ticketsOf(tp).join('\n'), links: linksOf(tp).join('\n') };
     ui.topicEditing = { id: tp.id, orig, ...orig };
     ui.topicRemoving = null;
     render();
@@ -2070,6 +2113,8 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     if (overview !== ed.orig.overview) fields.overview = overview || null;
     const tickets = ed.tickets.split('\n').map((t) => t.trim()).filter(Boolean);
     if (tickets.join('\n') !== ed.orig.tickets) fields.tickets = tickets.length ? tickets : null;
+    const links = ed.links.split('\n').map((l) => l.trim()).filter(Boolean);
+    if (links.join('\n') !== ed.orig.links) fields.links = links.length ? links : null;
     if (Object.keys(fields).length) patchTopic(tp.id, fields);
     ui.topicEditing = null;
     render();
@@ -2106,6 +2151,13 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
           id: id('tickets'), class: 'mono', rows: 2, maxlength: 4000, placeholder: 'OPS-142\nCase 00012345 https://…',
           oninput: (e) => { ed.tickets = e.target.value; }, onkeydown: areaKeys,
         }, ed.tickets),
+      ),
+      el('div', { class: 'field wide' },
+        el('label', { for: id('links') }, 'Links, one per line: a name, then the link'),
+        el('textarea', {
+          id: id('links'), class: 'mono', rows: 2, maxlength: 4000, placeholder: 'Q4 budget https://claude.ai/artifact/…',
+          oninput: (e) => { ed.links = e.target.value; }, onkeydown: areaKeys,
+        }, ed.links),
       ),
       el('div', { class: 'edit-actions' },
         el('button', { type: 'button', class: 'link-btn danger', onclick: () => {
@@ -2189,10 +2241,11 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     );
   }
 
-  // Under the name: the overview, the tickets, and links to add whichever the topic doesn't have yet.
+  // Under the name: the overview, the tickets, the links, and buttons to add whichever the topic doesn't have yet.
   function topicAbout(tp, editable) {
     const overview = overviewOf(tp);
     const tickets = ticketsOf(tp);
+    const links = linksOf(tp);
     const open = (field) => startTopicEdit(tp, field);
     return [
       !overview ? null : editable ? el('div', {
@@ -2204,9 +2257,14 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
         el('span', { class: 'label' }, tickets.length === 1 ? 'Ticket' : 'Tickets'),
         tickets.map(topicTicketNode),
       ) : null,
-      editable && (!overview || !tickets.length) ? el('div', { class: 'topic-adds' },
+      links.length ? el('div', { class: 'topic-tickets topic-links' },
+        el('span', { class: 'label' }, links.length === 1 ? 'Link' : 'Links'),
+        links.map(linkNode),
+      ) : null,
+      editable && (!overview || !tickets.length || !links.length) ? el('div', { class: 'topic-adds' },
         overview ? null : el('button', { type: 'button', class: 'link-btn', onclick: () => open('overview') }, 'Add an overview'),
         tickets.length ? null : el('button', { type: 'button', class: 'link-btn', onclick: () => open('tickets') }, 'Add a ticket'),
+        links.length ? null : el('button', { type: 'button', class: 'link-btn', onclick: () => open('links') }, 'Add a link'),
       ) : null,
     ];
   }
@@ -2316,6 +2374,12 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 
     const tag = typeTag(typeName);
     const ticket = t.ticket ? ticketNode(String(t.ticket)) : null;
+    // Its links: one opens straight away; more open the row's details, where each is listed.
+    const links = linksOf(t);
+    const linksChip = !links.length ? null : links.length === 1 ? linkNode(links[0]) : el('button', {
+      type: 'button', class: 'link links-n', 'aria-expanded': String(open), 'aria-controls': 'details-' + t.id,
+      title: links.length + ' links: show them', onclick: () => toggleOpen(t.id),
+    }, '↗ ' + links.length + ' links');
 
     // While a task is being edited, its form takes the place of its details.
     const panels = [];
@@ -2337,7 +2401,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
         el('button', { type: 'button', class: 'btn', onclick: () => { ui.removing = null; render(); } }, 'Keep'),
       ));
     }
-    return { done, open, added, chase, check, titleBtn, logBtn, checkBtn, tools, star, tag, ticket, panels };
+    return { done, open, added, chase, check, titleBtn, logBtn, checkBtn, tools, star, tag, ticket, linksChip, panels };
   }
 
   // Tasks Claude added from a chat carry `via: "chat"`.
@@ -2357,7 +2421,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     );
     const body = el('div', { class: 'body' },
       el('div', { class: 'title-line' },
-        p.titleBtn, p.tag, prioChip(t), p.ticket,
+        p.titleBtn, p.tag, prioChip(t), p.ticket, p.linksChip,
         t.owner ? el('span', { class: 'owner' }, 'for ' + memberName(t.owner)) : null,
         withChip(t),
         planChip(t, today),
@@ -2388,7 +2452,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     const p = parts(t, today, true);
     const tr = el('tr', { class: ['row', p.done ? 'is-done' : '', p.open ? 'is-open' : '', p.panels.length ? 'has-detail' : ''].join(' ').trim().replace(/\s+/g, ' '), onclick: rowClick(t.id) },
       el('td', { class: 'c-check' }, p.check),
-      el('td', { class: 'c-task' }, p.titleBtn, withChip(t), planChip(t, today), carryChip(t), viaChip(t)),
+      el('td', { class: 'c-task' }, p.titleBtn, withChip(t), planChip(t, today), carryChip(t), viaChip(t), p.linksChip),
       withOwner ? el('td', { class: 'c-owner' }, t.owner ? el('span', { class: 'owner' }, memberName(t.owner)) : el('span', { class: 'me' }, 'Me')) : null,
       el('td', { class: 'c-type' }, p.tag),
       el('td', { class: 'c-prio' }, prioChip(t)),

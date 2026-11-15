@@ -94,6 +94,12 @@ artifact on claude.ai, in the artifact's own database:
   `https://linear.app/yourteam/issue/{key}` puts it where `{key}` is. A
   GitHub link shows as `owner/repo#12`, and a ticket written as
   `owner/repo#12` links to that issue or PR on github.com.
+- A task or topic can have **links**: pages it points to, such as a claude.ai
+  artifact, a doc or a design. Add them in **Edit**, one per line with a name
+  before the link, with **Add a link** on a topic, or by asking ("link my Jira
+  Dashboard to the Kafka topic"; Claude finds the artifact and its name).
+  Artifacts are marked ▣ and other links ↗. A task's row shows its one link,
+  or how many it has; its details and the task view list them all.
 - A task can have a **priority**: High, Normal (the default) or Low. Pick it
   when you add a task, change it with **Edit** on the task, or say so
   ("add an urgent task…", "that one's low priority"). High tasks show a red
