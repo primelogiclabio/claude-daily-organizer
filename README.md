@@ -151,7 +151,9 @@ own (**Main**), with its checklist beside its notes. **All**, under the
 topic's people, shows every part; click **Main** or a name to see only that
 one, and more names to add them.
 **Edit** on a topic changes its title, overview and tickets (one per
-line), or removes it. On a narrower screen each
+line), or removes it. **Hide checklist** beside it hides the topic's
+checklists so the notes take the whole width; **Show checklist** (with how many
+items are ticked) brings them back, and each device remembers it per topic. On a narrower screen each
 part's notes go under its checklist; on a phone you see the list, then the topic
 you tap, with **‹ All topics** to go back. Each device remembers the screen
 and the topic.
