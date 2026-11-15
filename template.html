@@ -1,5 +1,5 @@
 <title>Daily Organizer</title>
-<meta name="daily-organizer-version" content="0.20.1">
+<meta name="daily-organizer-version" content="0.21.0">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,6 +17,7 @@
   --muted: #5a6476;
   --line: #dce1e9;
   --accent: #2c52b0;
+  --blue: #2c52b0;
   --today: #a3620b;
   --idea: #7146ad;
   --discussion: #a5316c;
@@ -32,15 +33,55 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #11151c; --surface: #19202a; --ink: #e5e9f0; --muted: #9aa4b5; --line: #2a3240;
-    --accent: #8eaaff; --today: #e3a748; --idea: #c3a2f2; --discussion: #f28dc0; --done: #74c795; --danger: #f08a80; --person: #6fcbe0; --github: #c9d1d9; --jira: #63b3f5;
+    --accent: #8eaaff; --blue: #8eaaff; --today: #e3a748; --idea: #c3a2f2; --discussion: #f28dc0; --done: #74c795; --danger: #f08a80; --person: #6fcbe0; --github: #c9d1d9; --jira: #63b3f5;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #11151c; --surface: #19202a; --ink: #e5e9f0; --muted: #9aa4b5; --line: #2a3240;
-  --accent: #8eaaff; --today: #e3a748; --idea: #c3a2f2; --discussion: #f28dc0; --done: #74c795; --danger: #f08a80; --person: #6fcbe0; --github: #c9d1d9; --jira: #63b3f5;
+  --accent: #8eaaff; --blue: #8eaaff; --today: #e3a748; --idea: #c3a2f2; --discussion: #f28dc0; --done: #74c795; --danger: #f08a80; --person: #6fcbe0; --github: #c9d1d9; --jira: #63b3f5;
   color-scheme: dark;
 }
+/* The accent colour picked under Settings → Appearance, in its light and dark shades; Blue is the default above.
+   `--blue` stays blue for the Task tag and types coloured Blue. */
+:root[data-accent="teal"] { --accent: #0f766e; }
+:root[data-accent="green"] { --accent: #15803d; }
+:root[data-accent="purple"] { --accent: #6d28d9; }
+:root[data-accent="rose"] { --accent: #be123c; }
+:root[data-accent="amber"] { --accent: #b45309; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"])[data-accent="teal"] { --accent: #5eead4; }
+  :root:not([data-theme="light"])[data-accent="green"] { --accent: #86efac; }
+  :root:not([data-theme="light"])[data-accent="purple"] { --accent: #c4b5fd; }
+  :root:not([data-theme="light"])[data-accent="rose"] { --accent: #fda4af; }
+  :root:not([data-theme="light"])[data-accent="amber"] { --accent: #fcd34d; }
+}
+:root[data-theme="dark"][data-accent="teal"] { --accent: #5eead4; }
+:root[data-theme="dark"][data-accent="green"] { --accent: #86efac; }
+:root[data-theme="dark"][data-accent="purple"] { --accent: #c4b5fd; }
+:root[data-theme="dark"][data-accent="rose"] { --accent: #fda4af; }
+:root[data-theme="dark"][data-accent="amber"] { --accent: #fcd34d; }
+/* The colour swatches show each accent in the shade the theme in effect uses. */
+.sw-blue { --sw: #2c52b0; }
+.sw-teal { --sw: #0f766e; }
+.sw-green { --sw: #15803d; }
+.sw-purple { --sw: #6d28d9; }
+.sw-rose { --sw: #be123c; }
+.sw-amber { --sw: #b45309; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .sw-blue { --sw: #8eaaff; }
+  :root:not([data-theme="light"]) .sw-teal { --sw: #5eead4; }
+  :root:not([data-theme="light"]) .sw-green { --sw: #86efac; }
+  :root:not([data-theme="light"]) .sw-purple { --sw: #c4b5fd; }
+  :root:not([data-theme="light"]) .sw-rose { --sw: #fda4af; }
+  :root:not([data-theme="light"]) .sw-amber { --sw: #fcd34d; }
+}
+:root[data-theme="dark"] .sw-blue { --sw: #8eaaff; }
+:root[data-theme="dark"] .sw-teal { --sw: #5eead4; }
+:root[data-theme="dark"] .sw-green { --sw: #86efac; }
+:root[data-theme="dark"] .sw-purple { --sw: #c4b5fd; }
+:root[data-theme="dark"] .sw-rose { --sw: #fda4af; }
+:root[data-theme="dark"] .sw-amber { --sw: #fcd34d; }
 
 body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.45; }
 /* The page takes the window's whole width. minmax(0, 1fr) keeps the column to it, so a wide row such as the day filter shrinks rather than pushing the page past a phone's screen. */
@@ -55,11 +96,12 @@ button, input, select, textarea { font: inherit; color: inherit; }
 /* The hidden attribute wins over display rules such as section's grid, or hidden sections and filters would still show. */
 [hidden] { display: none !important; }
 
-/* The header stays at the top while the page scrolls, on the page's background drawn edge to edge; a line marks its edge once content is under it.
-   Its height is kept in --head-h, so the left pane and scrolled-to rows sit below it. */
-.day { display: grid; gap: 2px; min-width: 0; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; padding-block: 10px; margin-block: -10px; background: var(--bg); box-shadow: 0 0 0 100vmax var(--bg); clip-path: inset(0 -100vmax); }
+/* The header stays put while the page scrolls: it sticks where it starts (--head-top, measured from the page's top margin), so
+   it doesn't slide up first, on the page's background drawn edge to edge and up to the window's top; a line marks its edge
+   once content is under it. Its height is kept in --head-h, so the left pane and scrolled-to rows sit below it. */
+.day { display: grid; gap: 2px; min-width: 0; position: sticky; top: var(--head-top, env(safe-area-inset-top, 0px)); z-index: 20; padding-block: 10px; margin-block: -10px; background: var(--bg); box-shadow: 0 0 0 100vmax var(--bg); clip-path: inset(calc(-1 * var(--head-top, 0px)) -100vmax 0 -100vmax); }
 .day.is-stuck { box-shadow: inset 0 -1px 0 var(--line), 0 0 0 100vmax var(--bg); }
-html { scroll-padding-top: calc(var(--head-h, 0px) + 8px); }
+html { scroll-padding-top: calc(var(--head-top, 0px) + var(--head-h, 0px) + 8px); }
 /* The page's version sits beside the date, as well as in the footer. */
 .date-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; }
 .date-row .ver { font-family: var(--font-mono); font-size: 13px; color: var(--muted); white-space: nowrap; }
@@ -138,7 +180,7 @@ h2 .n { font-family: var(--font-mono); font-weight: 400; margin-left: 6px; font-
 .title { overflow-wrap: anywhere; }
 .is-done .title { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line); }
 .tag { font-family: var(--font-mono); font-size: 12px; padding: 1px 6px; border-radius: 3px; border: 1px solid currentColor; line-height: 1.4; white-space: nowrap; }
-.tag-task { color: var(--accent); }
+.tag-task { color: var(--blue); }
 .tag-idea { color: var(--idea); }
 .tag-follow-up { color: var(--today); }
 .tag-discussion { color: var(--discussion); }
@@ -146,7 +188,7 @@ h2 .n { font-family: var(--font-mono); font-weight: 400; margin-left: 6px; font-
 .tag-jira { color: var(--jira); }
 /* The user's own types, in the colour picked for each: the page's own colours, so they suit light and dark. */
 .tc-grey { color: var(--muted); }
-.tc-blue { color: var(--accent); }
+.tc-blue { color: var(--blue); }
 .tc-teal { color: var(--person); }
 .tc-green { color: var(--done); }
 .tc-amber { color: var(--today); }
@@ -370,6 +412,10 @@ body.is-dragging-note, body.is-dragging-note * { cursor: grabbing !important; us
 .topic-pick[aria-pressed="true"] { border-left-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .topic-settings { grid-column: 2 / -1; grid-row: 1 / span 2; gap: 10px; padding: 14px 16px 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
 .topic-settings .team { padding-top: 0; }
+/* Appearance and Ticket link serve both screens: one box, shown in whichever screen's Settings is open; its blocks lay out
+   as the Settings section's own. */
+.settings-home, .settings-common { display: contents; }
+.topic-settings .appearance { padding-top: 0; }
 @media (max-width: 1100px) {
   .topics { grid-template-columns: minmax(160px, 210px) minmax(0, 1fr); }
   .part-cols { grid-template-columns: minmax(0, 1fr); gap: 12px; }
@@ -424,6 +470,12 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 .team .hint { margin: 0; font-size: 14px; color: var(--muted); }
 /* Settings → Types: the built-in types, the user's own with Edit and Remove, and a form to add one. */
 .types { display: grid; gap: 8px; padding-top: 18px; max-width: 760px; }
+/* Settings → Appearance: the theme and the accent colour as pressed buttons, and whether every device shares them. */
+.appearance .row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.appearance .row .label { min-width: 4.5em; font-size: 14px; color: var(--muted); }
+.appearance .seg { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.appearance .seg .btn[aria-pressed="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--surface)); color: var(--ink); }
+.swatch-dot { display: inline-block; width: 11px; height: 11px; margin-right: 6px; border-radius: 50%; background: var(--sw); vertical-align: -1px; }
 .types h3 { margin: 0; font-size: 15px; font-weight: 500; }
 .types ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .types li { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
@@ -478,7 +530,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 .task-main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; min-width: 0; }
 .lists { display: grid; gap: 28px; min-width: 0; }
 /* A long team can make the pane taller than the window, so it scrolls on its own. */
-.tabs { display: flex; flex-direction: column; gap: 2px; position: sticky; top: calc(var(--head-h, 0px) + 12px); min-height: calc(100vh - var(--head-h, 0px) - 24px); max-height: calc(100vh - var(--head-h, 0px) - 24px); overflow-y: auto; }
+.tabs { display: flex; flex-direction: column; gap: 2px; position: sticky; top: calc(var(--head-top, 0px) + var(--head-h, 0px) + 12px); max-height: calc(100vh - var(--head-top, 0px) - var(--head-h, 0px) - 24px); overflow-y: auto; }
 /* Types with a tab of their own, between Someday and People; their sections sit among the lists. */
 .type-tabs, .type-secs { display: contents; }
 .tabs button { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; width: 100%; padding: 7px 10px 8px; border: 0; border-left: 3px solid transparent; border-radius: 0 6px 6px 0; background: none; font-size: 15px; font-weight: 500; color: var(--muted); text-align: left; cursor: pointer; white-space: nowrap; }
@@ -491,8 +543,8 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 .tabs #show-people.has-person:not(:hover) { background: none; border-left-color: transparent; }
 /* The team shows under People only while People is the list shown; its arrow shows which. */
 .pcaret { margin-left: 6px; font-size: 12px; color: var(--muted); }
-/* Settings sits at the bottom of the pane, under a line, apart from the lists. */
-.tabs-rule { flex: none; width: 100%; margin: auto 0 4px; padding-top: 14px; border: 0; border-bottom: 1px solid var(--line); }
+/* Settings comes last in the pane, under a line, so it isn't read as one of the lists. */
+.tabs-rule { flex: none; width: 100%; margin: 10px 0 6px; border: 0; border-bottom: 1px solid var(--line); }
 .tabs .n { font-family: var(--font-mono); font-size: 13px; font-weight: 400; margin-left: 5px; color: var(--muted); font-variant-numeric: tabular-nums; }
 @media (max-width: 700px) {
   /* One column: the filters and the add box, then the tabs right over the list they show, then the day log and settings. */
@@ -621,6 +673,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     <section class="topic-settings" id="topic-settings" aria-labelledby="h-topic-settings" hidden>
       <button type="button" class="link-btn back" id="topic-settings-back">‹ All topics</button>
       <h2 id="h-topic-settings">Settings</h2>
+      <div class="settings-home" id="topic-common-home"></div>
       <div id="topic-team-home"></div>
     </section>
   </section>
@@ -785,12 +838,21 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 
       <section id="sec-settings" class="panel" aria-labelledby="h-settings" hidden>
         <div class="section-head"><h2 id="h-settings">Settings</h2></div>
+        <div class="settings-home" id="common-home"><div class="settings-common" id="common-box">
+        <div class="types appearance" id="appearance-box">
+          <h3>Appearance</h3>
+          <div class="row"><span class="label">Theme</span><span class="seg" id="theme-pick" role="group" aria-label="Theme"></span></div>
+          <div class="row"><span class="label">Colour</span><span class="seg" id="accent-pick" role="group" aria-label="Accent colour"></span></div>
+          <label class="tab-pick"><input type="checkbox" id="appearance-sync"> Same on all my devices</label>
+          <p class="hint" id="appearance-hint"></p>
+        </div>
         <form class="settings" id="settings-form" autocomplete="off">
           <label for="set-ticket">Ticket link</label>
           <input type="text" id="set-ticket" placeholder="https://yourcompany.atlassian.net/browse/" maxlength="500">
           <p class="hint">Ticket keys such as OPS-142 link here. The key goes at the end, or wherever you write {key}. Tickets saved as full links work without this.</p>
           <div class="row"><button class="btn btn-primary" type="submit">Save</button><span id="set-msg" role="status"></span></div>
         </form>
+        </div></div>
         <div class="types" id="types-box">
           <h3>Types</h3>
           <ul class="type-rows" id="type-list"></ul>
@@ -862,6 +924,37 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   // The template's version, from its meta tag; Claude compares it with organizer/settings.pageVersion to offer updates.
   const PAGE_VERSION = (document.querySelector('meta[name="daily-organizer-version"]') || {}).content || '';
   let db = null;
+
+  // Appearance: System, Light or Dark, and an accent colour. Every device shares one look, kept in
+  // organizer/settings.appearance, unless this device keeps its own (Same on all my devices unticked). The look last shown
+  // here is cached in this browser, so the page opens in it before the settings arrive.
+  const THEMES = [['system', 'System'], ['light', 'Light'], ['dark', 'Dark']];
+  const ACCENTS = [['blue', 'Blue'], ['teal', 'Teal'], ['green', 'Green'], ['purple', 'Purple'], ['rose', 'Rose'], ['amber', 'Amber']];
+  const deviceStore = {
+    get: (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: (k, v) => { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { /* this visit only */ } },
+  };
+  const validLook = (a) => ({
+    theme: THEMES.some(([v]) => v === (a && a.theme)) ? a.theme : 'system',
+    accent: ACCENTS.some(([v]) => v === (a && a.accent)) ? a.accent : 'blue',
+  });
+  const look = { ...validLook({ theme: deviceStore.get('organizer-theme'), accent: deviceStore.get('organizer-accent') }), own: deviceStore.get('organizer-appearance-own') === '1' };
+  const sharedLook = () => (state.settings.appearance && typeof state.settings.appearance === 'object' ? validLook(state.settings.appearance) : null);
+  const lookShown = () => (!look.own && sharedLook()) || { theme: look.theme, accent: look.accent };
+  function cacheLook(l) {
+    if (l.theme !== look.theme) deviceStore.set('organizer-theme', l.theme === 'system' ? null : l.theme);
+    if (l.accent !== look.accent) deviceStore.set('organizer-accent', l.accent === 'blue' ? null : l.accent);
+    look.theme = l.theme;
+    look.accent = l.accent;
+  }
+  function applyLook() {
+    const l = lookShown();
+    cacheLook(l);
+    const root = document.documentElement;
+    if (l.theme === 'system') delete root.dataset.theme; else root.dataset.theme = l.theme;
+    if (l.accent === 'blue') delete root.dataset.accent; else root.dataset.accent = l.accent;
+  }
+  applyLook();
 
   const pad = (n) => String(n).padStart(2, '0');
   const dayKey = (d = new Date()) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
@@ -1596,7 +1689,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
           oninput: (e) => { ui.drafts[key] = e.target.value; },
           onkeydown: (e) => { if (e.key === 'Enter') { e.preventDefault(); addItem(box); } },
         }),
-        el('button', { type: 'button', class: 'btn', onclick: () => addItem(box) }, 'Add'),
+        el('button', { type: 'button', class: 'btn btn-primary', onclick: () => addItem(box) }, 'Add'),
       ) : null,
     );
   }
@@ -2871,6 +2964,45 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     for (const c of $('type-form').elements) c.disabled = ro;
   }
 
+  // A pick is shown at once and cached here; shared, it's also saved in the organizer for the other devices.
+  // The shared look is updated here at once, so a second pick before the save comes back builds on the first; on a
+  // read-only page it changes only here.
+  function writeLook(l) {
+    state.settings = { ...state.settings, appearance: { theme: l.theme, accent: l.accent } };
+    if (!db || state.readOnly) return;
+    const body = { ...state.settings };
+    write('organizer-settings', () => settingsRef().set(body));
+  }
+  function setLook(key, value) {
+    const next = { ...lookShown(), [key]: value };
+    cacheLook(next);
+    if (!look.own) writeLook(next);
+    render();
+  }
+  // Ticking Same on all my devices makes the look shown here the shared one; unticking keeps it on this device alone.
+  function setLookShared(on) {
+    const now = lookShown();
+    look.own = !on;
+    deviceStore.set('organizer-appearance-own', on ? null : '1');
+    cacheLook(now);
+    if (on) writeLook(now);
+    render();
+  }
+  function renderAppearance() {
+    const l = lookShown();
+    const seg = (box, items, key, dots) => $(box).replaceChildren(...items.map(([v, label]) => el('button', {
+      type: 'button', class: 'btn', id: key + '-' + v, 'aria-pressed': String(l[key] === v), onclick: () => setLook(key, v),
+    }, dots ? el('span', { class: 'swatch-dot sw-' + v, 'aria-hidden': 'true' }) : null, label)));
+    seg('theme-pick', THEMES, 'theme', false);
+    seg('accent-pick', ACCENTS, 'accent', true);
+    const sync = $('appearance-sync');
+    sync.checked = !look.own;
+    sync.disabled = !db || state.readOnly;
+    $('appearance-hint').textContent = look.own ? 'Kept on this device only. Tick Same on all my devices to share this look.'
+      : !db || state.readOnly ? 'Shown on this device only, since this organizer is read-only here.'
+      : 'Saved in the organizer, so your other devices show it too, unless one keeps its own.';
+  }
+
   // Settings → Lists: All and Jira integration can be hidden, saved for the whole organizer.
   function setTabHidden(name, hide) {
     if (!db || state.readOnly) return;
@@ -2945,6 +3077,8 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     renderTeam();
     renderTypes();
     renderLists();
+    applyLook();
+    renderAppearance();
     const shown = state.tasks.filter(matchesFilter);
     // With one person shown, their open discussions are the 1:1 agenda, kept out of the lists below.
     const person = personShown();
@@ -3027,6 +3161,9 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     renderJira(sel, today, near ? selTitle : $('show-today-label').textContent);
     renderTopics();
     // The team list is one block, shown in the Settings of whichever screen is open.
+    // Appearance and Ticket link are one block too; types and lists are about tasks, so they stay on the Tasks screen.
+    const commonHome = ui.screen === 'topics' ? $('topic-common-home') : $('common-home');
+    if ($('common-box').parentNode !== commonHome) commonHome.append($('common-box'));
     const teamHome = ui.screen === 'topics' ? $('topic-team-home') : $('team-home');
     if ($('team-box').parentNode !== teamHome) teamHome.append($('team-box'));
 
@@ -3190,6 +3327,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     msg.textContent = '';
   });
   $('type-name').addEventListener('input', () => { $('type-msg').textContent = ''; });
+  $('appearance-sync').addEventListener('change', (e) => setLookShared(e.target.checked));
 
   $('team-form').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -3370,10 +3508,19 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   $('page-ver').textContent = PAGE_VERSION ? 'v' + PAGE_VERSION : '';
   if (PAGE_VERSION) $('page-ver').title = 'Daily Organizer page ' + PAGE_VERSION;
 
-  // The header's height, for the left pane and scrolled-to rows to sit below it, and its edge line once the page has scrolled.
+  // Where the header starts and how tall it is: it sticks where it starts, and the left pane and scrolled-to rows sit below
+  // it. Where it starts comes from the page's layout (the wrap's top and padding), not the header itself, which may already
+  // be stuck when the page opens scrolled.
   const head = document.querySelector('header.day');
-  const noteHead = () => document.documentElement.style.setProperty('--head-h', Math.ceil(head.getBoundingClientRect().height) + 'px');
+  const noteHead = () => {
+    const root = document.documentElement;
+    const wrap = head.parentElement;
+    const top = wrap.getBoundingClientRect().top + window.scrollY + parseFloat(getComputedStyle(wrap).paddingTop) + parseFloat(getComputedStyle(head).marginTop);
+    root.style.setProperty('--head-top', Math.max(0, Math.round(top)) + 'px');
+    root.style.setProperty('--head-h', Math.ceil(head.getBoundingClientRect().height) + 'px');
+  };
   if (window.ResizeObserver) new ResizeObserver(noteHead).observe(head);
+  window.addEventListener('resize', noteHead);
   noteHead();
   const stuck = () => head.classList.toggle('is-stuck', window.scrollY > 4);
   window.addEventListener('scroll', stuck, { passive: true });

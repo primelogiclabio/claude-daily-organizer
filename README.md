@@ -14,7 +14,10 @@ each with a count: **Today**, **Up Next**, **Waiting**, **Upcoming**,
 **Ideas**, **People**, **Jira integration** and **Done**, and shows one at a
 time. **All** shows every list stacked on one page. The pane stays in
 view as you scroll; on a phone it becomes tabs right above the list.
-**Settings** sits at the bottom of the pane. Ideas get their own list, so Up
+**Settings** sits at the bottom of the pane. Its **Appearance** picks the theme
+(System, Light or Dark) and an accent colour; **Same on all my devices**, on by
+default, keeps your other devices in step, or untick it to give one device its
+own look. Ideas get their own list, so Up
 Next holds only work to do, and any other type can have a tab of its own too.
 All and Jira integration can be hidden under **Settings › Lists**.
 **Upcoming** holds tasks planned for later days; tasks you've set aside with no
@@ -144,7 +147,9 @@ case number shows as it is. Click the overview, or **Add an overview** or
 **Add a ticket**, to change them in the topic's **Edit**.
 A **With** dropdown under them says whom it's a joint effort or
 discussion with, from the same team as your tasks; the Topics screen has its
-own **Settings** for adding people, so you can add them from either screen.
+own **Settings**, with the same Appearance, Ticket link and Team as the Tasks
+screen's (types and lists are about tasks, so they stay there), so you can set
+them from either screen.
 Each person on the topic has a part of their own, for what they're working
 on or questions to follow up with them, shown as a row under the topic's
 own (**Main**), with its checklist beside its notes. **All**, under the
