@@ -14,7 +14,10 @@ each with a count: **Today**, **Up Next**, **Waiting**, **Upcoming**,
 **Ideas**, **People**, **Jira integration** and **Done**, and shows one at a
 time. **All** shows every list stacked on one page. The pane stays in
 view as you scroll; on a phone it becomes tabs right above the list.
-**Settings** sits at the bottom of the pane. Ideas get their own list, so Up
+**Settings** sits at the bottom of the pane. Its **Appearance** picks the theme
+(System, Light or Dark) and an accent colour; **Same on all my devices**, on by
+default, keeps your other devices in step, or untick it to give one device its
+own look. Ideas get their own list, so Up
 Next holds only work to do, and any other type can have a tab of its own too.
 All and Jira integration can be hidden under **Settings › Lists**.
 **Upcoming** holds tasks planned for later days; tasks you've set aside with no
