@@ -1,5 +1,5 @@
 <title>Daily Organizer</title>
-<meta name="daily-organizer-version" content="0.18.0">
+<meta name="daily-organizer-version" content="0.19.0">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -410,13 +410,18 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 .team form input { flex: 1 1 200px; min-width: 0; }
 .team .hint { margin: 0; font-size: 14px; color: var(--muted); }
 /* Settings → Types: the built-in types, the user's own with Edit and Remove, and a form to add one. */
-.types { display: grid; gap: 8px; padding-top: 18px; max-width: 560px; }
+.types { display: grid; gap: 8px; padding-top: 18px; max-width: 760px; }
 .types h3 { margin: 0; font-size: 15px; font-weight: 500; }
 .types ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .types li { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
 .types .muted { color: var(--muted); font-size: 14px; }
 .types .hint { margin: 0; font-size: 14px; color: var(--muted); }
-.type-builtin { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; margin: 0; }
+.type-rows li { align-items: center; }
+.type-rows .tuse { display: inline-flex; align-items: center; gap: 8px; min-width: 10em; font-size: 15px; }
+.tab-pick { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; white-space: nowrap; }
+.type-rows .tools { display: inline-flex; align-items: baseline; gap: 12px; white-space: nowrap; }
+.type-rows li.is-off .tag { opacity: .55; }
+.lists-box .jira-setup { padding-top: 4px; font-size: 14px; }
 .types form, .type-edit { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .types form input, .type-edit input { flex: 1 1 160px; min-width: 0; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
@@ -460,7 +465,9 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 .task-main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; min-width: 0; }
 .lists { display: grid; gap: 28px; min-width: 0; }
 /* A long team can make the pane taller than the window, so it scrolls on its own. */
-.tabs { display: flex; flex-direction: column; gap: 2px; position: sticky; top: calc(var(--head-h, 0px) + 12px); max-height: calc(100vh - var(--head-h, 0px) - 24px); overflow-y: auto; }
+.tabs { display: flex; flex-direction: column; gap: 2px; position: sticky; top: calc(var(--head-h, 0px) + 12px); min-height: calc(100vh - var(--head-h, 0px) - 24px); max-height: calc(100vh - var(--head-h, 0px) - 24px); overflow-y: auto; }
+/* Types with a tab of their own, between Someday and People; their sections sit among the lists. */
+.type-tabs, .type-secs { display: contents; }
 .tabs button { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; width: 100%; padding: 7px 10px 8px; border: 0; border-left: 3px solid transparent; border-radius: 0 6px 6px 0; background: none; font-size: 15px; font-weight: 500; color: var(--muted); text-align: left; cursor: pointer; white-space: nowrap; }
 .tabs button:hover { color: var(--ink); background: color-mix(in srgb, var(--accent) 8%, transparent); }
 .tabs button[aria-pressed="true"] { color: var(--ink); border-left-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
@@ -471,18 +478,21 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 .tabs #show-people.has-person:not(:hover) { background: none; border-left-color: transparent; }
 /* The team shows under People only while People is the list shown; its arrow shows which. */
 .pcaret { margin-left: 6px; font-size: 12px; color: var(--muted); }
-.tabs #show-settings { margin-top: 18px; }
+/* Settings sits at the bottom of the pane, under a line, apart from the lists. */
+.tabs-rule { flex: none; width: 100%; margin: auto 0 4px; padding-top: 14px; border: 0; border-bottom: 1px solid var(--line); }
 .tabs .n { font-family: var(--font-mono); font-size: 13px; font-weight: 400; margin-left: 5px; color: var(--muted); font-variant-numeric: tabular-nums; }
 @media (max-width: 700px) {
   /* One column: the filters and the add box, then the tabs right over the list they show, then the day log and settings. */
   .task-screen { grid-template-columns: minmax(0, 1fr); }
   .task-main { display: contents; }
-  .tabs { order: 1; position: static; max-height: none; overflow: visible; flex-direction: row; flex-wrap: wrap; gap: 0 4px; border-bottom: 1px solid var(--line); }
+  .tabs { order: 1; position: static; min-height: 0; max-height: none; overflow: visible; flex-direction: row; flex-wrap: wrap; gap: 0 4px; border-bottom: 1px solid var(--line); }
   #lists, #sec-days, #sec-settings { order: 2; }
   .tabs button { display: inline; width: auto; padding: 8px 10px 6px; border-left: 0; border-bottom: 2px solid transparent; border-radius: 0; margin-bottom: -1px; background: none; }
   .tabs button:hover { background: none; }
   .tabs button[aria-pressed="true"] { border-bottom-color: var(--accent); background: none; }
-  .tabs #show-all, .tabs #show-settings { margin-top: 0; }
+  .tabs #show-all { margin-top: 0; }
+  .tabs-rule { display: none; }
+  .tabs #show-settings { margin-left: auto; }
   /* On a phone the team is a dropdown at the top of the People list instead, and With's list opens in place. */
   .pane-people, .pcaret { display: none; }
   .people-select { display: block; }
@@ -608,13 +618,14 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       <button type="button" id="show-next" aria-pressed="false">Up Next<span class="n" id="tn-next"></span></button>
       <button type="button" id="show-waiting" aria-pressed="false">Waiting<span class="n" id="tn-waiting"></span></button>
       <button type="button" id="show-upcoming" aria-pressed="false">Upcoming<span class="n" id="tn-upcoming"></span></button>
-      <button type="button" id="show-someday" aria-pressed="false">Someday<span class="n" id="tn-someday"></span></button>
       <button type="button" id="show-ideas" aria-pressed="false">Ideas<span class="n" id="tn-ideas"></span></button>
+      <div class="type-tabs" id="type-tabs"></div>
       <button type="button" id="show-people" aria-pressed="false" aria-expanded="false" aria-controls="pane-people"><span>People<span class="pcaret" id="people-caret" aria-hidden="true"></span></span><span class="n" id="tn-people"></span></button>
       <div class="pane-people" id="pane-people" role="group" aria-label="Person to show"></div>
-      <button type="button" id="show-jira" aria-pressed="false">Jira<span class="n" id="tn-jira"></span></button>
+      <button type="button" id="show-jira" aria-pressed="false">Jira integration<span class="n" id="tn-jira"></span></button>
       <button type="button" id="show-done" aria-pressed="false">Done<span class="n" id="tn-done"></span></button>
       <button type="button" id="show-all" aria-pressed="false">All</button>
+      <hr class="tabs-rule">
       <button type="button" id="show-settings" aria-pressed="false">Settings</button>
     </div>
 
@@ -716,19 +727,13 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
           <p class="empty" id="empty-upcoming">Nothing planned for later days. Pick a day when you add a task, or star one while a later day is shown.</p>
         </section>
 
-        <section id="sec-someday" class="panel" aria-labelledby="h-someday">
-          <div class="section-head"><h2 id="h-someday">Someday<span class="n" id="n-someday"></span></h2></div>
-          <ul class="list" id="list-someday"></ul>
-          <div class="table-wrap" id="table-someday" hidden></div>
-          <p class="empty" id="empty-someday">Nothing for someday. Pick Someday as the day when you add a task, or in a task's Edit.</p>
-        </section>
-
         <section id="sec-ideas" class="panel" aria-labelledby="h-ideas">
           <div class="section-head"><h2 id="h-ideas">Ideas<span class="n" id="n-ideas"></span></h2></div>
           <ul class="list" id="list-ideas"></ul>
           <div class="table-wrap" id="table-ideas" hidden></div>
           <p class="empty" id="empty-ideas">No ideas parked. Add one with the type set to Idea.</p>
         </section>
+        <div class="type-secs" id="type-secs"></div>
 
         <section id="sec-people" class="panel" aria-labelledby="h-people" hidden>
           <div class="section-head"><h2 id="h-people"><span id="people-label">People</span><span class="n" id="n-people"></span></h2></div>
@@ -739,22 +744,13 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 
         <section id="sec-jira" class="panel" aria-labelledby="h-jira">
           <div class="section-head">
-            <h2 id="h-jira">Flagged on the Jira Dashboard<span class="n" id="n-jira"></span></h2>
+            <h2 id="h-jira">Jira integration<span class="n" id="n-jira"></span></h2>
             <div class="sync"><span id="jira-sync-msg" role="status"></span><button type="button" class="link-btn" id="jira-sync">Sync now</button></div>
           </div>
           <ul class="list" id="list-jira"></ul>
           <div class="table-wrap" id="table-jira" hidden></div>
           <p class="empty" id="empty-jira" hidden>No tickets flagged on the Jira Dashboard.</p>
           <p class="jira-foot" id="jira-foot" hidden></p>
-          <div class="jira-setup" id="jira-setup">
-            <p id="jira-setup-lead">Jira flags aren't connected yet.</p>
-            <ol>
-              <li>Add the Atlassian connector to your claude.ai account, under Settings › Connectors.</li>
-              <li>Install the <a href="https://github.com/primelogiclabio/claude-jira-dashboard#try-it" target="_blank" rel="noopener noreferrer">Jira Dashboard skill</a> in Claude Code.</li>
-              <li>Ask Claude to start a Jira dashboard, and flag the tickets you want to discuss there.</li>
-              <li>Back here, press Sync now and paste it to Claude in Claude Code.</li>
-            </ol>
-          </div>
         </section>
 
         <section id="sec-done" class="panel" aria-labelledby="h-done">
@@ -784,8 +780,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
         </form>
         <div class="types" id="types-box">
           <h3>Types</h3>
-          <p class="type-builtin" id="type-builtin"></p>
-          <ul id="type-list" hidden></ul>
+          <ul class="type-rows" id="type-list"></ul>
           <form id="type-form" autocomplete="off">
             <input type="text" id="type-name" placeholder="New type, e.g. Bug" aria-label="New type's name" maxlength="40">
             <select id="type-priority" aria-label="Priority its tasks start at">
@@ -794,9 +789,25 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
               <option value="low">Low priority</option>
             </select>
             <select id="type-color" aria-label="Colour"></select>
+            <label class="tab-pick"><input type="checkbox" id="type-tab"> Own tab</label>
             <button class="btn" type="submit">Add type</button>
           </form>
-          <p class="hint">A new task starts at its type's priority. <span id="type-msg" role="status"></span></p>
+          <p class="hint">Untick a type you don't use: it leaves the add box, and its tasks keep it. A new task starts at its type's priority. A type's own tab holds its open tasks with no day, as Ideas does. <span id="type-msg" role="status"></span></p>
+        </div>
+        <div class="types lists-box" id="lists-box">
+          <h3>Lists</h3>
+          <p class="hint">Today, Up Next, Waiting, Upcoming, People and Done are always shown. A type's own tab is set under Types.</p>
+          <ul class="type-rows" id="tab-list"></ul>
+          <div class="jira-setup" id="jira-setup">
+            <p id="jira-setup-lead">Jira flags aren't connected yet.</p>
+            <ol>
+              <li>Add the Atlassian connector to your claude.ai account, under Settings › Connectors.</li>
+              <li>Install the <a href="https://github.com/primelogiclabio/claude-jira-dashboard#try-it" target="_blank" rel="noopener noreferrer">Jira Dashboard skill</a> in Claude Code.</li>
+              <li>Ask Claude to start a Jira dashboard, and flag the tickets you want to discuss there.</li>
+              <li>Back here, press Sync now and paste it to Claude in Claude Code.</li>
+            </ol>
+            <div class="row"><button type="button" class="link-btn" id="jira-sync-setup">Sync now</button><span id="jira-sync-setup-msg" role="status"></span></div>
+          </div>
         </div>
         <div id="team-home"><div class="team" id="team-box">
           <h3>Team</h3>
@@ -819,16 +830,20 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 <script>
 (() => {
   const $ = (id) => document.getElementById(id);
-  const state = { tasks: [], days: [], settings: {}, team: [], types: [], jira: [], topics: [], teamLoaded: false, confirmed: false, slow: false, error: '', note: '', readOnly: false, closed: false };
+  const state = { tasks: [], days: [], settings: {}, team: [], types: [], jira: [], topics: [], teamLoaded: false, typesLoaded: false, settingsLoaded: false, jiraLoaded: false, confirmed: false, slow: false, error: '', note: '', readOnly: false, closed: false };
   const ui = { completing: null, removing: null, editing: null, clearing: false, drafts: {}, open: new Set(), view: null, logRemoving: null, logEditing: null, itemEditing: null, itemRemoving: null, itemOpen: null, screen: 'tasks', topicSel: null, topicShow: {}, topicPicked: false, topicEditing: null, topicRemoving: null, layout: 'list', tab: 'today', filter: 'all', day: null, addWith: null, addDay: null, addType: null, addStatus: null, addPriority: null, person: null, withOpen: null, topicSettings: false, teamRemoving: null, typeEditing: null, typeRemoving: null };
   const chains = new Map();
-  // The built-in types: id, label, and the priority a new task of the type starts at. The user's own are rows in types/<id>.
-  const BUILT_IN = [['task', 'Task'], ['idea', 'Idea'], ['follow-up', 'Follow-up'], ['discussion', 'Discussion'], ['github', 'GitHub', 'high'], ['jira', 'Jira']];
+  // The built-in types: id, label, the priority a new task of the type starts at, whether it has a tab of its own and
+  // whether it starts off (GitHub and Jira wait to be turned on). The user's own are rows in types/<id>; a row with a
+  // built-in's id holds only what the user changed about it.
+  const BUILT_IN = [['task', 'Task'], ['idea', 'Idea', '', true], ['follow-up', 'Follow-up'], ['discussion', 'Discussion'], ['github', 'GitHub', 'high', false, true], ['jira', 'Jira', '', false, true]];
+  // Lists that can be hidden; the rest are always shown. A type's own tab comes and goes with its `tab`.
+  const HIDEABLE = ['all', 'jira'];
   const TYPES = BUILT_IN.map(([id]) => id);
   // The colours a type of the user's own can take, each drawn by a .tc-<name> rule.
   const TYPE_COLORS = { grey: 'Grey', blue: 'Blue', teal: 'Teal', green: 'Green', amber: 'Amber', red: 'Red', purple: 'Purple', pink: 'Pink' };
   // The list tabs: one list at a time, or All of them stacked.
-  const LISTS = ['today', 'next', 'waiting', 'upcoming', 'someday', 'ideas', 'jira', 'done'];
+  const LISTS = ['today', 'next', 'waiting', 'upcoming', 'ideas', 'jira', 'done'];
   // Settings sits at the bottom of the same pane, and shows in place of the lists.
   const TABS = [...LISTS, 'people', 'all', 'settings'];
   // The template's version, from its meta tag; Claude compares it with organizer/settings.pageVersion to offer updates.
@@ -866,6 +881,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   // Marks a task planned for a day other than the one shown.
   function planChip(t, shownDay) {
     const today = dayKey();
+    if (t.someday && !t.today && t.status !== 'done') return el('span', { class: 'plan-chip', title: 'Set aside for someday' }, 'someday');
     if (!t.today || t.today === shownDay || t.today < today || t.status === 'done') return null;
     return el('span', { class: 'plan-chip', title: 'Planned for ' + dayWord(t.today, today) }, '★ ' + shortDay(t.today, today));
   }
@@ -1080,7 +1096,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 
     return el('div', { class: 'edit', id: 'editbox-' + t.id, role: 'group', 'aria-label': 'Edit ' + (t.title || 'task') },
       field('title', 'Title', true, text('title', { maxlength: 300, required: true })),
-      field('type', 'Type', false, choose('type', typeChoices())),
+      field('type', 'Type', false, choose('type', typeChoices(orig.type))),
       done || draft.day === 'someday' ? null : field('status', 'List', false, choose('status', [['next', 'Up Next'], ['waiting', 'Waiting On']])),
       done ? null : field('priority', 'Priority', false, choose('priority', [['high', 'High'], ['', 'Normal'], ['low', 'Low']])),
       dayField,
@@ -1168,17 +1184,62 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 
   // Every type there is: the built-ins, then the user's own in the order added. A task of a type not listed (one removed,
   // or not loaded yet) shows as a task and keeps its type, so adding the type back brings it back.
+  // Each type is on unless turned off (`off`; Task never is), starts new tasks at its priority (`normal` on a built-in's row
+  // undoes its default) and may have its own tab (`tab`; Task never does, Up Next being its list).
+  let typesMemo = null;
+  let typesMemoOf = null;
   function allTypes() {
+    if (typesMemoOf === state.types) return typesMemo;
+    const rows = new Map(state.types.filter((r) => r.id).map((r) => [r.id, r]));
+    const prio = (p, d) => (p === 'normal' ? '' : PRIORITY[p] ? p : d);
+    const built = BUILT_IN.map(([id, label, priority = '', tab = false, off = false]) => {
+      const r = rows.get(id) || {};
+      return { id, label, priority: prio(r.priority, priority), off: id !== 'task' && (typeof r.off === 'boolean' ? r.off : off),
+        tab: id !== 'task' && (typeof r.tab === 'boolean' ? r.tab : tab), defaults: { priority, tab, off } };
+    });
     const own = state.types.filter((ty) => ty.id && !TYPES.includes(ty.id)).map((ty) => ({
-      id: ty.id, label: String(ty.name || '').trim() || ty.id, priority: PRIORITY[ty.priority] ? ty.priority : '',
-      color: TYPE_COLORS[ty.color] ? ty.color : 'grey', own: true,
+      id: ty.id, label: String(ty.name || '').trim() || ty.id, priority: prio(ty.priority, ''),
+      color: TYPE_COLORS[ty.color] ? ty.color : 'grey', own: true, off: ty.off === true, tab: ty.tab === true,
     }));
-    return [...BUILT_IN.map(([id, label, priority = '']) => ({ id, label, priority })), ...own];
+    typesMemo = [...built, ...own];
+    typesMemoOf = state.types;
+    return typesMemo;
   }
   const typeInfo = (id) => allTypes().find((ty) => ty.id === id) || null;
   const typeOf = (t) => (typeInfo(t.type) ? t.type : 'task');
   const typeLabel = (id) => (typeInfo(id) || typeInfo('task')).label;
-  const typeChoices = () => allTypes().map((ty) => [ty.id, ty.label]);
+  // The types offered for a task: those in use, plus the one a task already has.
+  const typeChoices = (keep) => allTypes().filter((ty) => !ty.off || ty.id === keep).map((ty) => [ty.id, ty.label]);
+
+  // The tabs: a type in use with `tab` has one (Idea's is Ideas); All and Jira integration can be hidden
+  // (`hiddenTabs` in organizer/settings), Jira integration showing only once a Jira Dashboard is connected.
+  const hiddenTabs = () => (Array.isArray(state.settings.hiddenTabs) ? state.settings.hiddenTabs.filter((n) => HIDEABLE.includes(n)) : []);
+  const jiraConnected = () => Boolean((state.settings.jira || {}).url) || state.jira.some((f) => f && f.key);
+  const tabTypeIds = () => allTypes().filter((ty) => ty.tab && !ty.off).map((ty) => ty.id);
+  const tabNameOf = (id) => (id === 'idea' ? 'ideas' : 'type-' + id);
+  const tabLabel = (id) => (id === 'idea' ? 'Ideas' : typeLabel(id));
+  function tabExists(name) {
+    if (name === 'ideas') return tabTypeIds().includes('idea');
+    if (name.startsWith('type-')) return tabTypeIds().includes(name.slice(5));
+    if (name === 'jira') return jiraConnected() && !hiddenTabs().includes('jira');
+    if (HIDEABLE.includes(name)) return !hiddenTabs().includes(name);
+    return TABS.includes(name);
+  }
+  // Whether what decides a tab has loaded, so a remembered tab isn't dropped while its type or settings are on the way.
+  function tabDecided(name) {
+    if (name === 'ideas' || name.startsWith('type-')) return state.typesLoaded;
+    if (name === 'jira') return state.settingsLoaded && state.jiraLoaded;
+    if (HIDEABLE.includes(name)) return state.settingsLoaded;
+    return true;
+  }
+  function pickTab(name) {
+    if (name === 'people') { pickPerson(null); return; }
+    ui.tab = name;
+    clearAddPicks();
+    // Settings isn't remembered: the page opens on the last list.
+    if (name !== 'settings') { try { localStorage.setItem('organizer-tab', name); } catch (e) { /* not remembered, still switches */ } }
+    render();
+  }
   // A type's tag: a built-in in its own colour, one of the user's own in the colour picked for it.
   function typeTag(id) {
     const ty = typeInfo(id) || typeInfo('task');
@@ -1206,9 +1267,9 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     else if (ui.tab === 'next') d.day = '';
     else if (ui.tab === 'waiting') Object.assign(d, { status: 'waiting', day: '' });
     else if (ui.tab === 'upcoming') d.day = addDays(today, 1);
-    else if (ui.tab === 'someday') d.day = 'someday';
     else if (ui.tab === 'ideas') Object.assign(d, { type: 'idea', day: '' });
     else if (ui.tab === 'people') Object.assign(d, { type: 'discussion', day: '' });
+    else if (ui.tab.startsWith('type-')) Object.assign(d, { type: ui.tab.slice(5), day: '' });
     return d;
   }
   const clearAddPicks = () => { ui.addType = ui.addStatus = ui.addDay = ui.addWith = ui.addPriority = null; };
@@ -1658,7 +1719,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     const today = dayKey();
     const fact = (label, value) => (value === null || value === undefined || value === '' ? null : el('div', {}, el('dt', {}, label), el('dd', {}, value)));
     const day = t.someday ? 'Someday' : t.today ? cap(shortDay(t.today, today)) + (!done && t.today < today ? ' (carried over)' : '') : 'No day';
-    const list = done ? 'Done' : t.someday ? 'Someday' : typeName === 'idea' ? 'Ideas' : t.status === 'waiting' ? 'Waiting On' : 'Up Next';
+    const list = done ? 'Done' : tabTypeIds().includes(typeName) ? tabLabel(typeName) : t.status === 'waiting' ? 'Waiting On' : 'Up Next';
     return el('dl', { class: 'facts' },
       fact('Type', typeLabel(typeName)),
       fact('List', list),
@@ -2478,8 +2539,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     if (t.today === sel) return selLabel;
     if (t.today && t.today >= today) return 'Upcoming';
     if (t.today) return 'Carried over';
-    if (t.someday) return 'Someday';
-    if (t.type === 'idea') return 'Ideas';
+    if (tabTypeIds().includes(typeOf(t))) return tabLabel(typeOf(t));
     return t.status === 'waiting' ? 'Waiting On' : 'Up Next';
   }
 
@@ -2606,7 +2666,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   const colorChoices = () => Object.entries(TYPE_COLORS);
 
   function startTypeEdit(ty) {
-    const orig = { name: ty.label, priority: ty.priority, color: ty.color };
+    const orig = { name: ty.label, color: ty.color };
     ui.typeEditing = { id: ty.id, orig, ...orig };
     ui.typeRemoving = null;
     $('type-msg').textContent = '';
@@ -2624,7 +2684,6 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     if (clash) { $('type-msg').textContent = takenMsg(clash); return; }
     const fields = {};
     if (name !== ed.orig.name) fields.name = name;
-    if (ed.priority !== ed.orig.priority) fields.priority = ed.priority || null;
     if (ed.color !== ed.orig.color) fields.color = ed.color;
     ui.typeEditing = null;
     if (Object.keys(fields).length) write('type-' + ty.id, () => typeRef(ty.id).update(fields));
@@ -2656,43 +2715,117 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
         oninput: (e) => { ed.name = e.target.value; $('type-ed-save').disabled = !e.target.value.trim(); },
         onkeydown: (e) => { if (e.key === 'Enter') { e.preventDefault(); saveType(ty); } keys(e); },
       }),
-      pick('priority', 'Priority its tasks start at', PRIORITY_CHOICES),
       pick('color', 'Colour', colorChoices()),
       el('button', { type: 'button', class: 'btn btn-primary', id: 'type-ed-save', disabled: !ed.name.trim(), onclick: () => saveType(ty) }, 'Save'),
       el('button', { type: 'button', class: 'btn', onclick: cancel }, 'Cancel'),
     );
   }
 
+  // One of a type's settings, saved at once: `off` and `tab` as true or removed, the priority as `high`, `low` or removed.
+  // A built-in's row holds only what differs from its defaults, so GitHub back at High leaves no `priority`, and GitHub
+  // turned on is `off: false`.
+  function setTypeOpt(ty, key, value) {
+    if (!db || state.readOnly) return;
+    let v;
+    if (key === 'off') v = ty.own ? (value ? true : null) : (value === ty.defaults.off ? null : value);
+    else if (key === 'tab') v = ty.own ? (value ? true : null) : (value === ty.defaults.tab ? null : value);
+    else v = ty.own ? (value || null) : (value === ty.defaults.priority ? null : (value || 'normal'));
+    if (state.types.some((r) => r.id === ty.id)) write('type-' + ty.id, () => typeRef(ty.id).update({ [key]: v }));
+    else if (v !== null) write('type-' + ty.id, () => typeRef(ty.id).set({ [key]: v }));
+    render();
+  }
+
   function renderTypes() {
     const ro = state.readOnly || !db;
     const types = allTypes();
-    $('type-builtin').replaceChildren(...types.filter((ty) => !ty.own).map((ty) => typeTag(ty.id)),
-      el('span', { class: 'muted' }, 'Built in. GitHub tasks start at High.'));
-    const own = types.filter((ty) => ty.own);
-    if (ui.typeEditing && !own.some((ty) => ty.id === ui.typeEditing.id)) ui.typeEditing = null;
-    const list = $('type-list');
-    list.replaceChildren(...own.map((ty) => {
+    if (ui.typeEditing && !types.some((ty) => ty.own && ty.id === ui.typeEditing.id)) ui.typeEditing = null;
+    $('type-list').replaceChildren(...types.map((ty) => {
       const ed = ui.typeEditing && ui.typeEditing.id === ty.id ? ui.typeEditing : null;
       if (ed && !ro) return el('li', {}, typeEditBox(ty, ed));
+      const fixed = ty.id === 'task';
+      const use = el('input', {
+        type: 'checkbox', id: 'type-use-' + ty.id, checked: !ty.off, disabled: ro || fixed,
+        'aria-label': 'Use the ' + ty.label + ' type', title: fixed ? 'Task is always on' : null,
+        onchange: (e) => setTypeOpt(ty, 'off', !e.target.checked),
+      });
+      const prio = el('select', {
+        id: 'type-prio-' + ty.id, 'aria-label': 'Priority new ' + ty.label + ' tasks start at', disabled: ro || ty.off,
+        onchange: (e) => setTypeOpt(ty, 'priority', e.target.value),
+      }, PRIORITY_CHOICES.map(([v, l]) => el('option', { value: v }, l)));
+      prio.value = ty.priority;
+      const tab = fixed ? el('span', { class: 'muted' }, 'listed in Up Next') : el('label', { class: 'tab-pick' },
+        el('input', {
+          type: 'checkbox', id: 'type-tab-' + ty.id, checked: ty.tab && !ty.off, disabled: ro || ty.off,
+          onchange: (e) => setTypeOpt(ty, 'tab', e.target.checked),
+        }), 'Own tab');
       const open = state.tasks.filter((t) => t.type === ty.id && t.status !== 'done').length;
       const all = state.tasks.filter((t) => t.type === ty.id).length;
-      const word = ty.priority === 'high' ? 'High priority' : ty.priority === 'low' ? 'Low priority' : 'Normal priority';
       const keep = () => { ui.typeRemoving = null; render(); const b = $('type-del-' + ty.id); if (b) b.focus(); };
-      const tools = ro ? null : ui.typeRemoving === ty.id
-        ? [el('span', { class: 'muted' }, all ? (all === 1 ? '1 task uses it' : all + ' tasks use it') + "; they'll show as Task until it's added back." : ''),
-           el('button', { type: 'button', class: 'link-btn danger', id: 'type-remove-' + ty.id, onclick: () => removeType(ty) }, 'Remove'),
-           el('button', { type: 'button', class: 'link-btn', onclick: keep }, 'Keep')]
-        : [el('button', { type: 'button', class: 'link-btn', id: 'type-edit-' + ty.id, 'aria-label': 'Edit the ' + ty.label + ' type', onclick: () => startTypeEdit(ty) }, 'Edit'),
+      const tools = ro || !ty.own ? null : ui.typeRemoving === ty.id
+        ? [all ? el('span', { class: 'muted' }, (all === 1 ? '1 task uses it' : all + ' tasks use it') + "; they'll show as Task until it's added back.") : null,
+           el('span', { class: 'tools' },
+             el('button', { type: 'button', class: 'link-btn danger', id: 'type-remove-' + ty.id, onclick: () => removeType(ty) }, 'Remove'),
+             el('button', { type: 'button', class: 'link-btn', onclick: keep }, 'Keep'))]
+        : el('span', { class: 'tools' },
+           el('button', { type: 'button', class: 'link-btn', id: 'type-edit-' + ty.id, 'aria-label': 'Edit the ' + ty.label + ' type', onclick: () => startTypeEdit(ty) }, 'Edit'),
            el('button', { type: 'button', class: 'link-btn danger', id: 'type-del-' + ty.id, 'aria-label': 'Remove the ' + ty.label + ' type', onclick: () => {
              ui.typeRemoving = ty.id; ui.typeEditing = null; render();
              const b = $('type-remove-' + ty.id); if (b) b.focus();
-           } }, 'Remove')];
-      return el('li', {}, typeTag(ty.id), el('span', { class: 'muted' }, word + ' · ' + (open ? open + ' open' : 'no open tasks')), tools);
+           } }, 'Remove'));
+      return el('li', { class: ty.off ? 'is-off' : null },
+        el('label', { class: 'tuse' }, use, typeTag(ty.id)), prio, tab,
+        el('span', { class: 'muted' }, open ? open + ' open' : 'no open tasks'), tools);
     }));
-    list.hidden = !own.length;
     const color = $('type-color');
     if (document.activeElement !== color) syncSelect(color, colorChoices());
     for (const c of $('type-form').elements) c.disabled = ro;
+  }
+
+  // Settings → Lists: All and Jira integration can be hidden, saved for the whole organizer.
+  function setTabHidden(name, hide) {
+    if (!db || state.readOnly) return;
+    const now = hiddenTabs();
+    const next = hide ? [...new Set([...now, name])] : now.filter((n) => n !== name);
+    const body = { ...state.settings, hiddenTabs: next.length ? next : null };
+    write('organizer-settings', () => settingsRef().set(body));
+    render();
+  }
+
+  function renderLists() {
+    const ro = state.readOnly || !db;
+    const connected = jiraConnected();
+    const hidden = hiddenTabs();
+    const rows = [
+      ['all', 'All', 'Every list on one page.'],
+      ['jira', 'Jira integration', connected ? 'Tickets flagged on your Jira Dashboard.' : 'Shows once a Jira Dashboard is connected: see below.'],
+    ];
+    $('tab-list').replaceChildren(...rows.map(([name, label, note]) => el('li', {},
+      el('label', { class: 'tuse' }, el('input', {
+        type: 'checkbox', id: 'tabshow-' + name, checked: !hidden.includes(name), disabled: ro || (name === 'jira' && !connected),
+        onchange: (e) => setTabHidden(name, !e.target.checked),
+      }), label),
+      el('span', { class: 'muted' }, note))));
+  }
+
+  // The tabs and sections of types with a tab of their own (Ideas has its own, fixed in the page), made as needed and
+  // moved only when the set or its order changes, so focus and scroll stay put.
+  function syncTypeTabs(ids) {
+    const btns = ids.map((id) => $('show-type-' + id) || el('button', { type: 'button', id: 'show-type-' + id, 'aria-pressed': 'false', onclick: () => pickTab('type-' + id) },
+      el('span', { class: 'tlabel' }), el('span', { class: 'n', id: 'tn-type-' + id })));
+    const secs = ids.map((id) => $('sec-type-' + id) || el('section', { id: 'sec-type-' + id, class: 'panel', 'aria-labelledby': 'h-type-' + id },
+      el('div', { class: 'section-head' }, el('h2', { id: 'h-type-' + id }, el('span', { class: 'tlabel' }), el('span', { class: 'n', id: 'n-type-' + id }))),
+      el('ul', { class: 'list', id: 'list-type-' + id }),
+      el('div', { class: 'table-wrap', id: 'table-type-' + id, hidden: true }),
+      el('p', { class: 'empty', id: 'empty-type-' + id })));
+    ids.forEach((id, i) => {
+      const label = tabLabel(id);
+      btns[i].querySelector('.tlabel').textContent = label;
+      secs[i].querySelector('.tlabel').textContent = label;
+      secs[i].querySelector('.empty').textContent = 'No open ' + label + ' tasks without a day. Add one with the type set to ' + label + '.';
+    });
+    const same = (box, nodes) => box.children.length === nodes.length && nodes.every((n, i) => box.children[i] === n);
+    if (!same($('type-tabs'), btns)) $('type-tabs').replaceChildren(...btns);
+    if (!same($('type-secs'), secs)) $('type-secs').replaceChildren(...secs);
   }
 
   function render() {
@@ -2716,9 +2849,12 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     const byId = new Map(state.tasks.map((t) => [t.id, t]));
     const byCreated = (a, b) => String(a.created || '').localeCompare(String(b.created || ''));
     const byPriority = (a, b) => prioRank(a) - prioRank(b) || byCreated(a, b);
+    // A tab turned off or hidden, or a remembered one that's gone, gives way to Today.
+    if (!tabExists(ui.tab) && tabDecided(ui.tab)) { ui.tab = 'today'; clearAddPicks(); }
     syncAddBox(today);
     renderTeam();
     renderTypes();
+    renderLists();
     const shown = state.tasks.filter(matchesFilter);
     // With one person shown, their open discussions are the 1:1 agenda, kept out of the lists below.
     const person = personShown();
@@ -2731,11 +2867,17 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     const upcoming = open.filter((t) => t.today && t.today >= today).sort((a, b) => a.today.localeCompare(b.today) || byPriority(a, b));
     const carried = open.filter((t) => t.today && t.today < today).sort((a, b) => prioRank(a) - prioRank(b) || a.today.localeCompare(b.today) || byCreated(a, b));
     const unplanned = open.filter((t) => !t.today);
-    const someday = unplanned.filter((t) => t.someday).sort(byPriority);
-    // Open ideas have their own list, so Up Next and Waiting On hold only work to do.
-    const ideas = unplanned.filter((t) => !t.someday && t.type === 'idea').sort(byPriority);
-    const work = unplanned.filter((t) => !t.someday && t.type !== 'idea');
-    const next = work.filter((t) => t.status === 'next' || !t.status).sort(byPriority);
+    // A type with its own tab holds its open tasks with no day (ideas in Ideas), so Up Next and Waiting On hold the rest.
+    // Tasks set aside for someday come last in each, marked someday.
+    const homes = new Set(tabTypeIds());
+    const loose = unplanned;
+    const bySomeday = (a, b) => Boolean(a.someday) - Boolean(b.someday) || byPriority(a, b);
+    const homeOf = (t) => (homes.has(typeOf(t)) ? typeOf(t) : null);
+    const ideas = loose.filter((t) => homeOf(t) === 'idea').sort(bySomeday);
+    const work = loose.filter((t) => !homeOf(t));
+    const typeIds = [...homes].filter((id) => id !== 'idea');
+    syncTypeTabs(typeIds);
+    const next = work.filter((t) => t.status === 'next' || !t.status).sort(bySomeday);
     const waiting = work.filter((t) => t.status === 'waiting').sort(byPriority);
     const done = rest.filter((t) => t.status === 'done').sort((a, b) => String(b.doneAt || '').localeCompare(String(a.doneAt || '')));
 
@@ -2750,8 +2892,8 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     fill('next', next, sel);
     fill('waiting', waiting, sel);
     fill('upcoming', upcoming, sel);
-    fill('someday', someday, sel);
     fill('ideas', ideas, sel);
+    for (const id of typeIds) fill('type-' + id, loose.filter((t) => homeOf(t) === id).sort(bySomeday), sel);
     fill('done', done, sel);
     renderPeople(today, byPriority);
     renderDays(byId);
@@ -2825,9 +2967,11 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     $('screens').hidden = state.closed;
     $('screen-tasks').setAttribute('aria-pressed', String(!onTopics));
     $('screen-topics').setAttribute('aria-pressed', String(onTopics));
-    for (const name of LISTS) $('sec-' + name).hidden = ui.tab !== 'all' && ui.tab !== name;
+    for (const name of LISTS) $('sec-' + name).hidden = !tabExists(name) || (ui.tab !== 'all' && ui.tab !== name);
+    for (const id of typeIds) $('sec-type-' + id).hidden = ui.tab !== 'all' && ui.tab !== 'type-' + id;
     $('sec-carry').hidden = !carried.length || (ui.tab !== 'all' && ui.tab !== 'today');
-    for (const name of TABS) $('show-' + name).setAttribute('aria-pressed', String(ui.tab === name));
+    for (const name of ['ideas', 'jira', 'all']) $('show-' + name).hidden = !tabExists(name);
+    for (const name of [...TABS, ...typeIds.map((id) => 'type-' + id)]) $('show-' + name).setAttribute('aria-pressed', String(ui.tab === name));
     document.querySelector('.wrap').classList.toggle('is-tabs', ui.tab !== 'all');
     $('view-list').setAttribute('aria-pressed', String(ui.layout === 'list'));
     $('view-table').setAttribute('aria-pressed', String(ui.layout === 'table'));
@@ -2879,15 +3023,18 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     $('add-title').focus();
   });
 
-  $('jira-sync').addEventListener('click', async () => {
-    const msg = $('jira-sync-msg');
-    try {
-      await navigator.clipboard.writeText(SYNC_ASK);
-      msg.textContent = 'Copied. Paste it to Claude in Claude Code.';
-    } catch (e) {
-      msg.textContent = 'Ask Claude in Claude Code: “' + SYNC_ASK + '”';
-    }
-  });
+  // Sync now, on the Jira integration list and beside the setup steps in Settings, copies the request for Claude.
+  for (const [btn, out] of [['jira-sync', 'jira-sync-msg'], ['jira-sync-setup', 'jira-sync-setup-msg']]) {
+    $(btn).addEventListener('click', async () => {
+      const msg = $(out);
+      try {
+        await navigator.clipboard.writeText(SYNC_ASK);
+        msg.textContent = 'Copied. Paste it to Claude in Claude Code.';
+      } catch (e) {
+        msg.textContent = 'Ask Claude in Claude Code: “' + SYNC_ASK + '”';
+      }
+    });
+  }
 
   // A new topic is picked at once, ready for its notes and checklist. The cursor stays in the box for the next topic,
   // except on a phone, where the box gives way to the new topic.
@@ -2944,9 +3091,11 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     for (let n = 2; TYPES.includes(id) || state.types.some((ty) => ty.id === id); n++) id = base + '-' + n;
     const body = { name, color: $('type-color').value || 'grey', created: new Date().toISOString() };
     if ($('type-priority').value) body.priority = $('type-priority').value;
+    if ($('type-tab').checked) body.tab = true;
     write('type-' + id, () => typeRef(id).set(body));
     input.value = '';
     $('type-priority').value = '';
+    $('type-tab').checked = false;
     $('type-color').value = 'grey';
     msg.textContent = '';
   });
@@ -2975,7 +3124,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 
   // The layout, the list tab, the person filter, the screen and the topic and person picked are per-device preferences, so they live in this browser only.
   try { ui.filter = localStorage.getItem('organizer-filter') || 'all'; } catch (e) { /* storage blocked: show everyone */ }
-  try { const tab = localStorage.getItem('organizer-tab'); if (TABS.includes(tab)) ui.tab = tab; } catch (e) { /* storage blocked: start on Today */ }
+  try { const tab = localStorage.getItem('organizer-tab'); if (TABS.includes(tab) || /^type-[a-z0-9-]+$/.test(tab || '')) ui.tab = tab; } catch (e) { /* storage blocked: start on Today */ }
   try { ui.person = localStorage.getItem('organizer-person') || null; } catch (e) { /* storage blocked: People shows everyone */ }
   try { if (localStorage.getItem('organizer-layout') === 'table') ui.layout = 'table'; } catch (e) { /* storage blocked: start in list */ }
   try { if (localStorage.getItem('organizer-screen') === 'topics') ui.screen = 'topics'; } catch (e) { /* storage blocked: start on tasks */ }
@@ -2990,16 +3139,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     addByHand = false;
     if (addBox.open && !$('add-title').disabled) $('add-title').focus();
   });
-  for (const name of TABS) {
-    $('show-' + name).addEventListener('click', () => {
-      if (name === 'people') { pickPerson(null); return; }
-      ui.tab = name;
-      clearAddPicks();
-      // Settings isn't remembered: the page opens on the last list.
-      if (name !== 'settings') { try { localStorage.setItem('organizer-tab', name); } catch (e) { /* not remembered, still switches */ } }
-      render();
-    });
-  }
+  for (const name of TABS) $('show-' + name).addEventListener('click', () => pickTab(name));
   for (const [id, value] of [['view-list', 'list'], ['view-table', 'table']]) {
     $(id).addEventListener('click', () => {
       ui.layout = value;
@@ -3089,13 +3229,15 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     db.collection('types').onSnapshot((snap) => {
       state.types = snap.docs.map((d) => ({ ...d.data(), id: d.id }))
         .sort((a, b) => String(a.created || '').localeCompare(String(b.created || '')) || String(a.name || '').localeCompare(String(b.name || '')));
+      state.typesLoaded = true;
       render();
-    }, () => {});
+    }, () => { state.typesLoaded = true; render(); });
     // Jira flags are optional: if they can't load, the Jira tab just stays hidden.
     db.collection('jira').onSnapshot((snap) => {
       state.jira = snap.docs.map((d) => ({ ...d.data(), key: d.data().key || d.id }));
+      state.jiraLoaded = true;
       render();
-    }, () => {});
+    }, () => { state.jiraLoaded = true; render(); });
     // Topics are optional too: if they can't load, the Topics screen just shows none.
     db.collection('topics').onSnapshot((snap) => {
       state.topics = snap.docs.map((d) => ({ ...d.data(), id: d.id }));
@@ -3107,7 +3249,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       state.settings = settingsOwn !== null ? settingsOwn : ownFields(settingsLegacy);
       render();
     };
-    settingsRef().onSnapshot((snap) => { settingsOwn = snap.exists ? { ...snap.data() } : null; showSettings(); }, () => {});
+    settingsRef().onSnapshot((snap) => { settingsOwn = snap.exists ? { ...snap.data() } : null; state.settingsLoaded = true; showSettings(); }, () => { state.settingsLoaded = true; render(); });
     db.doc('settings/main').onSnapshot((snap) => { settingsLegacy = snap.exists ? { ...snap.data() } : {}; showSettings(); }, () => {});
     if (PAGE_VERSION) noteVersion();
   }
