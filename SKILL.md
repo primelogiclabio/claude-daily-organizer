@@ -115,7 +115,7 @@ Tasks and topics can have `links`: pages they point to, such as a claude.ai arti
 
 ## Team
 
-The page's **Settings**, the last item in its left pane, lists the team (the Topics screen has a **Settings** with the same team, so people can be added from either screen), and the add box and each task's **Edit** let the user pick who a task is for (**For**) and who a discussion is with (**With**, any number of people). Discussions have no **For**: they're always the user's own. The page can also show one person at a time: their tasks, with a **1:1 with** section above them listing the open discussions with that person.
+The page's **Settings**, the last item in its left pane, lists the team (the Topics screen has a **Settings** with the same team, appearance and ticket link, leaving out types and lists, which are about tasks, so people can be added from either screen), and the add box and each task's **Edit** let the user pick who a task is for (**For**) and who a discussion is with (**With**, any number of people). Discussions have no **For**: they're always the user's own. The page can also show one person at a time: their tasks, with a **1:1 with** section above them listing the open discussions with that person.
 - To add someone, `set` `team/<new id>` with `name` and `created`. Ids are letters, digits and dashes, such as `m-` plus the time in milliseconds.
 - To assign a task, `update` its `owner`. To give it back to the user, write `owner` as `{"__delete__": true}`.
 - To add someone to a discussion, `update` `with` to the list of everyone it's with (one id becomes a list). To take someone off, write who's left: a list for two or more, one id for one, or `{"__delete__": true}` for no one.

@@ -147,7 +147,9 @@ case number shows as it is. Click the overview, or **Add an overview** or
 **Add a ticket**, to change them in the topic's **Edit**.
 A **With** dropdown under them says whom it's a joint effort or
 discussion with, from the same team as your tasks; the Topics screen has its
-own **Settings** for adding people, so you can add them from either screen.
+own **Settings**, with the same Appearance, Ticket link and Team as the Tasks
+screen's (types and lists are about tasks, so they stay there), so you can set
+them from either screen.
 Each person on the topic has a part of their own, for what they're working
 on or questions to follow up with them, shown as a row under the topic's
 own (**Main**), with its checklist beside its notes. **All**, under the

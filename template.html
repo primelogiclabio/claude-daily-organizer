@@ -411,6 +411,10 @@ body.is-dragging-note, body.is-dragging-note * { cursor: grabbing !important; us
 .topic-pick[aria-pressed="true"] { border-left-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .topic-settings { grid-column: 2 / -1; grid-row: 1 / span 2; gap: 10px; padding: 14px 16px 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
 .topic-settings .team { padding-top: 0; }
+/* Appearance and Ticket link serve both screens: one box, shown in whichever screen's Settings is open; its blocks lay out
+   as the Settings section's own. */
+.settings-home, .settings-common { display: contents; }
+.topic-settings .appearance { padding-top: 0; }
 @media (max-width: 1100px) {
   .topics { grid-template-columns: minmax(160px, 210px) minmax(0, 1fr); }
   .part-cols { grid-template-columns: minmax(0, 1fr); gap: 12px; }
@@ -668,6 +672,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     <section class="topic-settings" id="topic-settings" aria-labelledby="h-topic-settings" hidden>
       <button type="button" class="link-btn back" id="topic-settings-back">‹ All topics</button>
       <h2 id="h-topic-settings">Settings</h2>
+      <div class="settings-home" id="topic-common-home"></div>
       <div id="topic-team-home"></div>
     </section>
   </section>
@@ -832,6 +837,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 
       <section id="sec-settings" class="panel" aria-labelledby="h-settings" hidden>
         <div class="section-head"><h2 id="h-settings">Settings</h2></div>
+        <div class="settings-home" id="common-home"><div class="settings-common" id="common-box">
         <div class="types appearance" id="appearance-box">
           <h3>Appearance</h3>
           <div class="row"><span class="label">Theme</span><span class="seg" id="theme-pick" role="group" aria-label="Theme"></span></div>
@@ -845,6 +851,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
           <p class="hint">Ticket keys such as OPS-142 link here. The key goes at the end, or wherever you write {key}. Tickets saved as full links work without this.</p>
           <div class="row"><button class="btn btn-primary" type="submit">Save</button><span id="set-msg" role="status"></span></div>
         </form>
+        </div></div>
         <div class="types" id="types-box">
           <h3>Types</h3>
           <ul class="type-rows" id="type-list"></ul>
@@ -3153,6 +3160,9 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     renderJira(sel, today, near ? selTitle : $('show-today-label').textContent);
     renderTopics();
     // The team list is one block, shown in the Settings of whichever screen is open.
+    // Appearance and Ticket link are one block too; types and lists are about tasks, so they stay on the Tasks screen.
+    const commonHome = ui.screen === 'topics' ? $('topic-common-home') : $('common-home');
+    if ($('common-box').parentNode !== commonHome) commonHome.append($('common-box'));
     const teamHome = ui.screen === 'topics' ? $('topic-team-home') : $('team-home');
     if ($('team-box').parentNode !== teamHome) teamHome.append($('team-box'));
 
