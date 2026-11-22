@@ -134,8 +134,8 @@ many are done, and its **Notes** on the right, which take all the width the
 window has to spare: bullet points without dates, each a short point or a
 paragraph. Click a note to show its **Edit** and **Remove** right under it,
 with **↑**, **↓** and **Move to** to move it. Or drag a note by its grip
-(⋮⋮, over its bullet) to another place in the list, or into another
-person's notes or Main's.
+(⋮⋮, over its bullet) to another place in the list, or onto another
+person's group or Main's, even a folded or empty one.
 Write new notes in the box under them: Enter adds the note, Shift+Enter
 starts a new line.
 A checklist item can carry a ticket too, shown as a chip after its text;
@@ -152,15 +152,16 @@ own **Settings**, with the same Appearance, Ticket link and Team as the Tasks
 screen's (types and lists are about tasks, so they stay there), so you can set
 them from either screen.
 Each person on the topic has a part of their own, for what they're working
-on or questions to follow up with them, shown as a row under the topic's
-own (**Main**), with its checklist beside its notes. **All**, under the
-topic's people, shows every part; click **Main** or a name to see only that
-one, and more names to add them.
+on or questions to follow up with them. The checklist and the notes each
+show the topic's own part (**Main**) and then each person's as a group,
+under a heading with its count; click the heading to fold the group away or
+open it again, and each device remembers it per topic. One box at the
+bottom of each adds to the part picked beside its **Add** (Main at first).
 **Edit** on a topic changes its title, overview and tickets (one per
 line), or removes it. **Hide checklist** beside it hides the topic's
 checklists so the notes take the whole width; **Show checklist** (with how many
-items are ticked) brings them back, and each device remembers it per topic. On a narrower screen each
-part's notes go under its checklist; on a phone you see the list, then the topic
+items are ticked) brings them back, and each device remembers it per topic. On a narrower screen the
+notes go under the checklist; on a phone you see the list, then the topic
 you tap, with **‹ All topics** to go back. Each device remembers the screen
 and the topic.
 
