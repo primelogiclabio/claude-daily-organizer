@@ -126,8 +126,8 @@ artifact on claude.ai, in the artifact's own database:
 ## Topics
 
 **Topics** is a screen of its own, for subjects that aren't tasks, such as
-"Q4 planning" or "Kubernetes migration". The **Tasks | Topics** switch at
-the top of the page swaps between the two. Topics are listed down the left,
+"Q4 planning" or "Kubernetes migration". The **Tasks | Topics | Stickies**
+switch at the top of the page swaps between them. Topics are listed down the left,
 under a **New topic** box, at the left edge of the window. The topic you
 pick shows its **Checklist** in the middle, with items to tick off and how
 many are done, and its **Notes** on the right, which take all the width the
@@ -171,6 +171,27 @@ planning", "the Q4 topic is about …", "link OPS-142 and Salesforce case
 the agenda' to its checklist", "tick off book the room", "add to Sam's notes
 on Q4 planning: …", "what's left on Q4 planning?". Plan-my-day and wrap-up
 leave topics out unless you ask.
+
+## Sticky notes
+
+**Stickies**, the third screen on the header's switch, is for anything you
+want to jot down now and sort out later. Type it in the box at the top
+(Enter sticks it, Shift+Enter starts a new line) and it shows as a card,
+newest first, with how many you have on the switch. Each card has:
+
+- **→ Task**: opens Up Next with the add box filled in: the first line as the
+  title, the other lines as the task's first comment. Set its type, day or
+  priority, add it, and the sticky comes off the board. **Back to stickies**
+  (or folding the add box) keeps the sticky.
+- **→ Topic**: puts it in a topic you pick, in Main or a person's part, as a
+  note or a checklist item, or starts a new topic from it (the first line
+  as its name, the rest as a note). **Open it** goes to the topic.
+- **Edit**: its text and colour (yellow, pink, blue, green or purple).
+- **Remove**, after a check.
+
+Claude keeps them too: "stick a note: ask Sam about the offsite", "what's
+on my stickies?", "turn the Kafka sticky into a task for tomorrow", "put
+the offsite sticky in Sam's notes on Q4 planning".
 
 ## Team
 
