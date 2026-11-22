@@ -1,5 +1,5 @@
 <title>Daily Organizer</title>
-<meta name="daily-organizer-version" content="0.22.0">
+<meta name="daily-organizer-version" content="0.23.0">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -427,6 +427,47 @@ body.is-dragging-note, body.is-dragging-note * { cursor: grabbing !important; us
    as the Settings section's own. */
 .settings-home, .settings-common { display: contents; }
 .topic-settings .appearance { padding-top: 0; }
+/* Sticky notes: a screen of cards, newest first, filling the width in columns of 220px or more, under a box to jot one
+   down. Each card is tinted with its colour, mixed into the surface (less in a dark theme, so text stays easy to read), with
+   its text, when it was added and its buttons at the foot: → Task, → Topic, Edit and Remove. */
+.stickies { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.sticky-add { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: end; max-width: 760px; }
+.sticky-add textarea, .sticky textarea { display: block; width: 100%; min-height: 3.4em; field-sizing: content; max-height: 50vh; resize: vertical; padding: 6px 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); color: var(--ink); box-sizing: border-box; font: inherit; font-size: 15px; }
+.sticky-msg { margin: 0; font-size: 15px; color: var(--muted); }
+.sticky-msg:empty { display: none; }
+.sticky-board { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; align-items: start; }
+.sc-yellow { --sc: #eab308; }
+.sc-pink { --sc: #ec4899; }
+.sc-blue { --sc: #3b82f6; }
+.sc-green { --sc: #22c55e; }
+.sc-purple { --sc: #a855f7; }
+.sticky { --mix: 30%; display: flex; flex-direction: column; gap: 8px; min-height: 130px; min-width: 0; padding: 12px 14px 10px; border: 1px solid color-mix(in srgb, var(--sc) 45%, var(--line)); border-radius: 6px; background: color-mix(in srgb, var(--sc) var(--mix), var(--surface)); box-shadow: 0 1px 2px rgb(0 0 0 / .06), 0 4px 12px rgb(0 0 0 / .05); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .sticky { --mix: 18%; }
+}
+:root[data-theme="dark"] .sticky { --mix: 18%; }
+.sticky-text { font-size: 16px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.sticky-meta { margin-top: auto; font-size: 13px; color: var(--muted); }
+.sticky-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 4px; margin: 0 -4px; }
+.sticky-tools .link-btn { padding: 2px 4px; font-size: 14px; }
+.sticky-tools .end { margin-left: auto; display: flex; gap: 2px; }
+.sticky-tools .end .link-btn { color: var(--muted); }
+.sticky-tools .end .link-btn:hover { color: var(--accent); }
+.sticky-tools .end .link-btn.danger { color: var(--danger); }
+.sticky .inline-q { font-size: 14px; }
+/* Moving a sticky into a topic: which topic, whose part and as a note or a checklist item, then Move. */
+.sticky-move { display: grid; gap: 6px; font-size: 14px; }
+.sticky-move label { display: grid; gap: 2px; color: var(--muted); }
+.sticky-move select { width: 100%; min-width: 0; padding: 4px 6px; font-size: 14px; color: var(--ink); }
+.sticky-colors { display: flex; flex-wrap: wrap; gap: 6px; border: 0; margin: 0; padding: 0; }
+.sticky-colors label { position: relative; width: 22px; height: 22px; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--sc) 60%, var(--line)); background: color-mix(in srgb, var(--sc) 55%, var(--surface)); cursor: pointer; }
+.sticky-colors input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+.sticky-colors label:has(input:checked) { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink); }
+.sticky-colors label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 3px; }
+.sticky-btns { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+/* A task being made from a sticky says so under the add box, with a way back. */
+.from-sticky { margin: 0; padding: 0 2px; font-size: 14px; color: var(--muted); }
+.from-sticky .link-btn { padding: 0 4px; }
 @media (max-width: 1100px) {
   .topics { grid-template-columns: minmax(160px, 210px) minmax(0, 1fr); }
   .part-cols { grid-template-columns: minmax(0, 1fr); gap: 12px; }
@@ -653,6 +694,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       <div class="view-toggle screens" id="screens" role="group" aria-label="Screen">
         <button type="button" id="screen-tasks" aria-pressed="true">Tasks</button>
         <button type="button" id="screen-topics" aria-pressed="false">Topics<span class="n" id="tn-topics"></span></button>
+        <button type="button" id="screen-stickies" aria-pressed="false">Stickies<span class="n" id="tn-stickies"></span></button>
       </div>
     </div>
     <div class="date-row"><h1 id="date">Daily Organizer</h1><span class="ver" id="page-ver"></span></div>
@@ -689,6 +731,17 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       <div class="settings-home" id="topic-common-home"></div>
       <div id="topic-team-home"></div>
     </section>
+  </section>
+
+  <section class="stickies" id="stickies" aria-labelledby="h-stickies" hidden>
+    <h2 class="sr" id="h-stickies">Sticky notes</h2>
+    <form class="sticky-add" id="sticky-add" autocomplete="off">
+      <textarea id="sticky-text" rows="2" maxlength="2000" aria-label="New sticky note" placeholder="Jot something down (Shift+Enter for a new line)"></textarea>
+      <button class="btn btn-primary" type="submit" id="sticky-submit">Stick it</button>
+    </form>
+    <p class="sticky-msg" id="sticky-msg" role="status"></p>
+    <ul class="sticky-board" id="sticky-board" aria-label="Your sticky notes"></ul>
+    <p class="empty" id="empty-stickies">No sticky notes. Jot down anything to sort out later: each one can become a task or go into a topic.</p>
   </section>
 
   <div class="task-screen" id="task-screen">
@@ -759,6 +812,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
             <input type="text" id="add-note" placeholder="Status note, e.g. blocked on DNS change" aria-label="Status note" maxlength="300" hidden>
             <button class="btn btn-primary" type="submit" id="add-submit">Add task</button>
           </form>
+          <p class="from-sticky" id="add-from-sticky" hidden><span id="add-from-sticky-text"></span> <button type="button" class="link-btn" id="add-from-sticky-back">Back to stickies</button></p>
         </details>
       </div>
 
@@ -918,8 +972,8 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 <script>
 (() => {
   const $ = (id) => document.getElementById(id);
-  const state = { tasks: [], days: [], settings: {}, team: [], types: [], jira: [], topics: [], teamLoaded: false, typesLoaded: false, settingsLoaded: false, jiraLoaded: false, confirmed: false, slow: false, error: '', note: '', readOnly: false, closed: false };
-  const ui = { completing: null, removing: null, editing: null, clearing: false, drafts: {}, open: new Set(), view: null, logRemoving: null, logEditing: null, itemEditing: null, itemRemoving: null, itemOpen: null, screen: 'tasks', topicSel: null, topicFolded: new Set(), topicAddTo: {}, topicPicked: false, topicEditing: null, topicRemoving: null, layout: 'list', tab: 'today', filter: 'all', day: null, addWith: null, addDay: null, addType: null, addStatus: null, addPriority: null, person: null, withOpen: null, topicSettings: false, teamRemoving: null, typeEditing: null, typeRemoving: null, noChecklist: new Set() };
+  const state = { tasks: [], days: [], settings: {}, team: [], types: [], jira: [], topics: [], stickies: [], teamLoaded: false, typesLoaded: false, settingsLoaded: false, jiraLoaded: false, confirmed: false, slow: false, error: '', note: '', readOnly: false, closed: false };
+  const ui = { completing: null, removing: null, editing: null, clearing: false, drafts: {}, open: new Set(), view: null, logRemoving: null, logEditing: null, itemEditing: null, itemRemoving: null, itemOpen: null, screen: 'tasks', topicSel: null, topicFolded: new Set(), topicAddTo: {}, topicPicked: false, topicEditing: null, topicRemoving: null, layout: 'list', tab: 'today', filter: 'all', day: null, addWith: null, addDay: null, addType: null, addStatus: null, addPriority: null, person: null, withOpen: null, topicSettings: false, teamRemoving: null, typeEditing: null, typeRemoving: null, noChecklist: new Set(), stickyEditing: null, stickyRemoving: null, stickyMove: null, stickyColor: null, stickyMsg: null, fromSticky: null };
   const chains = new Map();
   // The built-in types: id, label, the priority a new task of the type starts at, whether it has a tab of its own and
   // whether it starts off (GitHub and Jira wait to be turned on). The user's own are rows in types/<id>; a row with a
@@ -1363,6 +1417,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     if (name === 'people') { pickPerson(null); return; }
     ui.tab = name;
     clearAddPicks();
+    ui.fromSticky = null;
     // Settings isn't remembered: the page opens on the last list.
     if (name !== 'settings') { try { localStorage.setItem('organizer-tab', name); } catch (e) { /* not remembered, still switches */ } }
     render();
@@ -1419,6 +1474,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     ui.tab = 'people';
     ui.person = id;
     clearAddPicks();
+    ui.fromSticky = null;
     try { localStorage.setItem('organizer-tab', 'people'); localStorage.setItem('organizer-person', id || ''); } catch (e) { /* not remembered, still shows */ }
     render();
   }
@@ -1909,7 +1965,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   // say finished and cleared, or removed by Claude.
   function renderTaskView() {
     const dlg = $('task-view');
-    const t = ui.view && !state.closed && ui.screen !== 'topics' ? state.tasks.find((x) => x.id === ui.view) : null;
+    const t = ui.view && !state.closed && ui.screen === 'tasks' ? state.tasks.find((x) => x.id === ui.view) : null;
     if (!t) {
       ui.view = null;
       if (dlg.open) dlg.close();
@@ -2495,6 +2551,206 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     $('topics').classList.toggle('is-picked', inSettings || Boolean(tp && ui.topicPicked));
     $('tn-topics').textContent = topics.length ? String(topics.length) : '';
     for (const c of $('topic-add').elements) c.disabled = state.readOnly || !db;
+  }
+
+  // Sticky notes: anything jotted down to sort out later, as cards on a screen of their own, newest first. A sticky becomes a
+  // task through the add box, which it fills, or goes into a topic as a note or a checklist item (or starts a topic of its
+  // own), and comes off the board once it has; or it's removed. `stickies/<id>`: `text`, `created`, and `color` unless yellow.
+  const STICKY_COLORS = ['yellow', 'pink', 'blue', 'green', 'purple'];
+  const stickyRef = (id) => db.collection('stickies').doc(id);
+  const stickyColor = (s) => (STICKY_COLORS.includes(s.color) ? s.color : 'yellow');
+  const stickiesShown = () => [...state.stickies].sort((a, b) => String(b.created || '').localeCompare(String(a.created || '')));
+  // A sticky's text split for a title: its first line, and the rest. A first line too long for a title goes whole into the rest.
+  function stickySplit(text) {
+    const all = String(text || '').trim();
+    const [first, ...more] = all.split('\n');
+    const title = first.trim();
+    if (title.length > 300) return { title: title.slice(0, 300).trim(), rest: all };
+    return { title, rest: more.join('\n').trim() };
+  }
+  const stickyDone = (msg) => { ui.stickyMsg = msg; ui.stickyMove = ui.stickyEditing = ui.stickyRemoving = null; render(); };
+
+  function addSticky() {
+    const box = $('sticky-text');
+    const text = box.value.trim();
+    if (!text || !db || state.readOnly) return;
+    const ref = db.collection('stickies').doc();
+    write('sticky-' + ref.id, () => ref.set({ text, created: new Date().toISOString() }));
+    box.value = '';
+    ui.stickyMsg = null;
+    render();
+    box.focus();
+  }
+
+  function saveSticky(s) {
+    const ek = 'stickyedit-' + s.id;
+    const text = (ui.drafts[ek] || '').trim();
+    if (!text) return;
+    const color = ui.stickyColor || stickyColor(s);
+    const fields = {};
+    if (text !== s.text) fields.text = text;
+    if (color !== stickyColor(s)) fields.color = color === 'yellow' ? null : color;
+    delete ui.drafts[ek];
+    ui.stickyEditing = ui.stickyColor = null;
+    if (Object.keys(fields).length) write('sticky-' + s.id, () => stickyRef(s.id).update(fields));
+    render();
+    const f = $('sticky-edit-btn-' + s.id); if (f) f.focus();
+  }
+
+  // → Task: the Tasks screen on Up Next, where an undated task lands, with the add box open and filled: the first line as
+  // the title. The rest becomes the task's first comment; the sticky comes off once the task is added.
+  function stickyToTask(s) {
+    const { title } = stickySplit(s.text);
+    ui.screen = 'tasks';
+    try { localStorage.setItem('organizer-screen', 'tasks'); } catch (e) { /* not remembered, still switches */ }
+    ui.stickyMove = ui.stickyEditing = ui.stickyRemoving = ui.stickyMsg = null;
+    pickTab('next');
+    ui.fromSticky = s.id;
+    $('add-title').value = title;
+    $('add-box').open = true;
+    render();
+    const f = $('add-title'); f.focus(); f.setSelectionRange(f.value.length, f.value.length);
+  }
+  const fromStickyNow = () => (ui.fromSticky ? state.stickies.find((s) => s.id === ui.fromSticky) || null : null);
+
+  // → Topic: into a topic picked on the card (newest first, or a new one), to Main or a team member's part on it, as a note
+  // or a checklist item, written in one go with the sticky's removal after it, so a failed write leaves the sticky be.
+  function stickyToTopic(s) {
+    const mv = ui.stickyMove;
+    const text = String(s.text || '').trim();
+    if (!mv || !text) return;
+    const now = new Date().toISOString();
+    if (mv.topic === '__new') {
+      const { title, rest } = stickySplit(text);
+      const ref = db.collection('topics').doc();
+      const body = { title, created: now };
+      if (rest) body.notes = [{ id: newItemId('n-'), text: rest }];
+      write('topic-' + ref.id, () => ref.set(body).then(() => stickyRef(s.id).delete()));
+      stickyDone({ text: 'Started the topic “' + title + '”.', topic: ref.id });
+      return;
+    }
+    const tp = state.topics.find((x) => x.id === mv.topic);
+    if (!tp) return;
+    const part = topicParts(tp).includes(mv.part) ? mv.part : 'main';
+    const check = mv.as === 'check';
+    const field = check ? 'checklist' : 'notes';
+    const box = (check ? topicItems : topicNotes)(tp, part === 'main' ? null : part);
+    const list = [...box.items, { id: newItemId(check ? 'c-' : 'n-'), text }];
+    const fields = part === 'main' ? { [field]: list } : { people: { ...peopleOf(tp), [part]: { ...partOf(tp, part), [field]: list } } };
+    write('topic-' + tp.id, () => topicRef(tp.id).update(fields).then(() => stickyRef(s.id).delete()));
+    const where = (part === 'main' ? '' : memberName(part) + '’s ') + (check ? 'checklist' : 'notes');
+    stickyDone({ text: 'Added to “' + (tp.title || 'the topic') + '”, in ' + where + '.', topic: tp.id });
+  }
+
+  function openTopicFromSticky(id) {
+    ui.screen = 'topics';
+    ui.stickyMsg = null;
+    try { localStorage.setItem('organizer-screen', 'topics'); } catch (e) { /* not remembered, still switches */ }
+    pickTopic(id);
+  }
+
+  // The form on a card for moving it into a topic.
+  function stickyMoveForm(s) {
+    const mv = ui.stickyMove;
+    const topics = [...state.topics].sort((a, b) => String(b.created || '').localeCompare(String(a.created || '')));
+    const tp = topics.find((x) => x.id === mv.topic) || null;
+    const parts = tp ? ['main', ...topicParts(tp).filter((k) => state.team.some((m) => m.id === k))] : [];
+    const set = (k, v) => { ui.stickyMove = { ...ui.stickyMove, [k]: v }; render(); };
+    const fid = 'sticky-move-' + s.id;
+    return el('div', { class: 'sticky-move', role: 'group', 'aria-label': 'Move into a topic' },
+      el('label', {}, 'Topic', el('select', { id: fid + '-topic', onchange: (e) => { ui.stickyMove = { ...ui.stickyMove, topic: e.target.value, part: 'main' }; render(); } },
+        topics.map((t) => el('option', { value: t.id, selected: mv.topic === t.id }, t.title || '(untitled)')),
+        el('option', { value: '__new', selected: mv.topic === '__new' }, 'New topic from this note'),
+      )),
+      parts.length > 1 ? el('label', {}, 'Part', el('select', { id: fid + '-part', onchange: (e) => set('part', e.target.value) },
+        parts.map((k) => el('option', { value: k, selected: (mv.part || 'main') === k }, partName(k))))) : null,
+      tp ? el('label', {}, 'As', el('select', { id: fid + '-as', onchange: (e) => set('as', e.target.value) },
+        el('option', { value: 'note', selected: mv.as !== 'check' }, 'A note'),
+        el('option', { value: 'check', selected: mv.as === 'check' }, 'A checklist item'))) : el('span', {}, 'Its first line becomes the topic’s name, the rest a note.'),
+      el('div', { class: 'sticky-btns' },
+        el('button', { type: 'button', class: 'btn', onclick: () => { ui.stickyMove = null; render(); const f = $('sticky-topic-btn-' + s.id); if (f) f.focus(); } }, 'Cancel'),
+        el('button', { type: 'button', class: 'btn btn-primary', id: fid + '-go', onclick: () => stickyToTopic(s) }, tp ? 'Move' : 'Start topic'),
+      ),
+    );
+  }
+
+  function stickyCard(s) {
+    const editable = !state.readOnly;
+    const text = String(s.text || '');
+    const editing = editable && ui.stickyEditing === s.id;
+    const moving = editable && !editing && ui.stickyMove && ui.stickyMove.id === s.id;
+    const removing = editable && ui.stickyRemoving === s.id;
+    const ek = 'stickyedit-' + s.id;
+    const color = editing ? ui.stickyColor || stickyColor(s) : stickyColor(s);
+    const cancelEdit = () => { ui.stickyEditing = ui.stickyColor = null; delete ui.drafts[ek]; render(); const f = $('sticky-edit-btn-' + s.id); if (f) f.focus(); };
+    const parts = [];
+    if (editing) {
+      parts.push(
+        noteArea(ek, 'Edit sticky note', () => saveSticky(s), cancelEdit),
+        el('fieldset', { class: 'sticky-colors' }, el('legend', { class: 'sr' }, 'Colour'),
+          STICKY_COLORS.map((c) => el('label', { class: 'sc-' + c, title: cap(c) },
+            el('input', { type: 'radio', name: 'sticky-color-' + s.id, id: 'sticky-color-' + s.id + '-' + c, value: c, checked: c === color, onchange: () => { ui.stickyColor = c; render(); } }),
+            el('span', { class: 'sr' }, cap(c))))),
+        el('div', { class: 'sticky-btns' },
+          el('button', { type: 'button', class: 'btn', onclick: cancelEdit }, 'Cancel'),
+          el('button', { type: 'button', class: 'btn btn-primary', id: ek + '-save', disabled: !(ui.drafts[ek] || '').trim(), onclick: () => saveSticky(s) }, 'Save'),
+        ),
+      );
+    } else {
+      parts.push(el('div', { class: 'sticky-text' }, text), el('div', { class: 'sticky-meta' }, ago(daysSince(s.created), 'added')));
+      if (moving) parts.push(stickyMoveForm(s));
+      else if (removing) {
+        parts.push(el('div', { class: 'sticky-tools inline-q' },
+          el('span', {}, 'Remove this sticky?'),
+          el('span', { class: 'end' },
+            el('button', { type: 'button', class: 'link-btn danger', id: 'sticky-remove-' + s.id, onclick: () => { ui.stickyRemoving = null; write('sticky-' + s.id, () => stickyRef(s.id).delete()); render(); } }, 'Remove'),
+            el('button', { type: 'button', class: 'link-btn', onclick: () => { ui.stickyRemoving = null; render(); const f = $('sticky-del-btn-' + s.id); if (f) f.focus(); } }, 'Keep'),
+          ),
+        ));
+      } else if (editable) {
+        parts.push(el('div', { class: 'sticky-tools' },
+          el('button', { type: 'button', class: 'link-btn', id: 'sticky-task-btn-' + s.id, title: 'Make it a task', onclick: () => stickyToTask(s) }, '→ Task'),
+          el('button', { type: 'button', class: 'link-btn', id: 'sticky-topic-btn-' + s.id, title: 'Put it in a topic', onclick: () => {
+            const topics = [...state.topics].sort((a, b) => String(b.created || '').localeCompare(String(a.created || '')));
+            ui.stickyMove = { id: s.id, topic: topics.length ? topics[0].id : '__new', part: 'main', as: 'note' };
+            ui.stickyEditing = ui.stickyRemoving = ui.stickyMsg = null;
+            render();
+            const f = $('sticky-move-' + s.id + '-topic'); if (f) f.focus();
+          } }, '→ Topic'),
+          el('span', { class: 'end' },
+            el('button', { type: 'button', class: 'link-btn', id: 'sticky-edit-btn-' + s.id, 'aria-label': 'Edit sticky: ' + text.slice(0, 60), onclick: () => {
+              ui.stickyEditing = s.id; ui.stickyColor = null; ui.stickyMove = ui.stickyRemoving = ui.stickyMsg = null; ui.drafts[ek] = text; render();
+              const f = $(ek); if (f) { f.focus(); f.setSelectionRange(f.value.length, f.value.length); }
+            } }, 'Edit'),
+            el('button', { type: 'button', class: 'link-btn', id: 'sticky-del-btn-' + s.id, 'aria-label': 'Remove sticky: ' + text.slice(0, 60), onclick: () => {
+              ui.stickyRemoving = s.id; ui.stickyEditing = ui.stickyMove = null; render(); const f = $('sticky-remove-' + s.id); if (f) f.focus();
+            } }, 'Remove'),
+          ),
+        ));
+      }
+    }
+    return el('li', { class: 'sticky sc-' + color, id: 'sticky-' + s.id }, parts);
+  }
+
+  function renderStickies() {
+    const list = stickiesShown();
+    if (ui.stickyEditing && !list.some((s) => s.id === ui.stickyEditing)) ui.stickyEditing = null;
+    if (ui.stickyMove && !list.some((s) => s.id === ui.stickyMove.id)) ui.stickyMove = null;
+    $('sticky-board').replaceChildren(...(ui.screen === 'stickies' ? list.map(stickyCard) : []));
+    $('sticky-board').hidden = !list.length;
+    $('empty-stickies').hidden = list.length > 0;
+    $('tn-stickies').textContent = list.length ? String(list.length) : '';
+    const msg = ui.stickyMsg;
+    $('sticky-msg').replaceChildren(...(msg ? [msg.text, ' ', msg.topic ? el('button', { type: 'button', class: 'link-btn', onclick: () => openTopicFromSticky(msg.topic) }, 'Open it') : null].filter(Boolean) : []));
+    for (const c of $('sticky-add').elements) c.disabled = state.readOnly || !db;
+    // The add box, while it holds a sticky's text, says what happens to the sticky.
+    const from = fromStickyNow();
+    if (!from) ui.fromSticky = null;
+    $('add-from-sticky').hidden = !from || ui.screen !== 'tasks';
+    if (from) {
+      const { rest } = stickySplit(from.text);
+      $('add-from-sticky-text').textContent = 'From a sticky note: ' + (rest ? 'its other lines become the task’s first comment, and ' : '') + 'it comes off the board once the task is added.';
+    }
   }
 
   // The pieces of one task, shared by the list and table layouts.
@@ -3214,8 +3470,10 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       $('fig-' + id).classList.toggle('is-zero', n === 0);
     }
     const onTopics = ui.screen === 'topics';
-    $('figures').hidden = state.closed || onTopics;
-    $('progress').hidden = state.closed || onTopics || !plannedToday.length;
+    const onStickies = ui.screen === 'stickies';
+    const onTasks = !onTopics && !onStickies;
+    $('figures').hidden = state.closed || !onTasks;
+    $('progress').hidden = state.closed || !onTasks || !plannedToday.length;
     if (plannedToday.length) {
       const text = planDone + ' of ' + plannedToday.length + ' done';
       const bar = $('progress-bar');
@@ -3237,6 +3495,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     $('empty-today').textContent = 'Nothing planned for ' + selWord + '. Star a task to add it, or ask Claude to plan ' + (sel === today ? 'your day' : selWord) + '.';
     renderJira(sel, today, near ? selTitle : $('show-today-label').textContent);
     renderTopics();
+    renderStickies();
     // The team list is one block, shown in the Settings of whichever screen is open.
     // Appearance and Ticket link are one block too; types and lists are about tasks, so they stay on the Tasks screen.
     const commonHome = ui.screen === 'topics' ? $('topic-common-home') : $('common-home');
@@ -3260,17 +3519,19 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     }
 
     for (const c of $('add').elements) c.disabled = state.readOnly || !db;
-    // The Topics screen takes the place of everything about tasks below the date.
-    $('task-screen').hidden = state.closed || onTopics;
+    // The Topics and Stickies screens take the place of everything about tasks below the date.
+    $('task-screen').hidden = state.closed || !onTasks;
     const onSettings = ui.tab === 'settings';
     $('sec-with').hidden = state.closed || !listShown('with');
     $('sec-people').hidden = ui.tab !== 'people';
     for (const id of ['controls', 'lists', 'sec-days']) $(id).hidden = onSettings;
     $('sec-settings').hidden = !onSettings;
     $('topics').hidden = state.closed || !onTopics;
+    $('stickies').hidden = state.closed || !onStickies;
     $('screens').hidden = state.closed;
-    $('screen-tasks').setAttribute('aria-pressed', String(!onTopics));
+    $('screen-tasks').setAttribute('aria-pressed', String(onTasks));
     $('screen-topics').setAttribute('aria-pressed', String(onTopics));
+    $('screen-stickies').setAttribute('aria-pressed', String(onStickies));
     for (const name of LISTS) $('sec-' + name).hidden = !tabExists(name) || (ui.tab !== 'all' && ui.tab !== name);
     for (const id of typeIds) $('sec-type-' + id).hidden = ui.tab !== 'all' && ui.tab !== 'type-' + id;
     $('sec-carry').hidden = !carried.length || (ui.tab !== 'all' && ui.tab !== 'today');
@@ -3315,7 +3576,14 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     if (body.type === 'discussion') { if (addWithIds().length) body.with = withValue(addWithIds()); }
     else if ($('add-owner').value) body.owner = $('add-owner').value;
     const ref = db.collection('tasks').doc();
-    write(ref.id, () => ref.set(body));
+    // Made from a sticky: the sticky's other lines are the task's first comment, and the sticky comes off once the task is in.
+    const from = fromStickyNow();
+    ui.fromSticky = null;
+    if (from) {
+      const { rest } = stickySplit(from.text);
+      if (rest) body.log = [{ at: body.created, text: rest }];
+      write(ref.id, () => ref.set(body).then(() => stickyRef(from.id).delete()));
+    } else write(ref.id, () => ref.set(body));
     $('add-title').value = '';
     $('add-ticket').value = '';
     $('add-note').value = '';
@@ -3354,7 +3622,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     pickTopic(ref.id);
   });
 
-  for (const [id, value] of [['screen-tasks', 'tasks'], ['screen-topics', 'topics']]) {
+  for (const [id, value] of [['screen-tasks', 'tasks'], ['screen-topics', 'topics'], ['screen-stickies', 'stickies']]) {
     $(id).addEventListener('click', () => {
       ui.screen = value;
       try { localStorage.setItem('organizer-screen', value); } catch (e) { /* not remembered, still switches */ }
@@ -3362,6 +3630,21 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     });
   }
 
+  // A new sticky: Enter sticks it, Shift+Enter starts a new line; the cursor stays in the box for the next one.
+  $('sticky-add').addEventListener('submit', (e) => { e.preventDefault(); addSticky(); });
+  $('sticky-text').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); addSticky(); }
+  });
+  // Back to stickies: the add box lets the sticky's text go, and the sticky stays.
+  $('add-from-sticky-back').addEventListener('click', () => {
+    ui.fromSticky = null;
+    $('add-title').value = '';
+    $('add-box').open = false;
+    ui.screen = 'stickies';
+    try { localStorage.setItem('organizer-screen', 'stickies'); } catch (e) { /* not remembered, still switches */ }
+    render();
+    $('screen-stickies').focus();
+  });
   $('add-type').addEventListener('change', (e) => { ui.addType = e.target.value; render(); });
   $('people-select').addEventListener('change', (e) => pickPerson(e.target.value || null));
   $('topic-settings-btn').addEventListener('click', openTopicSettings);
@@ -3432,7 +3715,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   try { const tab = localStorage.getItem('organizer-tab'); if (TABS.includes(tab) || /^type-[a-z0-9-]+$/.test(tab || '')) ui.tab = tab; } catch (e) { /* storage blocked: start on Today */ }
   try { ui.person = localStorage.getItem('organizer-person') || null; } catch (e) { /* storage blocked: People shows everyone */ }
   try { if (localStorage.getItem('organizer-layout') === 'table') ui.layout = 'table'; } catch (e) { /* storage blocked: start in list */ }
-  try { if (localStorage.getItem('organizer-screen') === 'topics') ui.screen = 'topics'; } catch (e) { /* storage blocked: start on tasks */ }
+  try { const sc = localStorage.getItem('organizer-screen'); if (sc === 'topics' || sc === 'stickies') ui.screen = sc; } catch (e) { /* storage blocked: start on tasks */ }
   try { ui.topicSel = localStorage.getItem('organizer-topic') || null; } catch (e) { /* storage blocked: show the newest topic */ }
   try {
     const hid = JSON.parse(localStorage.getItem('organizer-topic-nochecklist') || '[]');
@@ -3448,6 +3731,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
   let addByHand = false;
   $('add-summary').addEventListener('click', () => { addByHand = true; });
   addBox.addEventListener('toggle', () => {
+    if (!addBox.open && ui.fromSticky) { ui.fromSticky = null; render(); }
     if (!addByHand) return;
     addByHand = false;
     if (addBox.open && !$('add-title').disabled) $('add-title').focus();
@@ -3554,6 +3838,11 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     // Topics are optional too: if they can't load, the Topics screen just shows none.
     db.collection('topics').onSnapshot((snap) => {
       state.topics = snap.docs.map((d) => ({ ...d.data(), id: d.id }));
+      render();
+    }, () => {});
+    // Sticky notes are optional too: if they can't load, the Stickies screen just shows none.
+    db.collection('stickies').onSnapshot((snap) => {
+      state.stickies = snap.docs.map((d) => ({ ...d.data(), id: d.id }));
       render();
     }, () => {});
     // Settings are optional: if they can't load, tickets just stay plain text.
