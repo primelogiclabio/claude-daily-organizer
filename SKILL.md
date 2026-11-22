@@ -71,9 +71,9 @@ Dates are the user's local date. New task ids are letters, digits and dashes, su
 2. Publish it with the `Artifact` tool:
    - `icon`: `checklist`
    - `description`: "My tasks for today, what's next and what I'm waiting on."
-   - `capabilities`: `{"db": {"rules": [{"path": "", "read": "admin", "write": "admin"}]}}`
+   - `capabilities`: `{"db": {"rules": [{"path": "", "read": "admin", "write": "admin"}]}, "downloads": true}`
 
-   The rule keeps every row to the owner and anyone they make an Editor, even if the page is shared.
+   The rule keeps every row to the owner and anyone they make an Editor, even if the page is shared. `downloads` lets the page's Export save files; without it, Export can only copy.
 3. Check it with one `ArtifactData` `list` of `tasks`. An empty list is right. Never seed sample tasks.
 4. Give the user the link. If they listed tasks while asking, add them now (below). The page records its version in `organizer/settings` the first time it's opened.
 
@@ -150,6 +150,12 @@ A sticky note is anything the user jots down to sort out later: not yet a task, 
 - **Making one a task.** "Turn the Kafka sticky into a task": in one `batch`, `set` the task as Task rules say, with the sticky's first line as the title and its other lines as the task's first comment (`log`), and `delete` the sticky. Take the type, day, priority or list from the user's words, as for any new task.
 - **Putting one in a topic.** "Put the offsite sticky in Q4 planning's notes", "add it to Sam's checklist on Q4": in one `batch`, `update` the topic as Topics says (a note, or a checklist item, in the main part or the person's) with the sticky's text, and `delete` the sticky. "Make it a topic": `set` a topic titled with its first line, its other lines as a note, and `delete` the sticky.
 - **Changing or removing.** `update` `text` or `color` (remove `color` for yellow), or `delete` the sticky when the user says to.
+
+## Exporting
+
+The page exports from an **Export** button beside each view: next to List | Table on the Tasks screen, on a topic's top bar, and above the Stickies board. Each opens one dialog, set from what's on screen (the list and person shown, the topic picked), where the user picks what (Tasks, Topics, Stickies or Everything), which tasks (list, person, type, done dates, with or without comments and checklists) or which topic, and the format: CSV (tasks and stickies), Markdown, or JSON (every row as stored, ids included: a backup). **Download** saves the file after the viewer confirms it; **Copy** puts it on the clipboard. Export only reads.
+
+When the user asks Claude to export ("export my tasks for Sam to a spreadsheet"), point them to the page's Export and the choices that give it. In a session that can write files, Claude can instead read the rows and write the file itself, in the format asked for; say where it is.
 
 ## Changing tasks
 
@@ -259,7 +265,7 @@ An organizer keeps the page it was published with; a newer `template.html` doesn
   1. Read the page with `Artifact` `read`.
   2. Copy `template.html` as in Starting one. Re-apply each entry in `organizer/settings.pageChanges` to the copy. If the organizer has no `pageVersion`, there's no record of earlier changes: ask once whether Claude ever changed the page's look or features for them, and re-apply what they name. Leave the version meta as the template has it.
   3. If `settings/main` exists and `organizer/settings` doesn't, move the settings in one `batch`: `set` `organizer/settings` with the organizer's fields from `settings/main` (`ticketUrl`, `pageVersion`, `pageChanges`, `jira`, whichever are there), and `delete` `settings/main` with its `if_version`. Carry no other fields across.
-  4. Publish the copy to the same `url`. Omit `capabilities` so the database rules carry over.
+  4. Publish the copy to the same `url`. Omit `capabilities` so the database rules carry over, unless the organizer doesn't declare `downloads` yet (pages before 0.24.0): then give it its `db` declaration as it is plus `"downloads": true`, before the publish or with it. Where the session has separate tools for this (such as `read_declaration` and `declare_capabilities`), read the declaration, declare both, then publish.
   5. `list` `tasks` and check the count is the same as before. Tell the user to reload the page. It records its new version when it loads.
 
 ## Changing the page itself
