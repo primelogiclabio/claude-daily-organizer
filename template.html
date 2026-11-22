@@ -1,5 +1,5 @@
 <title>Daily Organizer</title>
-<meta name="daily-organizer-version" content="0.23.1">
+<meta name="daily-organizer-version" content="0.24.0">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -105,9 +105,9 @@ html { scroll-padding-top: calc(var(--head-top, 0px) + var(--head-h, 0px) + 8px)
 /* The page's version sits beside the date, as well as in the footer. */
 .date-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; }
 .date-row .ver { font-family: var(--font-mono); font-size: 13px; color: var(--muted); white-space: nowrap; }
-/* The filters wrap to two rows on a phone: the day, then people with the layout switch kept at the right. */
+/* The filters wrap to two rows on a phone: the day, then people with the layout switch and Export kept at the right. */
 .filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
-.filters #view-toggle { margin-left: auto; }
+.filters-end { display: flex; align-items: center; gap: 10px; margin-left: auto; }
 .filter { display: flex; gap: 8px; align-items: center; min-width: 0; }
 .filter select { min-width: 0; }
 /* The day picker shrinks as far as "Tomorrow" still fits; on phones of 360px or less it drops under the Today | Tomorrow tabs instead. */
@@ -308,6 +308,25 @@ html:has(dialog.view[open]) { overflow: hidden; }
   .view-body { grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 12px max(14px, env(safe-area-inset-right, 0px)) max(20px, env(safe-area-inset-bottom, 0px)) max(14px, env(safe-area-inset-left, 0px)); }
 }
 
+/* Export: a narrower dialog of choices, what to export, which tasks or topic, and the format, then what it holds, with Copy
+   and Download. On a phone it fills the screen, as the task view does. */
+dialog.export { width: min(640px, calc(100vw - 32px)); }
+.export-body { display: grid; gap: 14px; align-content: start; min-width: 0; padding: 16px 20px 20px; overflow-y: auto; overscroll-behavior: contain; }
+.export-opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(170px, 100%), 1fr)); gap: 10px 14px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.export-opts .field { display: grid; gap: 4px; min-width: 0; }
+.export-opts .field label { font-size: 13px; font-weight: 500; color: var(--muted); }
+.export-opts select, .export-opts input[type="date"] { width: 100%; min-width: 0; box-sizing: border-box; }
+.export-opts .tab-pick { grid-column: 1 / -1; white-space: normal; }
+.export-hint { margin: 0; font-size: 14px; color: var(--muted); }
+.export-sum { margin: 0; font-size: 15px; font-variant-numeric: tabular-nums; }
+.export-sum .fname { font-family: var(--font-mono); font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.export-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; align-items: center; }
+.export-msg { flex: 1 1 14em; margin: 0; font-size: 14px; color: var(--muted); }
+.export-body textarea { display: block; width: 100%; min-height: 10em; box-sizing: border-box; padding: 6px 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); color: var(--ink); font-family: var(--font-mono); font-size: 13px; resize: vertical; }
+@media (max-width: 700px) {
+  .export-body { padding: 12px max(14px, env(safe-area-inset-right, 0px)) max(20px, env(safe-area-inset-bottom, 0px)) max(14px, env(safe-area-inset-left, 0px)); }
+}
+
 /* The Topics screen: topics down the left; the picked topic's name and people across the top, then its checklist in the middle
    and its notes on the right, which take the spare width. Each holds every part (Main, the topic's own, and each person's on it)
    as a group under a heading that folds it away. The topics span both rows, and the second row is the flexible one, so a long
@@ -441,6 +460,7 @@ body.is-dragging-note, body.is-dragging-note * { cursor: grabbing !important; us
 .sticky-add textarea, .sticky textarea { display: block; width: 100%; min-height: 3.4em; field-sizing: content; max-height: 50vh; resize: vertical; padding: 6px 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); color: var(--ink); box-sizing: border-box; font: inherit; font-size: 15px; }
 .sticky-msg { margin: 0; font-size: 15px; color: var(--muted); }
 .sticky-msg:empty { display: none; }
+.sticky-tools { display: flex; justify-content: flex-end; max-width: 760px; margin-block: -8px -4px; }
 .sticky-board { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; align-items: start; }
 .sc-yellow { --sc: #eab308; }
 .sc-pink { --sc: #ec4899; }
@@ -530,11 +550,12 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 .team .hint { margin: 0; font-size: 14px; color: var(--muted); }
 /* Settings → Types: the built-in types, the user's own with Edit and Remove, and a form to add one. */
 .types { display: grid; gap: 8px; padding-top: 18px; max-width: 760px; }
-/* Settings → Appearance: the theme and the accent colour as pressed buttons, and whether every device shares them. */
-.appearance .row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
-.appearance .row .label { min-width: 4.5em; font-size: 14px; color: var(--muted); }
-.appearance .seg { display: inline-flex; flex-wrap: wrap; gap: 6px; }
-.appearance .seg .btn[aria-pressed="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--surface)); color: var(--ink); }
+/* Settings → Appearance: the theme and the accent colour as pressed buttons, and whether every device shares them. Export's
+   What and Format choices look the same. */
+.appearance .row, .export-body .row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.appearance .row .label, .export-body .row .label { min-width: 4.5em; font-size: 14px; color: var(--muted); }
+.appearance .seg, .export-body .seg { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.appearance .seg .btn[aria-pressed="true"], .export-body .seg .btn[aria-pressed="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--surface)); color: var(--ink); }
 .swatch-dot { display: inline-block; width: 11px; height: 11px; margin-right: 6px; border-radius: 50%; background: var(--sw); vertical-align: -1px; }
 .types h3 { margin: 0; font-size: 15px; font-weight: 500; }
 .types ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
@@ -746,6 +767,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       <button class="btn btn-primary" type="submit" id="sticky-submit">Stick it</button>
     </form>
     <p class="sticky-msg" id="sticky-msg" role="status"></p>
+    <div class="sticky-tools"><button type="button" class="link-btn" id="export-stickies" aria-haspopup="dialog">Export</button></div>
     <ul class="sticky-board" id="sticky-board" aria-label="Your sticky notes"></ul>
     <p class="empty" id="empty-stickies">No sticky notes. Jot down anything to sort out later: each one can become a task or go into a topic.</p>
   </section>
@@ -782,9 +804,12 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
             <label class="filter-label" for="filter">People</label>
             <select id="filter"></select>
           </div>
-          <div class="view-toggle" id="view-toggle" role="group" aria-label="Layout">
-            <button type="button" id="view-list" aria-pressed="true">List</button>
-            <button type="button" id="view-table" aria-pressed="false">Table</button>
+          <div class="filters-end">
+            <div class="view-toggle" id="view-toggle" role="group" aria-label="Layout">
+              <button type="button" id="view-list" aria-pressed="true">List</button>
+              <button type="button" id="view-table" aria-pressed="false">Table</button>
+            </div>
+            <button type="button" class="link-btn" id="export-tasks" aria-haspopup="dialog">Export</button>
           </div>
         </div>
         <details class="add-box" id="add-box">
@@ -974,6 +999,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 </div>
 
 <dialog id="task-view" class="view" aria-labelledby="view-title"></dialog>
+<dialog id="export-view" class="view export" aria-labelledby="export-title"></dialog>
 
 <script>
 (() => {
@@ -1319,7 +1345,10 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     const n = ids.map(memberName);
     return n.length < 3 ? n.join(' and ') : n.slice(0, -1).join(', ') + ' and ' + n[n.length - 1];
   };
-  const matchesFilter = (t) => (ui.filter === 'all' ? true : ui.filter === 'me' ? !t.owner : t.owner === ui.filter || withOf(t).includes(ui.filter));
+  // Whether a task is someone's: `all` matches every task, `me` the user's own (no `owner`), a member's id the tasks for
+  // them or with them.
+  const matchesPerson = (t, who) => (who === 'all' ? true : who === 'me' ? !t.owner : t.owner === who || withOf(t).includes(who));
+  const matchesFilter = (t) => matchesPerson(t, ui.filter);
   // The team member the People filter shows, if it's one person.
   const personShown = () => (state.team.some((m) => m.id === ui.filter) ? ui.filter : null);
   const withChip = (t) => (withOf(t).length ? el('span', { class: 'owner with-chip' }, 'with ' + namesOf(withOf(t))) : null);
@@ -2540,6 +2569,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
           el('span', {}, ago(daysSince(tp.created), 'added')),
           editable ? el('button', { type: 'button', class: 'link-btn', 'aria-label': 'Edit topic: ' + (tp.title || ''), onclick: () => startTopicEdit(tp) }, 'Edit') : null,
           checklistToggle(tp),
+          el('button', { type: 'button', class: 'link-btn', id: 'topic-export', 'aria-haspopup': 'dialog', onclick: () => openExport({ what: 'topics', topic: tp.id }, 'topic-export') }, 'Export'),
         ),
       ),
       ...(editing ? [] : topicAbout(tp, editable)),
@@ -3404,6 +3434,407 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     if (!same($('type-secs'), secs)) $('type-secs').replaceChildren(...secs);
   }
 
+  // Export: tasks, topics, sticky notes or everything, as CSV, Markdown or JSON, saved as a file through the viewer's
+  // downloads (where it offers them) or copied. One dialog, opened beside each view and set from what's on screen; render()
+  // redraws it with the page, so what it holds follows changes made meanwhile. It only reads.
+  let downloads = null;
+  let downloadsKnown = false;
+  const EXPORT_WHAT = [['tasks', 'Tasks'], ['topics', 'Topics'], ['stickies', 'Stickies'], ['everything', 'Everything']];
+  const EXPORT_FORMATS = [['csv', 'CSV'], ['md', 'Markdown'], ['json', 'JSON']];
+  // The formats each choice comes in, the first the one it starts at: a table for tasks, a document for topics and stickies,
+  // the whole store as JSON for everything.
+  const EXPORT_OFFERS = { tasks: ['csv', 'md', 'json'], topics: ['md', 'json'], stickies: ['md', 'csv', 'json'], everything: ['json', 'md'] };
+  const EXPORT_HINTS = {
+    csv: 'A table, one row each, for Excel, Numbers or Google Sheets.',
+    md: 'Reads as plain text, and pastes into notes and docs.',
+    json: 'Every field as it’s stored, ids included: a backup.',
+  };
+
+  function openExport(preset, opener) {
+    const x = { what: 'tasks', list: 'all', day: ui.day || dayKey(), person: 'all', type: 'all', from: '', to: '', topic: 'all', details: true, ...preset, msg: '', copied: null, opener };
+    x.format = EXPORT_OFFERS[x.what][0];
+    ui.exp = x;
+    render();
+    const f = $('exp-close');
+    if (f) f.focus();
+  }
+  // Closing it puts the focus back on the Export button that opened it.
+  function closeExport() {
+    const x = ui.exp;
+    if (!x) return;
+    ui.exp = null;
+    render();
+    const b = x.opener && $(x.opener);
+    if (b) b.focus();
+  }
+  // The Tasks screen's Export starts from the list shown, and the person: People's, or the People filter's.
+  function exportTasksPreset() {
+    const tab = ui.tab;
+    const list = tab === 'today' ? 'day' : tab === 'people' ? 'open'
+      : ['next', 'waiting', 'upcoming', 'ideas', 'done'].includes(tab) || tab.startsWith('type-') ? tab : 'all';
+    const who = tab === 'people' ? viewedPerson() || 'all' : ui.filter;
+    return { what: 'tasks', list, person: who };
+  }
+  // The day an export's day list is of: the day shown when it opened, or today once that's gone by.
+  const exportDay = (x) => (x.day && x.day >= dayKey() ? x.day : dayKey());
+  function exportListChoices(x) {
+    return [['all', 'All tasks'], ['open', 'Open tasks'], ['day', cap(dayWord(exportDay(x), dayKey()))], ['carried', 'Carried over'],
+      ['next', 'Up Next'], ['waiting', 'Waiting On'], ['upcoming', 'Upcoming'], ...tabTypeIds().map((id) => [tabNameOf(id), tabLabel(id)]), ['done', 'Done']];
+  }
+  const exportPeople = () => [['all', 'Everyone'], ['me', 'Me'], ...state.team.map((m) => [m.id, m.name || 'Unnamed'])];
+  const exportTypes = () => [['all', 'All types'], ...allTypes().filter((ty) => !ty.off || state.tasks.some((t) => typeOf(t) === ty.id)).map((ty) => [ty.id, ty.label])];
+  const topicsNewest = () => [...state.topics].sort((a, b) => String(b.created || '').localeCompare(String(a.created || '')));
+  const doneOn = (t) => { const d = t.doneAt ? new Date(t.doneAt) : null; return d && !isNaN(d) ? dayKey(d) : ''; };
+
+  // The tasks an export holds, in the page's lists: [key, heading, tasks] for each list it covers. Everything holds every task.
+  // A done task planned for the day shown is in the day's list when that list is exported on its own, else in Done.
+  function exportGroups(x) {
+    const f = x.what === 'everything' ? { ...x, list: 'all', person: 'all', type: 'all', from: '', to: '' } : x;
+    const today = dayKey();
+    const sel = exportDay(f);
+    const pool = state.tasks.filter((t) => matchesPerson(t, f.person) && (f.type === 'all' || typeOf(t) === f.type));
+    const p = partition(pool, sel, today);
+    const isDone = (t) => t.status === 'done';
+    const inRange = (t) => (!f.from || (doneOn(t) && doneOn(t) >= f.from)) && (!f.to || (doneOn(t) && doneOn(t) <= f.to));
+    const done = pool.filter((t) => isDone(t) && inRange(t)).sort((a, b) => String(b.doneAt || '').localeCompare(String(a.doneAt || '')));
+    const groups = [
+      ['day', cap(dayWord(sel, today)), f.list === 'day' ? p.planned : p.planned.filter((t) => !isDone(t))],
+      ['carried', 'Carried over', p.carried], ['next', 'Up Next', p.next], ['waiting', 'Waiting On', p.waiting], ['upcoming', 'Upcoming', p.upcoming],
+      ['ideas', 'Ideas', p.ideas], ...p.typeIds.map((id) => [tabNameOf(id), tabLabel(id), p.byType.get(id)]),
+      ['done', 'Done', done],
+    ];
+    if (f.list === 'all') return groups;
+    if (f.list === 'open') return groups.filter(([k]) => k !== 'done');
+    return groups.filter(([k]) => k === f.list);
+  }
+  const exportTopics = (x) => (x.what === 'topics' && x.topic !== 'all' ? topicsNewest().filter((tp) => tp.id === x.topic) : topicsNewest());
+
+  // Dates and times as a spreadsheet reads them, in the user's own time: 2026-11-20 14:05.
+  const exportStamp = (iso) => { const d = iso ? new Date(iso) : null; return d && !isNaN(d) ? dayKey(d) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) : ''; };
+  const shortDate = (iso) => { const d = iso ? new Date(iso) : null; return d && !isNaN(d) ? d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : ''; };
+  const prioWord = (t) => (t.priority === 'high' ? 'High' : t.priority === 'low' ? 'Low' : 'Normal');
+  const itemLine = (c, md) => '[' + (c.done ? 'x' : ' ') + '] ' + String(c.text || '').trim() + (c.ticket ? ' (' + (md ? mdLink(String(c.ticket)) : String(c.ticket)) + ')' : '');
+
+  // A CSV cell: quoted when it holds a comma, quote or line break; one starting with = + - or @ gets a ' first, so a
+  // spreadsheet doesn't run it as a formula. A file starts with a byte-order mark, so spreadsheets read it as UTF-8.
+  const csvCell = (v) => {
+    let s = v === null || v === undefined ? '' : String(v);
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+    return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const csvOf = (rows) => '﻿' + rows.map((r) => r.map(csvCell).join(',')).join('\r\n') + '\r\n';
+  function tasksCsv(x) {
+    const head = ['Title', 'List', 'Type', 'Priority', 'Day', 'For', 'With', 'Ticket', 'Links', 'Status note', 'Done comment', 'Added', 'Done', 'Comments', 'Checklist'];
+    const rows = exportGroups(x).flatMap(([, list, items]) => items.map((t) => {
+      const log = logOf(t);
+      const checks = checklistOf(t);
+      return [t.title || '', list, typeLabel(typeOf(t)), prioWord(t), t.someday && !t.today ? 'Someday' : t.today || '',
+        t.owner ? memberName(t.owner) : 'Me', namesOf(withOf(t)), t.ticket || '', linksOf(t).join('\n'), t.note || '', t.comment || '',
+        exportStamp(t.created), exportStamp(t.doneAt),
+        x.details ? log.map((c) => exportStamp(c.at) + ' ' + String(c.text || '').trim()).join('\n') : log.length || '',
+        x.details ? checks.map((c) => itemLine(c)).join('\n') : checks.length ? checks.filter((c) => c.done).length + ' of ' + checks.length + ' done' : ''];
+    }));
+    return csvOf([head, ...rows]);
+  }
+  const stickiesCsv = () => csvOf([['Text', 'Colour', 'Added'], ...stickiesShown().map((s) => [String(s.text || '').trim(), cap(STICKY_COLORS.includes(s.color) ? s.color : 'yellow'), exportStamp(s.created)])]);
+
+  // Markdown: a bullet whose text runs to more lines has them indented under it; a task is a task-list item, its note, links,
+  // checklist and comments bullets under it.
+  const bullet = (text, depth = 0) => '  '.repeat(depth) + '- ' + String(text).trim().replace(/\r?\n/g, '\n' + '  '.repeat(depth + 1));
+  const mdBold = (s) => '**' + String(s || '(untitled)').trim().replace(/([\\`*_[\]])/g, '\\$1') + '**';
+  const mdLink = (line) => { const m = line.match(/^(.*?)\s*(https?:\/\/\S+)$/i); return m ? '[' + (m[1].trim() || refLabel(m[2])) + '](' + m[2] + ')' : line; };
+  function taskMd(t, details, today) {
+    const done = t.status === 'done';
+    const bits = [typeLabel(typeOf(t))];
+    if (!done && PRIORITY[t.priority]) bits.push(prioWord(t));
+    if (t.owner) bits.push('for ' + memberName(t.owner));
+    if (withOf(t).length) bits.push('with ' + namesOf(withOf(t)));
+    if (t.ticket) bits.push(mdLink(String(t.ticket)));
+    if (!done && t.someday && !t.today) bits.push('someday');
+    else if (!done && t.today) bits.push(cap(shortDay(t.today, today)) + (t.today < today ? ' (carried over)' : ''));
+    let line = '[' + (done ? 'x' : ' ') + '] ' + mdBold(t.title) + ' · ' + bits.join(' · ');
+    if (done) line += (t.comment ? ' — ' + String(t.comment).trim().replace(/\s*\n\s*/g, ' ') : '') + (t.doneAt ? ' (done ' + shortDate(t.doneAt) + ')' : '');
+    const sub = [];
+    if (!done && t.note) sub.push('Note: ' + t.note);
+    sub.push(...linksOf(t).map(mdLink));
+    if (details) {
+      sub.push(...checklistOf(t).map((c) => itemLine(c, true)));
+      sub.push(...logOf(t).map((c) => exportStamp(c.at) + ': ' + String(c.text || '').trim()));
+    }
+    return [bullet(line), ...sub.map((s) => bullet(s, 1))].join('\n');
+  }
+  function tasksMd(x, level, details) {
+    const h = '#'.repeat(level);
+    const today = dayKey();
+    return exportGroups(x).filter(([, , items]) => items.length)
+      .flatMap(([, list, items]) => [h + ' ' + list + ' (' + items.length + ')', '', ...items.map((t) => taskMd(t, details, today)), '']);
+  }
+  // A topic: who it's with, its overview, tickets and links, then its checklist and notes, each part under its name once
+  // there's more than Main. A topic exported on its own has its name as the file's heading instead of its own.
+  function topicMd(tp, level, named = true) {
+    const h = '#'.repeat(level);
+    const out = named ? [h + ' ' + String(tp.title || '(untitled)').trim(), ''] : [];
+    const facts = [withOf(tp).length ? 'With ' + namesOf(withOf(tp)) : null, tp.created ? 'added ' + shortDate(tp.created) : null].filter(Boolean);
+    if (facts.length) out.push(cap(facts.join(' · ')), '');
+    if (overviewOf(tp)) out.push(overviewOf(tp), '');
+    if (ticketsOf(tp).length) out.push('Tickets:', '', ...ticketsOf(tp).map((k) => bullet(mdLink(k))), '');
+    if (linksOf(tp).length) out.push('Links:', '', ...linksOf(tp).map((l) => bullet(mdLink(l))), '');
+    const lists = [
+      ['Checklist', (k) => topicItems(tp, k === 'main' ? null : k).items, (c) => itemLine(c, true)],
+      ['Notes', (k) => notesOfPart(tp, k), (c) => String(c.text || '')],
+    ];
+    for (const [title, itemsOf, line] of lists) {
+      const filled = partKeys(tp).map((k) => [k, itemsOf(k)]).filter(([, items]) => items.length);
+      if (!filled.length) continue;
+      out.push(h + '# ' + title, '');
+      const named = filled.length > 1 || filled[0][0] !== 'main';
+      for (const [k, items] of filled) {
+        if (named) out.push(h + '## ' + partName(k), '');
+        out.push(...items.map((c) => bullet(line(c))), '');
+      }
+    }
+    return out;
+  }
+  // What an export is of, in words: its file's heading, and the start of its name.
+  function exportTitle(x) {
+    if (x.what === 'topics') { const tp = x.topic !== 'all' && state.topics.find((t) => t.id === x.topic); return tp ? String(tp.title || '(untitled)').trim() : 'Topics'; }
+    if (x.what === 'stickies') return 'Sticky notes';
+    if (x.what === 'everything') return 'Daily Organizer';
+    const list = x.list === 'all' ? 'Tasks' : (exportListChoices(x).find(([v]) => v === x.list) || [, 'Tasks'])[1];
+    const range = x.from || x.to ? ' (done ' + [x.from || '…', x.to || '…'].join(' to ') + ')' : '';
+    return list + (x.person === 'me' ? ', mine' : x.person !== 'all' ? ' for ' + memberName(x.person) : '') + (x.type !== 'all' ? ' (' + typeLabel(x.type) + ')' : '') + range;
+  }
+  function exportMd(x) {
+    const date = new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const out = ['# ' + exportTitle(x), '', 'From Daily Organizer, ' + date + '.', ''];
+    const stickies = stickiesShown().map((s) => bullet(String(s.text || '')));
+    if (x.what === 'tasks') out.push(...tasksMd(x, 2, x.details));
+    else if (x.what === 'topics') {
+      const one = x.topic !== 'all';
+      for (const tp of exportTopics(x)) out.push(...topicMd(tp, one ? 1 : 2, !one));
+    }
+    else if (x.what === 'stickies') out.push(...stickies);
+    else {
+      if (state.tasks.length) out.push('## Tasks', '', ...tasksMd(x, 3, true));
+      if (state.topics.length) out.push('## Topics', '', ...exportTopics(x).flatMap((tp) => topicMd(tp, 3)));
+      if (stickies.length) out.push('## Sticky notes', '', ...stickies);
+    }
+    return out.join('\n').replace(/\n{3,}/g, '\n\n').trim() + '\n';
+  }
+  // JSON: the rows as they're stored, ids included, so the organizer can be restored from it. A part of it holds the team and
+  // types too, which its rows refer to by id; everything holds every collection, days' plans and summaries included.
+  function exportJson(x) {
+    const out = { app: 'daily-organizer', version: PAGE_VERSION || null, exportedAt: new Date().toISOString() };
+    if (x.what === 'everything') {
+      Object.assign(out, { tasks: state.tasks, topics: state.topics, stickies: state.stickies, days: state.days, team: state.team, types: state.types, jira: state.jira, settings: state.settings });
+    } else {
+      if (x.what === 'tasks') {
+        out.filter = { list: x.list, day: x.list === 'day' ? exportDay(x) : null, person: x.person, type: x.type, doneFrom: x.from || null, doneTo: x.to || null };
+        out.tasks = exportGroups(x).flatMap(([, , items]) => items);
+      } else if (x.what === 'topics') {
+        out.filter = { topic: x.topic };
+        out.topics = exportTopics(x);
+      } else out.stickies = stickiesShown();
+      Object.assign(out, { team: state.team, types: state.types });
+    }
+    return JSON.stringify(out, null, 2) + '\n';
+  }
+  function exportName(x) {
+    const bits = ['daily-organizer', x.what];
+    const slug = (s, d) => slugPart(String(s || '')) || d;
+    if (x.what === 'tasks') {
+      if (x.list === 'day') bits.push(exportDay(x) <= addDays(dayKey(), 1) ? dayWord(exportDay(x), dayKey()) : exportDay(x));
+      else if (x.list !== 'all') bits.push(slug((exportListChoices(x).find(([v]) => v === x.list) || [])[1], 'list'));
+      if (x.person === 'me') bits.push('mine');
+      else if (x.person !== 'all') bits.push(slug(memberName(x.person), 'person'));
+      if (x.type !== 'all') bits.push(slug(typeLabel(x.type), 'type'));
+      if (x.from) bits.push('from-' + x.from);
+      if (x.to) bits.push('to-' + x.to);
+    } else if (x.what === 'topics' && x.topic !== 'all') {
+      const tp = state.topics.find((t) => t.id === x.topic);
+      if (tp) bits.push(slug(tp.title, 'topic'));
+    }
+    bits.push(dayKey());
+    return bits.join('-') + '.' + x.format;
+  }
+  // How much an export holds: [how many, in words].
+  function exportCount(x) {
+    const n = (k, one, many) => k + ' ' + (k === 1 ? one : many);
+    const tasks = () => exportGroups(x).reduce((s, [, , items]) => s + items.length, 0);
+    if (x.what === 'tasks') { const k = tasks(); return [k, n(k, 'task', 'tasks')]; }
+    if (x.what === 'topics') { const k = exportTopics(x).length; return [k, n(k, 'topic', 'topics')]; }
+    if (x.what === 'stickies') { const k = state.stickies.length; return [k, n(k, 'sticky note', 'sticky notes')]; }
+    const k = [state.tasks.length, state.topics.length, state.stickies.length];
+    return [k[0] + k[1] + k[2], [n(k[0], 'task', 'tasks'), n(k[1], 'topic', 'topics'), n(k[2], 'sticky note', 'sticky notes')].join(', ')];
+  }
+  function exportText(x) {
+    if (x.format === 'json') return exportJson(x);
+    if (x.format === 'md') return exportMd(x);
+    return x.what === 'stickies' ? stickiesCsv() : tasksCsv(x);
+  }
+
+  // Download hands the file to the viewer, who confirms it and may say no; a viewer that can't save files here loses the button.
+  async function exportSave() {
+    const x = ui.exp;
+    if (!x || !downloads) return;
+    const filename = exportName(x);
+    const data = exportText(x);
+    x.msg = 'Confirm the download to save it.';
+    x.copied = null;
+    render();
+    let msg;
+    try {
+      await downloads.save({ filename, data });
+      msg = 'Saved as ' + filename + '.';
+    } catch (e) {
+      const code = e && e.code;
+      if (code === 'declined') msg = 'Not saved.';
+      else if (code === 'rate_limited') msg = 'A download is already waiting for you to confirm it.';
+      else if (code === 'too_large') msg = 'That’s too large to save here. Copy it, or export less.';
+      else if (['rejected_extension', 'extension_not_enabled', 'bad_request', 'transform_error'].includes(code)) msg = 'That file can’t be saved here. Copy it instead.';
+      else { downloads = null; msg = 'Downloads aren’t available here, so copy it instead.'; }
+    }
+    if (ui.exp === x) x.msg = msg;
+    render();
+  }
+  // Copy puts the text on the clipboard; where that's refused, the text shows ready to copy by hand.
+  async function exportCopy() {
+    const x = ui.exp;
+    if (!x) return;
+    const text = exportText(x).replace(/^﻿/, '');
+    try {
+      await navigator.clipboard.writeText(text);
+      x.copied = null;
+      x.msg = 'Copied.';
+    } catch (e) {
+      x.copied = text;
+      x.msg = 'It can’t be copied from here. The text is below, selected: copy it from there.';
+    }
+    if (ui.exp !== x) return;
+    render();
+    const box = $('exp-text');
+    if (box) { box.focus(); box.select(); }
+  }
+
+  function renderExport() {
+    const dlg = $('export-view');
+    const x = ui.exp && !state.closed ? ui.exp : null;
+    if (!x) {
+      ui.exp = null;
+      if (dlg.open) dlg.close();
+      dlg.replaceChildren();
+      return;
+    }
+    // A choice that's gone since (a list's tab turned off, a person or topic removed) goes back to all.
+    const lists = exportListChoices(x);
+    if (!lists.some(([v]) => v === x.list)) x.list = 'all';
+    const people = exportPeople();
+    if (!people.some(([v]) => v === x.person)) x.person = 'all';
+    const types = exportTypes();
+    if (!types.some(([v]) => v === x.type)) x.type = 'all';
+    const topics = topicsNewest();
+    if (x.topic !== 'all' && !topics.some((tp) => tp.id === x.topic)) x.topic = 'all';
+    if (!EXPORT_OFFERS[x.what].includes(x.format)) x.format = EXPORT_OFFERS[x.what][0];
+    const set = (key, value) => {
+      x[key] = value;
+      x.msg = '';
+      x.copied = null;
+      if (key === 'what' && !EXPORT_OFFERS[value].includes(x.format)) x.format = EXPORT_OFFERS[value][0];
+      render();
+    };
+    const seg = (id, label, choices, key) => el('div', { class: 'row' },
+      el('span', { class: 'label', id }, label),
+      el('span', { class: 'seg', role: 'group', 'aria-labelledby': id }, choices.map(([v, l]) => el('button', {
+        type: 'button', class: 'btn', id: id + '-' + v, 'aria-pressed': String(x[key] === v), onclick: () => set(key, v),
+      }, l))));
+    const field = (id, label, control) => el('div', { class: 'field' }, el('label', { for: id }, label), control);
+    const select = (id, choices, key) => {
+      const s = el('select', { id, onchange: (e) => set(key, e.target.value) }, choices.map(([v, l]) => el('option', { value: v }, l)));
+      s.value = x[key];
+      return s;
+    };
+    const date = (id, key, bound) => el('input', { type: 'date', id, value: x[key] || null, [bound[0]]: bound[1] || null, onchange: (e) => set(key, e.target.value) });
+    const dated = x.list === 'all' || x.list === 'done';
+    const opts = x.what === 'tasks' ? el('div', { class: 'export-opts' },
+      field('exp-list', 'List', select('exp-list', lists, 'list')),
+      state.team.length || x.person !== 'all' ? field('exp-person', 'Whose', select('exp-person', people, 'person')) : null,
+      field('exp-type', 'Type', select('exp-type', types, 'type')),
+      dated ? field('exp-from', 'Done from', date('exp-from', 'from', ['max', x.to])) : null,
+      dated ? field('exp-to', 'Done to', date('exp-to', 'to', ['min', x.from])) : null,
+      x.format !== 'json' ? el('label', { class: 'tab-pick' }, el('input', { type: 'checkbox', id: 'exp-details', checked: x.details, onchange: (e) => set('details', e.target.checked) }), ' Comments and checklists') : null,
+    ) : x.what === 'topics' && topics.length ? el('div', { class: 'export-opts' },
+      field('exp-topic', 'Topic', select('exp-topic', [['all', 'All topics'], ...topics.map((tp) => [tp.id, String(tp.title || '(untitled)')])], 'topic')),
+    ) : null;
+    const [count, counted] = exportCount(x);
+    const ready = state.confirmed;
+    const name = exportName(x);
+    const copyBox = x.copied !== null ? el('textarea', { id: 'exp-text', readonly: true, rows: '8', 'aria-label': 'The export, to copy', spellcheck: 'false' }) : null;
+    if (copyBox) copyBox.value = x.copied;
+    dlg.replaceChildren(
+      el('div', { class: 'view-head' },
+        el('div', { class: 'view-title-row' },
+          el('h2', { class: 'view-title', id: 'export-title' }, 'Export'),
+          el('button', { type: 'button', class: 'icon-btn view-close', id: 'exp-close', 'aria-label': 'Close', title: 'Close (Esc)', onclick: closeExport }, '×'),
+        ),
+      ),
+      el('div', { class: 'export-body' },
+        seg('exp-what', 'What', EXPORT_WHAT, 'what'),
+        opts,
+        seg('exp-format', 'Format', EXPORT_FORMATS.filter(([v]) => EXPORT_OFFERS[x.what].includes(v)), 'format'),
+        el('p', { class: 'export-hint' }, EXPORT_HINTS[x.format], x.what === 'everything' && x.format === 'md' ? ' Days’ plans and summaries are in the JSON only.' : null),
+        el('p', { class: 'export-sum', id: 'exp-sum' }, !ready ? 'Loading your organizer…' : count ? [counted, ' · ', el('span', { class: 'fname' }, name)] : 'Nothing to export with these choices.'),
+        el('div', { class: 'export-actions' },
+          el('p', { class: 'export-msg', id: 'exp-msg', role: 'status' }, x.msg || (downloadsKnown && !downloads ? 'Downloads aren’t offered here: copy it instead.' : '')),
+          el('button', { type: 'button', class: 'btn', onclick: closeExport }, 'Close'),
+          el('button', { type: 'button', class: 'btn' + (downloads ? '' : ' btn-primary'), id: 'exp-copy', disabled: !ready || !count, onclick: exportCopy }, 'Copy'),
+          downloads ? el('button', { type: 'button', class: 'btn btn-primary', id: 'exp-save', disabled: !ready || !count, onclick: exportSave }, 'Download') : null,
+        ),
+        copyBox,
+      ),
+    );
+    if (!dlg.open) { try { dlg.showModal(); } catch (e) { dlg.show(); } }
+  }
+  // The Export dialog closes as the task view does: × or Close, Escape, or a click on the dimmed page around it.
+  {
+    const dlg = $('export-view');
+    const outside = (e) => {
+      const r = dlg.getBoundingClientRect();
+      return e.target === dlg && (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom);
+    };
+    let downOutside = false;
+    dlg.addEventListener('pointerdown', (e) => { downOutside = outside(e); });
+    dlg.addEventListener('click', (e) => { if (downOutside && outside(e)) closeExport(); downOutside = false; });
+    dlg.addEventListener('close', () => { if (ui.exp) closeExport(); });
+  }
+
+  // Tasks sorted into the lists the page shows, with `sel` the day shown: planned for it, carried over from a day gone by,
+  // Up Next, Waiting On, Upcoming (planned for another day), Ideas, each type tab, and Done. The lists and Export both use it,
+  // so an exported list holds what the page lists (Export's Done adds the tasks done on the day shown).
+  const byCreated = (a, b) => String(a.created || '').localeCompare(String(b.created || ''));
+  const byPriority = (a, b) => prioRank(a) - prioRank(b) || byCreated(a, b);
+  function partition(tasks, sel, today) {
+    const planned = tasks.filter((t) => t.today === sel).sort((a, b) => (a.status === 'done') - (b.status === 'done') || byPriority(a, b));
+    const rest = tasks.filter((t) => t.today !== sel);
+    const open = rest.filter((t) => t.status !== 'done');
+    // Open tasks planned for another day are Upcoming, and those planned for a day gone by are carried over.
+    const upcoming = open.filter((t) => t.today && t.today >= today).sort((a, b) => a.today.localeCompare(b.today) || byPriority(a, b));
+    const carried = open.filter((t) => t.today && t.today < today).sort((a, b) => prioRank(a) - prioRank(b) || a.today.localeCompare(b.today) || byCreated(a, b));
+    const loose = open.filter((t) => !t.today);
+    // A type with its own tab holds its open tasks with no day (ideas in Ideas), so Up Next and Waiting On hold the rest.
+    // Tasks set aside for someday come last in each, marked someday.
+    const homes = new Set(tabTypeIds());
+    const bySomeday = (a, b) => Boolean(a.someday) - Boolean(b.someday) || byPriority(a, b);
+    const homeOf = (t) => (homes.has(typeOf(t)) ? typeOf(t) : null);
+    const ideas = loose.filter((t) => homeOf(t) === 'idea').sort(bySomeday);
+    const work = loose.filter((t) => !homeOf(t));
+    const typeIds = [...homes].filter((id) => id !== 'idea');
+    const byType = new Map(typeIds.map((id) => [id, loose.filter((t) => homeOf(t) === id).sort(bySomeday)]));
+    const next = work.filter((t) => t.status === 'next' || !t.status).sort(bySomeday);
+    const waiting = work.filter((t) => t.status === 'waiting').sort(byPriority);
+    const done = rest.filter((t) => t.status === 'done').sort((a, b) => String(b.doneAt || '').localeCompare(String(a.doneAt || '')));
+    return { planned, carried, next, waiting, upcoming, ideas, typeIds, byType, done };
+  }
+
   function render() {
     // While a note is dragged, the page waits to redraw until it's dropped, so the note under the pointer stays put.
     if (ui.drag) { ui.dragPending = true; return; }
@@ -3423,8 +3854,6 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 
     const active = document.activeElement && document.activeElement.id;
     const byId = new Map(state.tasks.map((t) => [t.id, t]));
-    const byCreated = (a, b) => String(a.created || '').localeCompare(String(b.created || ''));
-    const byPriority = (a, b) => prioRank(a) - prioRank(b) || byCreated(a, b);
     // A tab turned off or hidden, or a remembered one that's gone, gives way to Today.
     if (!tabExists(ui.tab) && tabDecided(ui.tab)) { ui.tab = 'today'; clearAddPicks(); }
     syncAddBox(today);
@@ -3438,26 +3867,8 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     const person = personShown();
     const agenda = person ? shown.filter((t) => withOf(t).includes(person) && t.status !== 'done').sort(byPriority) : [];
     const inLists = shown.filter((t) => !agenda.includes(t));
-    const planned = inLists.filter((t) => t.today === sel).sort((a, b) => (a.status === 'done') - (b.status === 'done') || byPriority(a, b));
-    const rest = inLists.filter((t) => t.today !== sel);
-    const open = rest.filter((t) => t.status !== 'done');
-    // Open tasks planned for another day are Upcoming, and those planned for a day gone by are carried over.
-    const upcoming = open.filter((t) => t.today && t.today >= today).sort((a, b) => a.today.localeCompare(b.today) || byPriority(a, b));
-    const carried = open.filter((t) => t.today && t.today < today).sort((a, b) => prioRank(a) - prioRank(b) || a.today.localeCompare(b.today) || byCreated(a, b));
-    const unplanned = open.filter((t) => !t.today);
-    // A type with its own tab holds its open tasks with no day (ideas in Ideas), so Up Next and Waiting On hold the rest.
-    // Tasks set aside for someday come last in each, marked someday.
-    const homes = new Set(tabTypeIds());
-    const loose = unplanned;
-    const bySomeday = (a, b) => Boolean(a.someday) - Boolean(b.someday) || byPriority(a, b);
-    const homeOf = (t) => (homes.has(typeOf(t)) ? typeOf(t) : null);
-    const ideas = loose.filter((t) => homeOf(t) === 'idea').sort(bySomeday);
-    const work = loose.filter((t) => !homeOf(t));
-    const typeIds = [...homes].filter((id) => id !== 'idea');
+    const { planned, carried, next, waiting, upcoming, ideas, typeIds, byType, done } = partition(inLists, sel, today);
     syncTypeTabs(typeIds);
-    const next = work.filter((t) => t.status === 'next' || !t.status).sort(bySomeday);
-    const waiting = work.filter((t) => t.status === 'waiting').sort(byPriority);
-    const done = rest.filter((t) => t.status === 'done').sort((a, b) => String(b.doneAt || '').localeCompare(String(a.doneAt || '')));
 
     fill('with', agenda, sel);
     if (person) {
@@ -3471,7 +3882,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     fill('waiting', waiting, sel);
     fill('upcoming', upcoming, sel);
     fill('ideas', ideas, sel);
-    for (const id of typeIds) fill('type-' + id, loose.filter((t) => homeOf(t) === id).sort(bySomeday), sel);
+    for (const id of typeIds) fill('type-' + id, byType.get(id), sel);
     fill('done', done, sel);
     renderPeople(today, byPriority);
     renderDays(byId);
@@ -3565,6 +3976,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     const ticketInput = $('set-ticket');
     if (!ui.settingsTyped && document.activeElement !== ticketInput) ticketInput.value = state.settings.ticketUrl || '';
     renderTaskView();
+    renderExport();
 
     if (active) {
       const f = $(active);
@@ -3666,6 +4078,8 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     render();
     $('screen-stickies').focus();
   });
+  $('export-tasks').addEventListener('click', () => openExport(exportTasksPreset(), 'export-tasks'));
+  $('export-stickies').addEventListener('click', () => openExport({ what: 'stickies' }, 'export-stickies'));
   $('add-type').addEventListener('change', (e) => { ui.addType = e.target.value; render(); });
   $('people-select').addEventListener('change', (e) => pickPerson(e.target.value || null));
   $('topic-settings-btn').addEventListener('click', openTopicSettings);
@@ -3815,6 +4229,8 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
         return;
       }
     }
+    // Downloads are optional: without them, Export offers Copy only.
+    claude.use('downloads').then((d) => { downloads = d || null; downloadsKnown = true; render(); }, () => { downloadsKnown = true; render(); });
     let gotTasks = false, gotDays = false;
     const settle = (meta) => {
       if (gotTasks && gotDays && meta && !meta.fromCache) { state.confirmed = true; state.slow = false; clearTimeout(timer); }

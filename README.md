@@ -195,6 +195,23 @@ Claude keeps them too: "stick a note: ask Sam about the offsite", "what's
 on my stickies?", "turn the Kafka sticky into a task for tomorrow", "put
 the offsite sticky in Sam's notes on Q4 planning".
 
+## Export
+
+**Export** sits beside each view: next to List | Table on the Tasks screen,
+on a topic's top bar, and above the Stickies board. It opens one dialog,
+already set to what you're looking at (Up Next, Sam on People, the topic
+picked), where you choose:
+
+- **What**: Tasks, Topics, Stickies or Everything.
+- **Which tasks**: a list (All, Open, Today, Up Next, Done…), whose (everyone,
+  yours, or one person's, including discussions with them), a type, done
+  dates, and whether comments and checklists come along. Or which topic.
+- **Format**: CSV for a spreadsheet (tasks and stickies), Markdown to read or
+  paste into notes, or JSON with every field as stored, as a backup.
+
+**Download** saves the file once you confirm it; **Copy** puts it on the
+clipboard instead. Export only reads, so nothing in your organizer changes.
+
 ## Team
 
 Tasks are yours unless you say otherwise. To hand some out:
@@ -277,7 +294,8 @@ can't clash with another skill's; updating an older organizer moves them.
 The update republishes the page at the same link. Your tasks stay, because
 they're in the organizer's database rather than the page. Changes you asked
 Claude to make to the page are carried over to the new one. For a page older
-than 0.4.0, Claude asks which changes those were.
+than 0.4.0, Claude asks which changes those were. Updating a page older than
+0.24.0 also lets it save files, for Export's Download.
 
 The full instructions are in [`SKILL.md`](SKILL.md).
 
