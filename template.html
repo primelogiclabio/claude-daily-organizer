@@ -1,5 +1,5 @@
 <title>Daily Organizer</title>
-<meta name="daily-organizer-version" content="0.21.0">
+<meta name="daily-organizer-version" content="0.21.1">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -448,11 +448,13 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 .tasks tr.has-detail td { border-bottom: 0; }
 .tasks tr.detail td { padding-top: 0; }
 .tasks .c-check { width: 1%; padding-right: 0; }
-/* The Task column takes a third of the table and long titles wrap in it; the other columns share the rest, and the icon columns stay tight. */
-.tasks .c-task { min-width: 16ch; width: 34%; overflow-wrap: anywhere; }
+/* The Task column takes the spare width and long titles wrap in it; the other columns fit their contents, so a wide screen has no gaps between them. */
+.tasks .c-task { min-width: 16ch; overflow-wrap: anywhere; }
 .tasks .c-note { min-width: 18ch; max-width: 36ch; overflow-wrap: anywhere; }
-.tasks .c-type, .tasks .c-prio, .tasks .c-ticket, .tasks .c-age, .tasks .c-log, .tasks .c-star, .tasks .c-actions { white-space: nowrap; }
-.tasks .c-star, .tasks .c-actions { width: 1%; }
+.tasks .c-owner, .tasks .c-day, .tasks .c-type, .tasks .c-prio, .tasks .c-ticket, .tasks .c-age, .tasks .c-log, .tasks .c-star, .tasks .c-actions { width: 1%; white-space: nowrap; }
+.tasks .c-owner, .tasks .c-day, .tasks .c-type, .tasks .c-prio, .tasks .c-ticket, .tasks .c-age, .tasks .c-log { padding-left: 14px; }
+.tasks .c-day { font-size: 14px; }
+.tasks .c-day .muted { color: var(--muted); }
 .tasks .c-age { font-family: var(--font-mono); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .tasks .c-age.stale { color: var(--today); }
 .tasks .c-log .link-btn { padding: 0 4px; margin-left: -4px; }
@@ -2555,7 +2557,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 
   // Table columns: [heading, shown only to screen readers].
   // The status note has no column: it's in the row's details.
-  const COLUMNS = [['Done', true], ['Task'], ['Type'], ['Priority'], ['Ticket'], ['Age'], ['Comments'], ['Today', true], ['Actions', true]];
+  const COLUMNS = [['Done', true], ['Task'], ['Day'], ['Type'], ['Priority'], ['Ticket'], ['Age'], ['Comments'], ['Today', true], ['Actions', true]];
   const columns = (withOwner) => (withOwner ? [...COLUMNS.slice(0, 2), ['For'], ...COLUMNS.slice(2)] : COLUMNS);
 
   function ageCell(t, p) {
@@ -2567,12 +2569,28 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     return p.added <= 0 ? 'today' : p.added + 'd';
   }
 
+  // The Day column: the day a task is planned for, Someday, or the day gone by an open task is carried over from.
+  function dayCell(t) {
+    const today = dayKey();
+    const open = t.status !== 'done';
+    if (!t.today) return t.someday && open ? el('span', { class: 'muted', title: 'Set aside for someday' }, 'Someday') : null;
+    if (open && t.today < today) {
+      const n = Math.round((fromKey(today) - fromKey(t.today)) / 86400000);
+      const from = fromKey(t.today).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      return el('span', { class: 'carry-chip', title: 'Planned for ' + dayLabel(t.today) + ', carried over ' + n + (n === 1 ? ' day' : ' days') }, from + ' · ' + n + 'd');
+    }
+    const word = shortDay(t.today, today);
+    const label = word[0].toUpperCase() + word.slice(1);
+    return el('span', { class: open && t.today === today ? 'plan-chip' : open ? null : 'muted', title: 'Planned for ' + dayLabel(t.today) }, label);
+  }
+
   function tableRows(t, today, withOwner) {
     const p = parts(t, today, true);
     const tr = el('tr', { class: ['row', p.done ? 'is-done' : '', p.open ? 'is-open' : '', p.panels.length ? 'has-detail' : ''].join(' ').trim().replace(/\s+/g, ' '), onclick: rowClick(t.id) },
       el('td', { class: 'c-check' }, p.check),
-      el('td', { class: 'c-task' }, p.titleBtn, withChip(t), planChip(t, today), carryChip(t), viaChip(t), p.linksChip),
+      el('td', { class: 'c-task' }, p.titleBtn, withChip(t), viaChip(t), p.linksChip),
       withOwner ? el('td', { class: 'c-owner' }, t.owner ? el('span', { class: 'owner' }, memberName(t.owner)) : el('span', { class: 'me' }, 'Me')) : null,
+      el('td', { class: 'c-day' }, dayCell(t)),
       el('td', { class: 'c-type' }, p.tag),
       el('td', { class: 'c-prio' }, prioChip(t)),
       el('td', { class: 'c-ticket' }, p.ticket),

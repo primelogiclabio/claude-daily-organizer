@@ -32,7 +32,8 @@ follow-ups and waiting tasks that are 3 or more days old.
 
 A bar above the lists holds the **Day** and **People** filters and a
 **List | Table** switch, which shows each section as a list or as a table
-with columns for type, priority, ticket, age and comments. Rows light up under
+with columns for the planned day, type, priority, ticket, age and comments;
+the columns fit their contents and the task takes the rest. Rows light up under
 the pointer; click one to open its details: every field, the status note in
 the table, and how many comments and checklist items it has, with **Open**.
 Opening a row closes the one already open. **Open**, a row's comments link or
