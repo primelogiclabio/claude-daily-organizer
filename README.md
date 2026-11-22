@@ -179,7 +179,9 @@ leave topics out unless you ask.
 **Stickies**, the third screen on the header's switch, is for anything you
 want to jot down now and sort out later. Type it in the box at the top
 (Enter sticks it, Shift+Enter starts a new line) and it shows as a card,
-newest first, with how many you have on the switch. Each card has:
+newest first, with how many you have on the switch. Each card has a border
+in its colour and, at its top right, a dot in that colour: click it to pick
+yellow, pink, blue, green or purple. Its buttons:
 
 - **→ Task**: opens Up Next with the add box filled in: the first line as the
   title, the other lines as the task's first comment. Set its type, day or
@@ -188,7 +190,7 @@ newest first, with how many you have on the switch. Each card has:
 - **→ Topic**: puts it in a topic you pick, in Main or a person's part, as a
   note or a checklist item, or starts a new topic from it (the first line
   as its name, the rest as a note). **Open it** goes to the topic.
-- **Edit**: its text and colour (yellow, pink, blue, green or purple).
+- **Edit**: its text.
 - **Remove**, after a check.
 
 Claude keeps them too: "stick a note: ask Sam about the offsite", "what's
