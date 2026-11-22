@@ -1,5 +1,5 @@
 <title>Daily Organizer</title>
-<meta name="daily-organizer-version" content="0.23.0">
+<meta name="daily-organizer-version" content="0.23.1">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -330,15 +330,21 @@ html:has(dialog.view[open]) { overflow: hidden; }
 .topic-col { gap: 10px; }
 .tgroup { display: grid; gap: 4px; min-width: 0; }
 .tgroup.is-grouped + .tgroup.is-grouped { padding-top: 8px; border-top: 1px solid var(--line); }
-.group-head { display: flex; align-items: baseline; gap: 6px; width: calc(100% + 12px); box-sizing: border-box; margin: 0 -6px; padding: 3px 6px; border: 0; border-radius: 5px; background: none; font: inherit; font-size: 15px; font-weight: 600; text-align: left; color: var(--ink); cursor: pointer; }
-.group-head .caret { flex: none; display: inline-block; width: 12px; font-size: 18px; line-height: 1; text-align: center; color: var(--muted); transition: transform .12s; }
-.group-head[aria-expanded="true"] .caret { transform: rotate(90deg); }
-.group-head .gname { min-width: 0; overflow-wrap: anywhere; }
+/* A part's heading: the arrow folds the group; the name, where the add box offers the part, picks it there and shows
+   pressed (in the accent) while it's the one picked. */
+.group-head { display: flex; align-items: center; gap: 0; min-width: 0; margin: 0 -6px; }
+.group-head .fold { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 26px; padding: 0; border: 0; border-radius: 5px; background: none; font-size: 18px; line-height: 1; color: var(--muted); cursor: pointer; }
+.group-head span.fold { cursor: default; }
+.group-head .fold span { display: inline-block; transition: transform .12s; }
+.group-head .fold[aria-expanded="true"] span { transform: rotate(90deg); }
+.group-head .pick, .group-head .gname { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 0 6px; min-width: 0; padding: 3px 6px; border: 0; border-radius: 5px; background: none; font: inherit; font-size: 15px; font-weight: 600; text-align: left; color: var(--ink); overflow-wrap: anywhere; }
+.group-head .pick { cursor: pointer; }
+.group-head.is-empty .pick, .group-head.is-empty .gname { font-weight: 500; color: var(--muted); }
 .group-head .n { font-family: var(--font-mono); font-size: 13px; font-weight: 400; color: var(--muted); font-variant-numeric: tabular-nums; }
-.group-head.is-empty { font-weight: 500; color: var(--muted); cursor: default; }
 @media (hover: hover) {
-  button.group-head:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+  .group-head .fold:hover, .group-head .pick:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
 }
+.group-head .pick[aria-pressed="true"] { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .tgroup.is-grouped > ul { padding-left: 18px; }
 .checklist .add-item.has-to { flex-wrap: wrap; }
 .checklist .add-item.has-to input[type="text"] { flex-basis: 100%; }
@@ -2403,22 +2409,31 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       if (ui.topicFolded.delete(tp.id + ':' + kind + ':' + k)) saveFolded();
       return boxes[keys.indexOf(k)];
     };
-    const picker = addKeys.length < 2 ? null : el('select', {
+    const canPick = !state.readOnly && addKeys.length > 1;
+    const picker = !canPick ? null : el('select', {
       id: addKey + '-to', class: 'add-to', title: check ? 'Whose checklist the item goes on' : 'Whose notes the note goes in',
       'aria-label': check ? 'Add the item to' : 'Add the note to',
-      onchange: (e) => { ui.topicAddTo[pickKey] = e.target.value; },
+      onchange: (e) => { ui.topicAddTo[pickKey] = e.target.value; render(); },
     }, addKeys.map((k) => el('option', { value: k, selected: k === picked }, partName(k))));
+    // A click on a part's name picks it in the dropdown, and opens it if it's folded, so what's added shows there.
+    const pickPart = (k) => {
+      ui.topicAddTo[pickKey] = k;
+      if (ui.topicFolded.delete(tp.id + ':' + kind + ':' + k)) saveFolded();
+      render();
+    };
     return el('div', { class: 'checklist topic-col' + (check ? '' : ' points'), id: 'items-' + kind + '-' + tp.id },
       el('h3', {}, w.title, check && all.length ? el('span', { class: 'n' }, ticked + ' of ' + all.length + ' done') : null),
-      keys.map((k, i) => topicGroup(tp, kind, k, boxes[i], grouped)),
+      keys.map((k, i) => topicGroup(tp, kind, k, boxes[i], grouped, canPick && addKeys.includes(k) ? { on: k === picked, go: () => pickPart(k) } : null)),
       !grouped && !all.length ? el('p', { class: 'empty' }, w.none) : null,
       state.readOnly ? null : check ? addItemRow(target, addKey, picker) : addNoteRow(target, addKey, picker),
     );
   }
 
-  // One part's items or notes in a topic's column, under a heading with how many it has (ticked of all, on a checklist) that
-  // folds it away or opens it again. Folding is a view choice per part, kept on this device; it closes any item open in it.
-  function topicGroup(tp, kind, k, box, grouped) {
+  // One part's items or notes in a topic's column, under a heading: an arrow that folds it away or opens it again, then its
+  // name with how many it has (ticked of all, on a checklist). Folding is a view choice per part, kept on this device; it
+  // closes any item open in it. Where the column's add box offers the part, its name is a button that picks it there (`pick`),
+  // shown pressed while it's the one picked.
+  function topicGroup(tp, kind, k, box, grouped, pick) {
     const check = kind === 'check';
     const list = check ? checkList(box) : notesList(box);
     const fk = tp.id + ':' + kind + ':' + k;
@@ -2437,17 +2452,23 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
       saveFolded();
       render();
     };
-    const count = check ? box.items.filter((c) => c.done).length + '/' + n : String(n);
-    const head = !grouped ? null : !n
-      ? el('div', { class: 'group-head is-empty', id: gid }, el('span', { class: 'caret', 'aria-hidden': 'true' }), el('span', { class: 'gname' }, partName(k)))
-      : el('button', {
-        type: 'button', class: 'group-head', id: gid, 'aria-expanded': String(!folded), 'aria-controls': folded ? null : gid + '-list',
-        title: (folded ? 'Show ' : 'Hide ') + partName(k) + (check ? '’s items' : '’s notes'), onclick: fold,
-      }, el('span', { class: 'caret', 'aria-hidden': 'true' }, '›'), el('span', { class: 'gname' }, partName(k)), el('span', { class: 'n' }, count));
+    const name = partName(k);
+    const things = check ? 'items' : 'notes';
+    const count = !n ? null : el('span', { class: 'n' }, check ? box.items.filter((c) => c.done).length + '/' + n : String(n));
+    const head = !grouped ? null : el('div', { class: 'group-head' + (n ? '' : ' is-empty'), id: gid },
+      n ? el('button', {
+        type: 'button', class: 'fold', id: gid + '-fold', 'aria-expanded': String(!folded), 'aria-controls': folded ? null : gid + '-list',
+        'aria-label': (folded ? 'Show ' : 'Hide ') + name + '’s ' + things, title: (folded ? 'Show ' : 'Hide ') + name + '’s ' + things, onclick: fold,
+      }, el('span', { 'aria-hidden': 'true' }, '›')) : el('span', { class: 'fold', 'aria-hidden': 'true' }),
+      pick ? el('button', {
+        type: 'button', class: 'pick', id: gid + '-pick', 'aria-pressed': String(pick.on),
+        title: pick.on ? 'New ' + things + ' go to ' + name : 'Add new ' + things + ' to ' + name, onclick: pick.go,
+      }, name, count) : el('span', { class: 'gname' }, name, count),
+    );
     // Notes take a drop anywhere in their part's group, so `points`, `data-topic` and `data-part` are on it, the list right under it.
     return el('div', {
       class: 'tgroup' + (check ? '' : ' points') + (grouped ? ' is-grouped' : '') + (folded ? ' is-folded' : ''),
-      role: grouped ? 'group' : null, 'aria-labelledby': grouped ? gid : null,
+      role: grouped ? 'group' : null, 'aria-label': grouped ? name + (check ? '’s checklist' : '’s notes') : null,
       'data-topic': check ? null : tp.id, 'data-part': check ? null : k,
     }, head, folded ? null : list);
   }

@@ -154,9 +154,11 @@ them from either screen.
 Each person on the topic has a part of their own, for what they're working
 on or questions to follow up with them. The checklist and the notes each
 show the topic's own part (**Main**) and then each person's as a group,
-under a heading with its count; click the heading to fold the group away or
-open it again, and each device remembers it per topic. One box at the
-bottom of each adds to the part picked beside its **Add** (Main at first).
+under a heading with its count. The arrow (›) beside a heading folds the group
+away or opens it again, and each device remembers it per topic. One box at
+the bottom of each adds to the part picked beside its **Add** (Main at
+first); click a heading's name to pick that part there, which highlights it
+and opens it if it's folded.
 **Edit** on a topic changes its title, overview and tickets (one per
 line), or removes it. **Hide checklist** beside it hides the topic's
 checklists so the notes take the whole width; **Show checklist** (with how many
