@@ -1,5 +1,5 @@
 <title>Daily Organizer</title>
-<meta name="daily-organizer-version" content="0.24.0">
+<meta name="daily-organizer-version" content="0.24.1">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -453,7 +453,7 @@ body.is-dragging-note, body.is-dragging-note * { cursor: grabbing !important; us
 .settings-home, .settings-common { display: contents; }
 .topic-settings .appearance { padding-top: 0; }
 /* Sticky notes: a screen of cards, newest first, filling the width in columns of 220px or more, under a box to jot one
-   down. Each card is tinted with its colour, mixed into the surface (less in a dark theme, so text stays easy to read), with
+   down. Each card is the surface with a border in its colour and a dot in that colour at its top right to change it, then
    its text, when it was added and its buttons at the foot: → Task, → Topic, Edit and Remove. */
 .stickies { display: grid; gap: 14px; align-content: start; min-width: 0; }
 .sticky-add { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: end; max-width: 760px; }
@@ -467,11 +467,7 @@ body.is-dragging-note, body.is-dragging-note * { cursor: grabbing !important; us
 .sc-blue { --sc: #3b82f6; }
 .sc-green { --sc: #22c55e; }
 .sc-purple { --sc: #a855f7; }
-.sticky { --mix: 30%; display: flex; flex-direction: column; gap: 8px; min-height: 130px; min-width: 0; padding: 12px 14px 10px; border: 1px solid color-mix(in srgb, var(--sc) 45%, var(--line)); border-radius: 6px; background: color-mix(in srgb, var(--sc) var(--mix), var(--surface)); box-shadow: 0 1px 2px rgb(0 0 0 / .06), 0 4px 12px rgb(0 0 0 / .05); }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .sticky { --mix: 18%; }
-}
-:root[data-theme="dark"] .sticky { --mix: 18%; }
+.sticky { display: flex; flex-direction: column; gap: 8px; min-height: 130px; min-width: 0; padding: 11px 13px 9px; border: 2px solid var(--sc); border-radius: 6px; background: var(--surface); box-shadow: 0 1px 2px rgb(0 0 0 / .06), 0 4px 12px rgb(0 0 0 / .05); }
 .sticky-text { font-size: 16px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .sticky-meta { margin-top: auto; font-size: 13px; color: var(--muted); }
 .sticky-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 4px; margin: 0 -4px; }
@@ -485,11 +481,17 @@ body.is-dragging-note, body.is-dragging-note * { cursor: grabbing !important; us
 .sticky-move { display: grid; gap: 6px; font-size: 14px; }
 .sticky-move label { display: grid; gap: 2px; color: var(--muted); }
 .sticky-move select { width: 100%; min-width: 0; padding: 4px 6px; font-size: 14px; color: var(--ink); }
-.sticky-colors { display: flex; flex-wrap: wrap; gap: 6px; border: 0; margin: 0; padding: 0; }
-.sticky-colors label { position: relative; width: 22px; height: 22px; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--sc) 60%, var(--line)); background: color-mix(in srgb, var(--sc) 55%, var(--surface)); cursor: pointer; }
-.sticky-colors input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
-.sticky-colors label:has(input:checked) { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink); }
-.sticky-colors label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 3px; }
+/* A card's colour: the dot at its top right, floated so the text wraps under it, opens the five colours below it. */
+.sticky-color { float: right; position: relative; margin: -5px -7px 2px 8px; }
+.sticky-color summary { list-style: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; }
+.sticky-color summary::-webkit-details-marker { display: none; }
+.sticky-color summary::before { content: ""; width: 14px; height: 14px; border-radius: 50%; background: var(--sc); box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 18%, transparent); }
+.sticky-color summary:hover, .sticky-color[open] summary { background: color-mix(in srgb, var(--ink) 8%, transparent); }
+.sticky-color summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; }
+.sticky-colors { position: absolute; z-index: 5; top: calc(100% + 2px); right: 0; display: flex; gap: 8px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); box-shadow: 0 6px 18px color-mix(in srgb, var(--ink) 16%, transparent); }
+.sticky-colors button { width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; background: var(--sc); cursor: pointer; }
+.sticky-colors button[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink); }
+.sticky-colors button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .sticky-btns { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
 /* A task being made from a sticky says so under the add box, with a way back. */
 .from-sticky { margin: 0; padding: 0 2px; font-size: 14px; color: var(--muted); }
@@ -1005,7 +1007,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
 (() => {
   const $ = (id) => document.getElementById(id);
   const state = { tasks: [], days: [], settings: {}, team: [], types: [], jira: [], topics: [], stickies: [], teamLoaded: false, typesLoaded: false, settingsLoaded: false, jiraLoaded: false, confirmed: false, slow: false, error: '', note: '', readOnly: false, closed: false };
-  const ui = { completing: null, removing: null, editing: null, clearing: false, drafts: {}, open: new Set(), view: null, logRemoving: null, logEditing: null, itemEditing: null, itemRemoving: null, itemOpen: null, screen: 'tasks', topicSel: null, topicFolded: new Set(), topicAddTo: {}, topicPicked: false, topicEditing: null, topicRemoving: null, layout: 'list', tab: 'today', filter: 'all', day: null, addWith: null, addDay: null, addType: null, addStatus: null, addPriority: null, person: null, withOpen: null, topicSettings: false, teamRemoving: null, typeEditing: null, typeRemoving: null, noChecklist: new Set(), stickyEditing: null, stickyRemoving: null, stickyMove: null, stickyColor: null, stickyMsg: null, fromSticky: null };
+  const ui = { completing: null, removing: null, editing: null, clearing: false, drafts: {}, open: new Set(), view: null, logRemoving: null, logEditing: null, itemEditing: null, itemRemoving: null, itemOpen: null, screen: 'tasks', topicSel: null, topicFolded: new Set(), topicAddTo: {}, topicPicked: false, topicEditing: null, topicRemoving: null, layout: 'list', tab: 'today', filter: 'all', day: null, addWith: null, addDay: null, addType: null, addStatus: null, addPriority: null, person: null, withOpen: null, topicSettings: false, teamRemoving: null, typeEditing: null, typeRemoving: null, noChecklist: new Set(), stickyEditing: null, stickyRemoving: null, stickyMove: null, stickyMsg: null, fromSticky: null };
   const chains = new Map();
   // The built-in types: id, label, the priority a new task of the type starts at, whether it has a tab of its own and
   // whether it starts off (GitHub and Jira wait to be turned on). The user's own are rows in types/<id>; a row with a
@@ -1384,14 +1386,15 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     dlg.addEventListener('close', () => { if (ui.view) closeView(); });
   }
 
-  // A click outside an open With dropdown, or Escape, closes it.
+  // A click outside an open With dropdown or sticky colour dot, or Escape, closes it.
+  const DROPDOWNS = 'details.multi, details.sticky-color';
   document.addEventListener('click', (e) => {
-    if (e.target.closest && e.target.closest('details.multi')) return;
-    for (const d of document.querySelectorAll('details.multi[open]')) d.open = false;
+    const inside = e.target.closest ? e.target.closest(DROPDOWNS) : null;
+    for (const d of document.querySelectorAll('details.multi[open], details.sticky-color[open]')) if (d !== inside) d.open = false;
   });
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    const d = document.querySelector('details.multi[open]');
+    const d = document.querySelector('details.multi[open], details.sticky-color[open]');
     if (d) { d.open = false; const s = d.querySelector('summary'); if (s) s.focus(); }
   });
 
@@ -2637,13 +2640,9 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     const ek = 'stickyedit-' + s.id;
     const text = (ui.drafts[ek] || '').trim();
     if (!text) return;
-    const color = ui.stickyColor || stickyColor(s);
-    const fields = {};
-    if (text !== s.text) fields.text = text;
-    if (color !== stickyColor(s)) fields.color = color === 'yellow' ? null : color;
     delete ui.drafts[ek];
-    ui.stickyEditing = ui.stickyColor = null;
-    if (Object.keys(fields).length) write('sticky-' + s.id, () => stickyRef(s.id).update(fields));
+    ui.stickyEditing = null;
+    if (text !== s.text) write('sticky-' + s.id, () => stickyRef(s.id).update({ text }));
     render();
     const f = $('sticky-edit-btn-' + s.id); if (f) f.focus();
   }
@@ -2725,6 +2724,27 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     );
   }
 
+  // A card's colour: a dot at its top right opening the five colours, a pick saved at once (yellow by removing `color`).
+  // It opens and closes as a With dropdown does (a click elsewhere or Escape), staying open across redraws.
+  function stickyColorPick(s) {
+    const id = 'sticky-color-' + s.id;
+    const now = stickyColor(s);
+    const d = el('details', { class: 'sticky-color', id, open: ui.withOpen === id },
+      el('summary', { id: id + '-btn', title: 'Colour: ' + cap(now), 'aria-label': 'Colour: ' + cap(now) }),
+      el('div', { class: 'sticky-colors', role: 'group', 'aria-label': 'Colour' }, STICKY_COLORS.map((c) => el('button', {
+        type: 'button', class: 'sc-' + c, id: id + '-' + c, title: cap(c), 'aria-label': cap(c), 'aria-pressed': String(c === now),
+        onclick: () => {
+          ui.withOpen = null;
+          if (c !== now) write('sticky-' + s.id, () => stickyRef(s.id).update({ color: c === 'yellow' ? null : c }));
+          render();
+          const f = $(id + '-btn'); if (f) f.focus();
+        },
+      }))),
+    );
+    d.addEventListener('toggle', () => { if (d.open) ui.withOpen = id; else if (d.isConnected && ui.withOpen === id) ui.withOpen = null; });
+    return d;
+  }
+
   function stickyCard(s) {
     const editable = !state.readOnly;
     const text = String(s.text || '');
@@ -2732,23 +2752,18 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
     const moving = editable && !editing && ui.stickyMove && ui.stickyMove.id === s.id;
     const removing = editable && ui.stickyRemoving === s.id;
     const ek = 'stickyedit-' + s.id;
-    const color = editing ? ui.stickyColor || stickyColor(s) : stickyColor(s);
-    const cancelEdit = () => { ui.stickyEditing = ui.stickyColor = null; delete ui.drafts[ek]; render(); const f = $('sticky-edit-btn-' + s.id); if (f) f.focus(); };
+    const cancelEdit = () => { ui.stickyEditing = null; delete ui.drafts[ek]; render(); const f = $('sticky-edit-btn-' + s.id); if (f) f.focus(); };
     const parts = [];
     if (editing) {
       parts.push(
         noteArea(ek, 'Edit sticky note', () => saveSticky(s), cancelEdit),
-        el('fieldset', { class: 'sticky-colors' }, el('legend', { class: 'sr' }, 'Colour'),
-          STICKY_COLORS.map((c) => el('label', { class: 'sc-' + c, title: cap(c) },
-            el('input', { type: 'radio', name: 'sticky-color-' + s.id, id: 'sticky-color-' + s.id + '-' + c, value: c, checked: c === color, onchange: () => { ui.stickyColor = c; render(); } }),
-            el('span', { class: 'sr' }, cap(c))))),
         el('div', { class: 'sticky-btns' },
           el('button', { type: 'button', class: 'btn', onclick: cancelEdit }, 'Cancel'),
           el('button', { type: 'button', class: 'btn btn-primary', id: ek + '-save', disabled: !(ui.drafts[ek] || '').trim(), onclick: () => saveSticky(s) }, 'Save'),
         ),
       );
     } else {
-      parts.push(el('div', { class: 'sticky-text' }, text), el('div', { class: 'sticky-meta' }, ago(daysSince(s.created), 'added')));
+      parts.push(el('div', { class: 'sticky-text' }, editable ? stickyColorPick(s) : null, text), el('div', { class: 'sticky-meta' }, ago(daysSince(s.created), 'added')));
       if (moving) parts.push(stickyMoveForm(s));
       else if (removing) {
         parts.push(el('div', { class: 'sticky-tools inline-q' },
@@ -2770,7 +2785,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
           } }, '→ Topic'),
           el('span', { class: 'end' },
             el('button', { type: 'button', class: 'link-btn', id: 'sticky-edit-btn-' + s.id, 'aria-label': 'Edit sticky: ' + text.slice(0, 60), onclick: () => {
-              ui.stickyEditing = s.id; ui.stickyColor = null; ui.stickyMove = ui.stickyRemoving = ui.stickyMsg = null; ui.drafts[ek] = text; render();
+              ui.stickyEditing = s.id; ui.stickyMove = ui.stickyRemoving = ui.stickyMsg = null; ui.drafts[ek] = text; render();
               const f = $(ek); if (f) { f.focus(); f.setSelectionRange(f.value.length, f.value.length); }
             } }, 'Edit'),
             el('button', { type: 'button', class: 'link-btn', id: 'sticky-del-btn-' + s.id, 'aria-label': 'Remove sticky: ' + text.slice(0, 60), onclick: () => {
@@ -2780,7 +2795,7 @@ table.tasks { width: 100%; border-collapse: collapse; font-size: 15px; }
         ));
       }
     }
-    return el('li', { class: 'sticky sc-' + color, id: 'sticky-' + s.id }, parts);
+    return el('li', { class: 'sticky sc-' + stickyColor(s), id: 'sticky-' + s.id }, parts);
   }
 
   function renderStickies() {
